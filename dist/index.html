@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en-NG">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2d7d2d" />
+    <meta name="description" content="Your rights, constitution and history — in everyday language every Nigerian can understand." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="KYN" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Know Your Nigeria" />
+    <meta property="og:description" content="Your rights, constitution and history — in everyday language." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Know Your Nigeria" />
+    <meta name="twitter:description" content="Your rights, constitution and history — in everyday language." />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <title>Know Your Nigeria</title>
+
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; background: #f0f2f0; }
+      #root { height: 100%; }
+      /* Splash screen */
+      #splash {
+        position: fixed; inset: 0; background: linear-gradient(160deg, #1a5c1a 0%, #2d7d2d 55%, #3d9940 100%);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        z-index: 9999; transition: opacity 0.4s ease;
+      }
+      #splash.hidden { opacity: 0; pointer-events: none; }
+      #splash-flag { font-size: 64px; margin-bottom: 20px; }
+      #splash-title { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+      #splash-sub { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 8px; }
+    </style>
+    <script type="module" crossorigin src="/assets/index-DnNul_ef.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-wGySg1uH.js">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <!-- Splash -->
+    <div id="splash">
+      <div id="splash-flag">🇳🇬</div>
+      <div id="splash-title">Know Your Nigeria</div>
+      <div id="splash-sub">Loading…</div>
+    </div>
+
+    <div id="root"></div>
+
+    <script>
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const s = document.getElementById('splash');
+          if (s) { s.classList.add('hidden'); setTimeout(() => s.remove(), 400); }
+        }, 600);
+      });
+    </script>
+  </body>
+</html>
