@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="22" fill="#2d7d2d"/>
+  <rect x="33" y="10" width="34" height="80" fill="white"/>
+  <text x="50" y="62" text-anchor="middle" font-family="Georgia,serif" font-size="28" font-weight="900" fill="#2d7d2d">KYN</text>
+</svg>
