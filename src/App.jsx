@@ -1,0 +1,2881 @@
+import { useState, useEffect, useRef, useContext, createContext, useCallback } from "react";
+
+
+/* ════════════════════════════════════════
+   USER CONTEXT & PERSISTENCE  (Phase 5)
+════════════════════════════════════════ */
+const USER_KEY  = "kyn_user_v1";
+const defaultUser = {
+  name: "", setupComplete: false,
+  readSections: {},   // "chIdx_sIdx" → true
+  bookmarks:    {},   // "chIdx_sIdx" → true
+  quizHistory:  [],   // [{ date, cat, score, total, maxStreak, pts }]
+  lastActive:   null, streak: 0, joinedDate: null,
+  totalPoints: 0, totalGames: 0, perfectGames: 0, maxStreak: 0,
+};
+
+function loadUser()  { try { const s = localStorage.getItem(USER_KEY); return s ? { ...defaultUser, ...JSON.parse(s) } : { ...defaultUser }; } catch { return { ...defaultUser }; } }
+function saveUser(u) { try { localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch {} }
+
+const UserCtx = createContext(null);
+function useUser() { return useContext(UserCtx); }
+
+function UserProvider({ children }) {
+  const [user, setUserRaw] = useState(() => loadUser());
+
+  const setUser = useCallback((updater) => {
+    setUserRaw(prev => {
+      const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
+      saveUser(next);
+      return next;
+    });
+  }, []);
+
+  // Streak update on mount
+  useEffect(() => {
+    const today = new Date().toDateString();
+    setUser(prev => {
+      if (prev.lastActive === today) return prev;
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      const newStreak = prev.lastActive === yesterday ? prev.streak + 1 : 1;
+      return { ...prev, lastActive: today, streak: newStreak };
+    });
+  }, []);
+
+  const markRead = useCallback((chIdx, sIdx) => {
+    const key = `${chIdx}_${sIdx}`;
+    setUser(prev => prev.readSections[key] ? prev : { ...prev, readSections: { ...prev.readSections, [key]: true } });
+  }, [setUser]);
+
+  const toggleBookmark = useCallback((chIdx, sIdx) => {
+    const key = `${chIdx}_${sIdx}`;
+    setUser(prev => {
+      const bm = { ...prev.bookmarks };
+      if (bm[key]) delete bm[key]; else bm[key] = true;
+      return { ...prev, bookmarks: bm };
+    });
+  }, [setUser]);
+
+  const saveQuizResult = useCallback((result) => {
+    setUser(prev => ({
+      ...prev,
+      quizHistory:   [result, ...prev.quizHistory].slice(0, 30),
+      totalGames:    prev.totalGames + 1,
+      perfectGames:  prev.perfectGames + (result.score === result.total ? 1 : 0),
+      maxStreak:     Math.max(prev.maxStreak, result.maxStreak),
+      totalPoints:   prev.totalPoints + result.pts,
+    }));
+  }, [setUser]);
+
+  const completeSetup = useCallback((name) => {
+    setUser(prev => ({ ...prev, name: name.trim(), setupComplete: true, joinedDate: new Date().toDateString() }));
+  }, [setUser]);
+
+  const totalSections = CHAPTERS.reduce((a, ch) => a + ch.sections.length, 0);
+  const readCount     = Object.keys(user.readSections).length;
+  const bookmarkCount = Object.keys(user.bookmarks).length;
+  const readPct       = totalSections > 0 ? Math.round((readCount / totalSections) * 100) : 0;
+
+  return (
+    <UserCtx.Provider value={{ user, setUser, markRead, toggleBookmark, saveQuizResult, completeSetup, readCount, bookmarkCount, readPct, totalSections }}>
+      {children}
+    </UserCtx.Provider>
+  );
+}
+
+
+const FontLoader = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { background: #f0f2f0; }
+    ::-webkit-scrollbar { display: none; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+  `}</style>
+);
+
+const C = {
+  bg: "#f0f2f0", card: "#ffffff", cardAlt: "#f7f9f7", deep: "#e8ede8",
+  border: "#dce8dc", borderLit: "#b8d4b8",
+  gDark: "#1a5c1a", gMid: "#2d7d2d", gMain: "#3d9940", gBright: "#4CAF50", gLight: "#e8f5e8",
+  textPrimary: "#1a2a1a", textBody: "#3a4e3a", textMuted: "#6b806b", textGhost: "#9aaa9a",
+};
+
+/* ════════════════════════════════════════
+   CONSTITUTION DATA
+════════════════════════════════════════ */
+const CHAPTERS = [
+  {
+    id:1, chapter:"Chapter I", title:"Supremacy & The State", icon:"🏛️", tag:"Foundation",
+    sections:[
+      { ref:"Section 1", heading:"The Constitution is Supreme",
+        plain:"This Constitution is the highest law in Nigeria. Every authority — federal, state, local — is bound by it. Any law that contradicts it is automatically void.",
+        realTalk:"No president, senator, or governor can act outside this document. If they do, their actions carry no legal weight. You can challenge them in court.",
+        official:"(1) A National Assembly Election Tribunal shall consist of a Chairman and four other members. (2) The Chairman shall be a Judge of a High Court and the four other members shall be appointed from among Judges of a High Court, Kadis of a Sharia Court of Appeal, Judges of a Customary Court of Appeal or" },
+      { ref:"Section 2", heading:"One Indivisible Nation",
+        plain:"Nigeria is one sovereign, indivisible state consisting of a Federation of States and the Federal Capital Territory. No part can break away.",
+        realTalk:"Sovereignty belongs entirely to the Nigerian people — not politicians, not the military. The state exists to serve its citizens.",
+        official:"(1) A Governorship and Legislative Houses Election Tribunal shall consist of a Chairman and four other members. (2) The Chairman shall be a Judge of a High Court and the four other members shall be appointed from among Judges of a High Court, Kadis of a Sharia Court of Appeal, Judges of a Customary" },
+      { ref:"Section 3", heading:"36 States + FCT",
+        plain:"Nigeria consists of 36 states and the Federal Capital Territory, Abuja. The boundaries and names of states are defined here.",
+        realTalk:"Your state is constitutionally recognized. Any attempt to redraw or absorb state boundaries requires a constitutional amendment — it's not something a president can do alone.",
+        official:"The President and Deputy President of the Senate Speakers and Deputy Speaker of the House of Representatives and Speakers and Deputy Speakers of Houses of Assembly of States, and all members and staff of legislative houses." },
+      { ref:"Section 4", heading:"Who Makes Nigeria's Laws",
+        plain:"Legislative power is shared between the National Assembly (for the Federation) and State Houses of Assembly (for states). Each level can only make laws within its permitted scope.",
+        realTalk:"There's a list of what only federal government can legislate on. States can legislate on everything else. If the federal government tries to control something outside its list, that law is void.",
+        official:"Governors and Deputy Governors of States." },
+      { ref:"Section 5", heading:"Who Runs the Government",
+        plain:"Executive power of the Federation is vested in the President. Executive power of a State is vested in the Governor. They must act in line with the Constitution.",
+        realTalk:"The President and Governors don't have unlimited power. Their authority comes from and is limited by this document. Acting outside it is unconstitutional.",
+        official:"Chief Justice of Nigeria, Justices of the Supreme Court, President and Justices of the Court of Appeal, all other judicial officers and all staff of courts of law." },
+      { ref:"Section 6", heading:"Who Interprets the Law",
+        plain:"Judicial powers of the Federation are vested in courts established by this Constitution. No court can be set up to override the Constitution.",
+        realTalk:"Courts exist to protect your rights. If you believe the government has wronged you, you have a constitutional right to go to court — that right cannot be taken away.",
+        official:"Attorney-General of the Federation and Attorney-General of each State." },
+      { ref:"Section 7", heading:"Local Government Is Guaranteed",
+        plain:"A system of local government with democratically elected councils is guaranteed by this Constitution. Federal and state governments must ensure their functioning.",
+        realTalk:"Your local government must be democratically elected — appointed councils are unconstitutional. LGA funds must reach the grassroots; using LGAs as political tools violates this provision.",
+        official:"Ministers of the Government of the Federation and Commissioners of the Governments of the States." },
+      { ref:"Section 8", heading:"How New States Are Created",
+        plain:"New states can only be created through a complex constitutional process requiring National Assembly approval, state legislature approval, and referendums in affected areas.",
+        realTalk:"Creating or splitting states isn't the President's personal decision. It needs massive democratic consensus at multiple levels. This protects communities from arbitrary political gerrymandering.",
+        official:"Chief of Defence Staff, Chief of Army Staff, Chief of Naval Staff, Chief of Air Staff and all members of the armed forces of the Federation." },
+      { ref:"Section 9", heading:"How to Change the Constitution",
+        plain:"The Constitution can only be amended by a two-thirds majority of the National Assembly and approval by at least two-thirds of State Houses of Assembly.",
+        realTalk:"One person or party cannot rewrite Nigeria's fundamental law. Major changes require broad consensus across the entire country — by design, to protect everyone's rights.",
+        official:"Inspector-General of Police, Deputy Inspector-General of Police and all members of the Nigeria Police Force and other government security agencies established by law." },
+      { ref:"Section 10", heading:"No State Religion Allowed",
+        plain:"Neither the Federal Government nor any State Government shall adopt any religion as a State Religion. Nigeria is constitutionally secular.",
+        realTalk:"Any government official who tries to impose one religion as Nigeria's official faith is acting unconstitutionally. Nigeria belongs equally to Christians, Muslims, traditionalists, and all others.",
+        official:"Secretary to the Government of the Federation, Head of the Civil service, Permanent Secretaries, Directors-Generals and all other persons in the civil service of the Federation or of the State." },
+      { ref:"Section 11", heading:"Government Can Maintain Order",
+        plain:"The National Assembly may make laws for the Federation or any part of it with respect to public order and public security.",
+        realTalk:"Security laws must be made by the legislature — not invented by the executive. Emergency powers have constitutional limits and cannot be used to permanently suppress citizens.",
+        official:"Ambassadors, High Commissioners and other officers of Nigeria Missions abroad." },
+      { ref:"Section 12", heading:"International Treaties Need Laws",
+        plain:"No treaty between Nigeria and any other country has the force of law except to the extent that it has been enacted into law by the National Assembly.",
+        realTalk:"If Nigeria signs an international deal that affects your life, it only becomes binding on you when parliament passes a law to that effect. The executive can't impose treaty obligations unilaterally.",
+        official:"Chairman, members and staff of the Code of Conduct Bureau and Code of Conduct Tribunal." },
+    ],
+  },
+  {
+    id:2, chapter:"Chapter II", title:"Fundamental Objectives", icon:"🤝", tag:"Welfare",
+    sections:[
+      { ref:"Section 13", heading:"Government Must Obey This Too",
+        plain:"It is the duty of all government organs and agencies — at all levels — to conform to and apply the provisions of this chapter on fundamental objectives.",
+        realTalk:"Government accountability isn't optional. Every ministry, agency, and official has a constitutional duty to work toward the welfare objectives set in this chapter.",
+        official:"Chairman, members and staff of local government councils." },
+      { ref:"Section 14", heading:"Government Exists to Serve You",
+        plain:"The security and welfare of the people is the PRIMARY purpose of government. Sovereignty belongs to the people, from whom government derives all its powers.",
+        realTalk:"When a government fails to secure your welfare, it is failing its constitutional mandate. Citizens have the right to demand accountability — it's literally law.",
+        official:"Chairman and members of the Boards or other governing bodies and staff of statutory corporations and of companies in which the Federal or State Governments or local governments councils." },
+      { ref:"Section 15", heading:"No Discrimination. Full Stop.",
+        plain:"National integration is a constitutional duty. Discrimination based on place of origin, sex, religion, status, ethnicity, or linguistic ties is prohibited.",
+        realTalk:"\"Indigene\" discrimination in jobs, schools, or government — refusing someone opportunities because they're not 'from' a state — goes against this section.",
+        official:"All staff of universities, colleges and institutions owned and financed by the Federal or State Governments or local government councils." },
+      { ref:"Section 16", heading:"Your Right to Economic Welfare",
+        plain:"The government must manage Nigeria's economy to ensure maximum welfare for every citizen. Wealth must not be concentrated in a few hands. The constitution mandates shelter, food, a minimum living wage, pensions, and welfare for the disabled.",
+        realTalk:"Minimum wage, pension rights, unemployment benefits — these aren't optional policies, they're constitutional obligations. A government that ignores them is failing the law.",
+        official:"Chairman, members and staff of permanent commissions or councils appointed on full time basis. Sixth Schedule Election Tribunals A- National Assembly Election Tribunal" },
+      { ref:"Section 17", heading:"Social Justice & Equality",
+        plain:"Every citizen shall have equality of rights, obligations and opportunities before the law. There must be equal pay for equal work, regardless of sex.",
+        realTalk:"Paying a woman less than a man for the same job violates this section. Exploitation of Nigerian workers goes against constitutional principles.",
+        official:"(1) Subject to the provisions of this paragraph, a person holding the office of Chairman or member of the Code of Conduct Tribunal shall vacate his office when he attains the age of seventy years. (2) A person who has held office as Chairman or member of the Code of Conduct Tribunal for a period of" },
+      { ref:"Section 18", heading:"Right to Education",
+        plain:"Government is obligated to provide equal educational opportunities at all levels — including free, compulsory primary education, free secondary and university education, and adult literacy programmes.",
+        realTalk:"Universal Basic Education exists because of this section. Any government that underfunds education is failing a direct constitutional obligation.",
+        official:"(1) Where the Code of Conduct Tribunal finds a public officer guilty of contravention of any of the provisions of this Code it shall impose upon that officer any of the punishments specified under sub-paragraph (2) of this paragraph and such other punishment as may be prescribed by the National Asse" },
+      { ref:"Section 19", heading:"Nigeria's Foreign Policy Principles",
+        plain:"Nigeria's foreign policy must be based on African unity, non-alignment, non-interference in other countries' affairs, respect for international law, and promotion of world peace.",
+        realTalk:"Nigeria can't just take sides in global conflicts arbitrarily. Our foreign policy has constitutional principles — promoting African solidarity and peace isn't optional.",
+        official:"In this Code, unless the context otherwise requires – \"assets\" includes any property, movable and immovable and incomes owned by a person; \"business\" means any profession, vocation, trade, or any adventure or concern in the nature of trade and excludes farming; \"child\" includes a step-child, a lawfu" },
+      { ref:"Section 20", heading:"Right to a Clean Environment",
+        plain:"The State is constitutionally obligated to protect and improve the environment, and safeguard Nigeria's water, air, land, forests, and wildlife.",
+        realTalk:"Oil spills that destroy communities in the Niger Delta violate this constitutional provision. Environmental negligence by government or corporations isn't just harmful — it's unconstitutional.",
+        official:"The National Judicial Council shall comprise the following members - (a) the Chief Justice of Nigeria who shall be the Chairman (b) the next most senior Justice of the Supreme Court who shall be the Deputy Chairman; (c) the President of the Court of Appeal; (d) five retired Justices selected by the" },
+      { ref:"Section 21", heading:"Protecting Nigerian Culture",
+        plain:"Government must protect, preserve, and promote Nigeria's cultural heritage — festivals, arts, languages, and traditions — and foster national pride.",
+        realTalk:"When government neglects to fund cultural institutions, Nollywood, or local arts, it's failing a constitutional duty. Our diversity is an asset the government must actively protect.",
+        official:"The National Judicial Council shall have power to - (a) recommend to the President from among the list of persons submitted to it by - (i) the Federal Judicial Service Commission, persons for appointment to the offices of the Chief Justice of Nigeria, the Justices of the Supreme Court, the President" },
+      { ref:"Section 22", heading:"The Press Must Hold Power Accountable",
+        plain:"The press, radio, television, and other media shall at all times be free to uphold the fundamental objectives and expose corruption and abuse of government power.",
+        realTalk:"Journalists have a constitutional mandate. Governments that suppress media criticism, arrest journalists, or shut down broadcast stations are violating this section.",
+        official:"The Secretary of the Council shall be appointed by the National Judicial Council on the recommendation of the Federal Judicial Service Commission and shall be a legal practitioner. J - National Population Commission" },
+      { ref:"Section 23", heading:"Our National Ethics",
+        plain:"The national ethics are discipline, integrity, dignity of labour, social justice, religious tolerance, self-reliance, and patriotism.",
+        realTalk:"These aren't just words — they're constitutional values. Corruption, tribalism, and religious intolerance aren't just social problems; they contradict Nigeria's fundamental law.",
+        official:"The National Population Commission shall comprise the following members - (a) a Chairman; and (b) one person from each State of the Federation and the Federal Capital Territory, Abuja." },
+      { ref:"Section 24", heading:"Your Duties as a Citizen",
+        plain:"The constitution isn't just about rights — it also outlines citizen duties: respecting the constitution and its institutions, contributing to your community, and paying taxes honestly.",
+        realTalk:"Rights come with responsibilities. Paying your taxes, respecting others' rights, participating in your community — these are constitutional obligations, not optional choices.",
+        official:"The Commission shall have power to - (a) undertake periodical enumeration of population through sample surveys, censuses or otherwise; (b) establish and maintain a machinery for continuous and universal registration of births and deaths throughout the Federation; (c) advise the President on populati" },
+    ],
+  },
+  {
+    id:3, chapter:"Chapter III", title:"Citizenship", icon:"🇳🇬", tag:"Identity",
+    sections:[
+      { ref:"Section 25", heading:"Who is a Nigerian Citizen?",
+        plain:"You are a Nigerian citizen by birth if you were born in Nigeria and at least one parent or grandparent is indigenous to Nigeria — or if you were born outside Nigeria but one of your parents is Nigerian.",
+        realTalk:"Being born in Nigeria doesn't automatically make you a citizen if you have no Nigerian ancestry. But if either parent is Nigerian, you are Nigerian — regardless of where you were born.",
+        official:"The National Security Council shall comprise the following members - (a) the President who shall be the Chairman; (b) the Vice-President who shall be the Deputy Chairman; (c) the Chief of Defence Staff; (d) the Minister of the Government of the Federation charged with the responsibility for internal" },
+      { ref:"Section 26", heading:"Becoming Nigerian by Marriage/Registration",
+        plain:"A foreign woman married to a Nigerian citizen may apply for Nigerian citizenship. Other persons can also apply for citizenship by registration after meeting residency requirements.",
+        realTalk:"Marriage to a Nigerian gives a foreign woman the right to become a citizen — but it isn't automatic, she must apply. Citizenship by registration has conditions including loyalty and residence.",
+        official:"The Council shall have power to advise the President on matters relating to public security including matters relating to any organisation or agency established by law for ensuring the security of the Federation. L - Nigeria Police Council" },
+      { ref:"Section 27", heading:"Citizenship by Naturalisation",
+        plain:"A foreign person who has lived in Nigeria for 15+ years, is of good character, knows a Nigerian language, and renounces their previous citizenship can apply for naturalisation.",
+        realTalk:"Naturalisation requires genuine commitment — 15 years of residency, language knowledge, and renouncing another citizenship. It's a serious legal process, not a loophole.",
+        official:"The Nigeria Police Council shall comprise the following members - (a) the President who shall be the Chairman; (b) the Governor of each State of the Federation; (c) the Chairman of the Police Service Commission; and (d) the Inspector-General of Police" },
+      { ref:"Section 28", heading:"Dual Citizenship Rules",
+        plain:"A person who is a Nigerian citizen and acquires citizenship of another country may, under certain conditions, retain Nigerian citizenship. Specific rules apply.",
+        realTalk:"Nigerians in the diaspora who've acquired foreign citizenship can still retain Nigerian citizenship in some circumstances — but check the conditions carefully, as not all situations are covered.",
+        official:"The functions of the Nigeria Police Council shall include - (a) the organisation and administration of the Nigeria Police Force and all other matters relating thereto (not being matters relating to the use and operational control of the Force or the appointment, disciplinary control and dismissal of" },
+      { ref:"Section 29", heading:"You Can Renounce Citizenship",
+        plain:"A Nigerian citizen who has attained the age of 21 and is also a citizen of another country may renounce their Nigerian citizenship by declaration.",
+        realTalk:"You have the right to walk away from Nigerian citizenship if you want — but once done, it must be accepted by the President. It's a formal legal process, not reversible on a whim.",
+        official:"The Police Service Commission shall comprise the following members - (a) a Chairman; and (b) such number of other persons, not less than seven but not more than nine, as may be prescribed by an Act of the National Assembly." },
+      { ref:"Section 30", heading:"Citizenship Can Be Revoked",
+        plain:"The President may revoke the citizenship of a naturalised citizen who obtained it by fraud, has been disloyal, or has been imprisoned in another country for a year or more.",
+        realTalk:"Naturalised citizenship is not unconditional. Getting it through fraud or showing disloyalty to Nigeria can result in losing it. Birth citizens, however, cannot have their citizenship revoked.",
+        official:"The Commission shall have power to - (a) appoint persons to offices (other than office of the Inspector-General of Police) in the Nigeria Police Force; and (b) dismiss and exercise disciplinary control over persons holding any office referred to in sub-paragraph (a) of this paragraph. N - Revenue Mo" },
+      { ref:"Section 31", heading:"Who Is Also Considered Nigerian",
+        plain:"Persons who were Nigerian citizens before this Constitution took effect, or those born in Nigeria before independence, may also be considered citizens under certain conditions.",
+        realTalk:"This protects people who may have missed out on formal citizenship registration — especially those who were adults when independence came. No long-term resident should be stateless.",
+        official:"The Revenue Mobilisation Allocation and Fiscal Commission shall comprise the following members - (a) a Chairman; and (b) one member from each State of the Federation and the Federal Capital Territory, Abuja who in the opinion of the President are persons of unquestionable integrity with requisite qu" },
+      { ref:"Section 32", heading:"Government Can Make Citizenship Regulations",
+        plain:"The National Assembly is empowered to make laws providing for the acquisition, holding, and renunciation of Nigerian citizenship beyond what is stated in this chapter.",
+        realTalk:"Parliament can expand citizenship rules — but cannot reduce what the Constitution already guarantees. Your constitutional citizenship rights have a floor that no law can go below.",
+        official:"The Commission shall have power to - (a) monitor the accruals to and disbursement of revenue from the Federation Account; (b) review, from time to time, the revenue allocation formulae and principles in operation to ensure conformity with changing realities. Provided that any revenue formula which h" },
+    ],
+  },
+  {
+    id:4, chapter:"Chapter IV", title:"Fundamental Rights", icon:"⚖️", tag:"Rights",
+    sections:[
+      { ref:"Section 33", heading:"Right to Life",
+        plain:"Every person has the right to life. Nobody — including the government or law enforcement — can intentionally take your life, except in execution of a lawful court sentence.",
+        realTalk:"Extrajudicial killings are unconstitutional. SARS, the police, or any security agency killing you without a lawful basis violates this section. Your family can seek redress in court.",
+        official:"(1) Every person has a right to life, and no one shall be deprived intentionally of his life, save in execution of the sentence of a court in respect of a criminal offence of which he has been found guilty in Nigeria. (2) A person shall not be regarded as having been deprived of his life in contrave" },
+      { ref:"Section 34", heading:"Right to Dignity",
+        plain:"Every person is entitled to respect for their dignity. No one can subject you to torture, inhuman or degrading treatment, slavery, servitude, or forced labour.",
+        realTalk:"If police beat or torture you during an arrest or detention, it is a constitutional violation. You have legal grounds to pursue compensation. Dignity is not a privilege — it's your constitutional right.",
+        official:"Labour, including trade unions, industrial relations; conditions, safety and welfare of labour; industrial disputes; prescribing a national minimum wage for the Federation or any part thereof; and industrial arbitration." },
+      { ref:"Section 35", heading:"Right to Personal Liberty",
+        plain:"You cannot be arrested and held indefinitely. If arrested, you must be told in writing within 24 hours why you were arrested, brought before a court within reasonable time, and released if not charged.",
+        realTalk:"If police hold you for days without charge, they are violating Section 35. Any unlawful arrest entitles you to COMPENSATION and a PUBLIC APOLOGY from the arresting authority.",
+        official:"Legal proceedings between Governments of States or between the Government of the Federation and Government of any State or any other authority or person." },
+      { ref:"Section 36", heading:"Right to Fair Hearing",
+        plain:"You are innocent until proven guilty. You have the right to a fair and public hearing before an independent court. You must be told the charges against you in a language you understand.",
+        realTalk:"You cannot be punished for something that wasn't a crime when you did it. Courts cannot conduct secret trials. If you can't understand the court language, you are entitled to a free interpreter.",
+        official:"Maritime shipping and navigation, including - (a) shipping and navigation on tidal waters; (b) shipping and navigation on the River Niger and its affluents and on any such other inland waterway as may be designated by the National Assembly to be an international waterway or to be an inter-State wate" },
+      { ref:"Section 37", heading:"Right to Privacy",
+        plain:"Your home, correspondence, telephone conversations and communications are constitutionally protected. No one can enter your home or tap your communications without lawful authority.",
+        realTalk:"A landlord cannot enter your apartment without your consent. Security forces cannot search your home without a valid warrant. Any unauthorized entry is unconstitutional.",
+        official:"The privacy of citizens, their homes, correspondence, telephone conversations and telegraphic communications is hereby guaranteed and protected." },
+      { ref:"Section 38", heading:"Freedom of Religion & Conscience",
+        plain:"Every person is entitled to freedom of thought, conscience and religion. You may change your religion, manifest it in worship, practice, or teaching — alone or with others.",
+        realTalk:"No one — including your family, government, or employer — can force you to practice a particular religion. Coercing someone to change faith or punishing them for apostasy violates this right.",
+        official:"Military (Army, Navy and Air Force) including any other branch of the armed forces of the Federation." },
+      { ref:"Section 39", heading:"Freedom of Expression & the Press",
+        plain:"Every person shall be entitled to freedom of expression, including freedom to hold opinions, receive and impart ideas and information without interference.",
+        realTalk:"You have the right to criticize the government, share information, and express your views. Arresting citizens for social media posts or opinions violates this constitutional right.",
+        official:"Mines and minerals, including oil fields, oil mining, geological surveys and natural gas." },
+      { ref:"Section 40", heading:"Freedom of Assembly",
+        plain:"You have the right to assemble freely with other people, form or join organisations, political parties, trade unions, or any association for the protection of your interests.",
+        realTalk:"Peaceful protests are constitutionally protected. Any government that breaks up a peaceful gathering without lawful justification is acting unconstitutionally.",
+        official:"National parks being such areas in a State as may, with the consent of the Government of that State, be designated by the National Assembly as national parks." },
+      { ref:"Section 41", heading:"Freedom of Movement",
+        plain:"Every citizen of Nigeria is entitled to move freely throughout Nigeria, reside in any part of it, and cannot be expelled from Nigeria or refused entry without lawful cause.",
+        realTalk:"No state government can stop you from living or working in another state. Internal travel bans and 'indigene' restrictions on movement are unconstitutional.",
+        official:"(1) Every citizen of Nigeria is entitled to move freely throughout Nigeria and to reside in any part thereof, and no citizen of Nigeria shall be expelled from Nigeria or refused entry thereby or exit therefrom. (2) Nothing in subsection (1) of this section shall invalidate any law that is reasonably" },
+      { ref:"Section 42", heading:"Right Against Discrimination",
+        plain:"No Nigerian citizen shall be discriminated against — by law or government action — because of their community, ethnic group, place of origin, sex, religion, or political opinion.",
+        realTalk:"If a state government denies you a scholarship or job because you're not an 'indigene,' that's a constitutional violation. Your rights apply everywhere in Nigeria.",
+        official:"(1) A citizen of Nigeria of a particular community, ethnic group, place of origin, sex, religion or political opinion shall not, by reason only that he is such a person:- (a) be subjected either expressly by, or in the practical application of, any law in force in Nigeria or any executive or adminis" },
+      { ref:"Section 43", heading:"Right to Own Property Anywhere",
+        plain:"Every citizen of Nigeria shall have the right to acquire and own immovable property anywhere in Nigeria.",
+        realTalk:"You can legally buy land or a house in any state, even if you're not 'from' there. State laws that restrict property ownership by non-indigenes are unconstitutional.",
+        official:"Patents, trade marks, trade or business names, industrial designs and merchandise marks." },
+      { ref:"Section 44", heading:"Property Can't Be Seized Without Compensation",
+        plain:"The government cannot seize your property without paying prompt and adequate compensation. Any property acquisition must be by law, with full compensation paid.",
+        realTalk:"If the government demolishes your home for a project without paying you first, they're violating the constitution. Compensation must be PROMPT. You can take them to court.",
+        official:"Pensions, gratuities and other-like benefit payable out of the Consolidated Revenue Fund or any other public funds of the Federation." },
+      { ref:"Section 45", heading:"When Rights Can Be Restricted",
+        plain:"Rights in Chapter IV can be restricted under specific circumstances: national defence, public safety, order, morality, health, or to protect others' rights. These restrictions must be reasonable and justified.",
+        realTalk:"The government can't simply claim 'national security' to crush all your rights. Any restriction must be proportionate and lawful. Courts can overturn restrictions that aren't justified.",
+        official:"Police and other government security services established by law." },
+      { ref:"Section 46", heading:"How to Enforce Your Rights",
+        plain:"If you believe any of your fundamental rights have been or are being violated, you can apply to a High Court in your state for redress. The court can make orders to enforce your rights.",
+        realTalk:"Your rights aren't just words on paper — they're enforceable today. Walk into a High Court, file a fundamental rights enforcement application. Legal aid is supposed to be available for those who cannot afford it.",
+        official:"Posts, telegraphs and telephones" },
+    ],
+  },
+  {
+    id:5, chapter:"Chapter V", title:"The Legislature", icon:"🏛️", tag:"Parliament",
+    sections:[
+      { ref:"Section 47", heading:"Nigeria Has a Parliament",
+        plain:"There shall be a National Assembly for the Federation, which shall consist of a Senate and a House of Representatives.",
+        realTalk:"Nigeria has a bicameral legislature — two chambers that must both agree to pass federal laws. This system exists to slow down hasty legislation and ensure broader representation.",
+        official:"Powers of the National Assembly, and the privileges and immunities of its members" },
+      { ref:"Section 48", heading:"The Senate's Composition",
+        plain:"The Senate shall consist of three Senators from each of the 36 States and one from the Federal Capital Territory — 109 Senators total.",
+        realTalk:"Each state has equal representation in the Senate regardless of population. Your three senators represent you at the federal level — you can hold them accountable.",
+        official:"The Senate shall consist of three Senators from each State and one from the Federal Capital Territory, Abuja." },
+      { ref:"Section 49", heading:"House of Representatives Composition",
+        plain:"The House of Representatives consists of 360 members representing Federal Constituencies of nearly equal population across Nigeria.",
+        realTalk:"Your federal constituency has one representative in the House. Population determines how many House seats a state gets — bigger states have more Representatives.",
+        official:"Professional occupations as may be designated by the National Assembly." },
+      { ref:"Section 50", heading:"Senate President & House Speaker",
+        plain:"The National Assembly shall have a Senate President and Deputy, and a Speaker and Deputy Speaker for the House of Representatives — elected from among their members.",
+        realTalk:"These are the two most powerful legislative offices. They control the agenda of Nigeria's parliament. Your legislators vote for them — meaning you indirectly choose them through your vote.",
+        official:"(1) There shall be:- (a) a President and a Deputy President of the Senate, who shall be elected by the members of that House from among themselves; and (b) a Speaker and a Deputy Speaker of the House of Representatives, who shall be elected by the members of that House from among themselves. (2) The" },
+      { ref:"Section 51", heading:"National Assembly Staff",
+        plain:"There shall be a Clerk and other staff of the National Assembly appointed by the National Assembly Service Commission.",
+        realTalk:"The legislature has independent staff — not civil servants under the Presidency. This independence is important for a functioning separation of powers.",
+        official:"There shall be a Clerk to the National Assembly and such other staff as may be prescribed by an Act of the National Assembly, and the method of appointment of the Clerk and other staff of the National Assembly shall be as prescribed by that tab B - Procedure for Summoning and Dissolution of National" },
+      { ref:"Section 52", heading:"Lawmakers Must Declare Assets",
+        plain:"Every member of the National Assembly must declare their assets and liabilities before taking their seat and swear an oath of loyalty to Nigeria.",
+        realTalk:"Your senator or rep must legally declare what they own before taking office. This creates a paper trail — you can demand accountability if they suddenly become inexplicably wealthy.",
+        official:"Public relations of the Federation" },
+      { ref:"Section 53", heading:"Who Chairs Legislative Sessions",
+        plain:"The Senate President presides at Senate sittings. The Speaker presides at House sittings. At joint sittings, the Senate President presides.",
+        realTalk:"Joint sessions happen for major national decisions — like impeachment or emergency debates. The Senate President chairs these high-stakes moments in Nigeria's democracy.",
+        official:"Public service of the Federation including the settlement of disputes between the Federation and officers of such service." },
+      { ref:"Section 54", heading:"How Many Lawmakers Needed for Decisions",
+        plain:"A quorum for the Senate is 1/3 of all senators. A quorum for the House is 1/3 of all members. Without quorum, no valid decisions can be made.",
+        realTalk:"Lawmakers can't vote on your behalf with only a handful of people present. Quorum rules force minimum participation — though absenteeism remains a real problem in Nigeria's legislature.",
+        official:"(1) The quorum of the Senate or of the House of Representatives shall be one-third of all the members on of the Legislative House concerned. (2) The quorum of a joint sitting of both the Senate or of the House of Representatives shall be one-third of all the members of both Houses. (3) If objection" },
+      { ref:"Section 55", heading:"Official Languages in Parliament",
+        plain:"Business of the National Assembly shall be conducted in English, but Hausa, Yoruba, and Igbo may also be used when adequate provision has been made.",
+        realTalk:"Nigeria's three major languages are constitutionally recognized in parliament. This provision acknowledges linguistic diversity — though English remains the primary working language.",
+        official:"The business of the National Assembly shall be conducted in English, and in Hausa, Ibo and Yoruba when adequate arrangements have been made therefor." },
+      { ref:"Section 56", heading:"How Parliament Votes",
+        plain:"Questions in each House are decided by the majority of members present and voting, with the presiding officer having a casting vote in case of a tie.",
+        realTalk:"Simple majority wins in regular votes. Understanding how your lawmakers voted on key bills is your right — Nigeria has Freedom of Information laws that give you access to voting records.",
+        official:"Regulations of political parties" },
+      { ref:"Section 57", heading:"Unqualified Persons Can't Sit or Vote",
+        plain:"Any person who sits or votes in the National Assembly knowing they are not qualified is guilty of an offence and liable to a fine.",
+        realTalk:"Stolen mandates are illegal. If someone fraudulently takes a seat they didn't win, it's a criminal offence. Nigerians can and should report and challenge such cases.",
+        official:"Service and execution in a State of the civil and criminal processes, judgements, decrees, orders and other decisions of any court of law outside Nigeria or any court of law in Nigeria other than a court of law established by the House of Assembly of that State." },
+      { ref:"Section 58", heading:"How Federal Laws Are Made",
+        plain:"A bill becomes law when passed by both the Senate and House, then signed by the President. If the President withholds assent, the National Assembly can override the veto with a two-thirds majority.",
+        realTalk:"The President can't single-handedly block laws forever — parliament can override a veto. This is a crucial democratic check on executive power.",
+        official:"(1) The power of the National Assembly to make laws shall be exercised by bills passed by both the Senate and the House of Representatives and, except as otherwise provided by subsection (5) of this section, assented to by the President. (2) A bill may originate in either the Senate or the House of" },
+      { ref:"Section 59", heading:"How Money Bills Work",
+        plain:"Appropriation bills and money bills must originate in the House of Representatives. The Senate can suggest amendments but final decisions on money matters rest with both houses.",
+        realTalk:"Budget bills start in the House — where population is represented. How Nigeria's money is spent requires both chambers' agreement. Follow budget debates to track how your taxes are allocated.",
+        official:"Taxation of incomes, profits and capital gains, except as otherwise prescribed by this Constitution." },
+      { ref:"Section 60", heading:"Parliament Controls Its Own Rules",
+        plain:"Each House of the National Assembly may make standing orders with respect to the order and conduct of its proceedings and business.",
+        realTalk:"Parliament sets its own internal rules. This independence from the executive is fundamental to democracy — though those rules must still respect the Constitution.",
+        official:"The establishment and regulation of authorities for the Federation or any part thereof – (a) To promote and enforce the observance of the Fundamental Objectives and Directive Principles contained in this Constitution; (b) To identify, collect, preserve or generally look after ancient and historical" },
+      { ref:"Section 61", heading:"Absent Members Don't Invalidate Votes",
+        plain:"The presence of strangers or the participation of unqualified members doesn't invalidate proceedings if the required quorum was met.",
+        realTalk:"Parliamentary proceedings remain valid even if not everyone shows up. But lawmakers who consistently miss votes should face accountability from their constituents.",
+        official:"The formation, annulment and dissolution of marriages other than marriages under Islamic law and Customary law including matrimonial causes relating thereto." },
+      { ref:"Section 62", heading:"Parliament Has Committees",
+        plain:"Each House may appoint committees of its members for any special or general purpose and may delegate any function to such committees.",
+        realTalk:"Committee work is where the real legislative action happens. Senate and House committees investigate government agencies, review bills, and hold hearings. Their work is often open to the public.",
+        official:"Trade and commerce, and in particular – (a) trade and commerce between Nigeria and other countries including import of commodities into and export of commodities from Nigeria, and trade and commerce between the states; (b) establishment of a purchasing authority with power to acquire for export or s" },
+      { ref:"Section 63", heading:"When Parliament Meets",
+        plain:"Each House shall hold at least two sessions every year, with no more than 6 months between sessions. The first session must start within 30 days of election results.",
+        realTalk:"Parliament must meet regularly — it cannot be suspended indefinitely by the executive. If it's not meeting when the country faces a crisis, lawmakers are failing their constitutional duty.",
+        official:"Traffic on Federal trunk roads." },
+      { ref:"Section 64", heading:"Parliament Can Be Dissolved",
+        plain:"The President may dissolve the National Assembly before its 4-year term expires by proclamation. This triggers fresh elections.",
+        realTalk:"A president can call snap elections if needed — but cannot rule without parliament. The dissolution triggers immediate elections; it's not a power to simply shut down democracy.",
+        official:"Water from such sources as may be declared by the National Assembly to be sources affecting more than one state" },
+      { ref:"Section 65", heading:"Who Can Run for Parliament",
+        plain:"To run for National Assembly, you must be a Nigerian citizen, at least 30 years old (Senate) or 25 years old (House), educated to at least School Certificate level, and a member of a political party.",
+        realTalk:"Ordinary Nigerians can run for parliament. You don't need to be rich or well-connected to qualify — though in practice, campaign costs remain a significant barrier.",
+        official:"(1) Subject to the provisions of section 66 of this Constitution, a person shall be qualified for election as a member of: (a) the Senate, if he is a citizen of Nigeria and has attained the age of 35 years; and (b) the House of Representatives, if he is a citizen of Nigeria and has attained the age" },
+      { ref:"Section 66", heading:"Who Cannot Serve in Parliament",
+        plain:"You are disqualified from parliament if you hold dual citizenship, are under a sentence of imprisonment, are under 30/25 years, are bankrupt, are of unsound mind, or belong to a secret society.",
+        realTalk:"Secret society membership disqualifies you from parliament. This is rarely enforced but remains on the books. Convicted criminals and undischarged bankrupts also cannot serve as lawmakers.",
+        official:"Wireless, broadcasting and television other than broadcasting and television provided by the Government of a state; allocation of wave-lengths for wireless, broadcasting and television transmission." },
+      { ref:"Section 67", heading:"President Can Address Parliament",
+        plain:"The President may at any time address the National Assembly on any matter, and may do so in a joint sitting.",
+        realTalk:"The executive and legislature are separate but must communicate. Presidential addresses to parliament are key democratic moments where the nation's leader must face lawmakers directly.",
+        official:"Any other matter with respect to which the National Assembly has power to make laws in accordance with the provisions of this Constitution." },
+      { ref:"Section 68", heading:"When Lawmakers Lose Their Seats",
+        plain:"A member of the National Assembly shall vacate their seat if they become disqualified, resign, are absent for more than 1/3 of meetings without permission, or switch parties.",
+        realTalk:"Defecting to another party while in parliament — floor-crossing — can mean losing your seat. Your constituency elected you on a platform; party-switching without re-election is constitutionally questionable.",
+        official:"Any matter incidental or supplementary to any matter mentioned elsewhere in this list. Part II Concurrent Legislative List Extent of Federal and State Legislative powers" },
+      { ref:"Section 69", heading:"Constituents Can Recall Lawmakers",
+        plain:"A member of the National Assembly may be recalled by their constituents through a petition signed by more than half of the registered voters in the constituency.",
+        realTalk:"You can actually sack your lawmaker. If over half of registered voters in a constituency sign a petition, that representative can be removed. This power is rarely used but is constitutionally real.",
+        official:"A member of the Senate or of the House Representatives may be recalled as such a member if – (a) there is presented to the Chairman of the Independent National Electoral Commission a petition in that behalf signed by more than one-half of the persons registered to vote in that member's constituency" },
+      { ref:"Section 70", heading:"Lawmakers Are Paid by Law",
+        plain:"Members of the National Assembly shall receive salaries and allowances as prescribed by the Revenue Mobilisation Allocation and Fiscal Commission.",
+        realTalk:"Your lawmakers' pay is set by an independent commission — not by lawmakers themselves. The consistently high salaries of Nigerian legislators are a subject of public debate and legitimate scrutiny.",
+        official:"A member of the Senate or of the House of Representatives shall receive such salary and other allowances as Revenue Mobilization Allocation and Fiscal Commission may determine D - Elections to National Assembly" },
+      { ref:"Section 71", heading:"Senatorial Districts & Constituencies",
+        plain:"Nigeria is divided into Senatorial Districts (three per state) and Federal Constituencies for elections to the Senate and House of Representatives respectively.",
+        realTalk:"Your constituency is your specific representation unit. Know which senatorial district and federal constituency you're in — that's who you're voting for when you cast a ballot.",
+        official:"Subject to the provisions of section 72 of this Constitution, the Independent National Electoral Commission shall – (a) divide each State of the Federation into three Senatorial districts for purposes of elections to the Senate; and (b) subject to the provisions of section 49 of this Constitution, d" },
+      { ref:"Section 72", heading:"Constituencies Must Be Roughly Equal",
+        plain:"Senatorial districts and Federal Constituencies must be as equal in population as is reasonably practicable, taking geography and administrative boundaries into account.",
+        realTalk:"Population equality in constituencies ensures your vote counts roughly the same as anyone else's. Manipulation of constituency boundaries — gerrymandering — undermines this constitutional principle.",
+        official:"No Senatorial district or Federal constituency shall fall within more than one State, and the boundaries of each district or constituency shall be as contiguous as possible and be such that the number of inhabitants thereof is as nearly equal to the population quota as is reasonably practicable." },
+      { ref:"Section 73", heading:"Constituency Boundaries Are Reviewed Regularly",
+        plain:"INEC is required to review constituency boundaries after every census to reflect population changes, completing reviews within 12 months of receiving census results.",
+        realTalk:"As Nigeria's population shifts, constituency boundaries must be updated. Outdated boundaries that overrepresent some areas and underrepresent others distort democratic outcomes.",
+        official:"(1) The Independent National Electoral Commission shall review the division of States and of the Federation into Senatorial districts and Federal constituencies at intervals of not less than ten years, and may alter the districts or constituencies in accordance with the provisions of this section to" },
+      { ref:"Section 74", heading:"When Constituency Changes Take Effect",
+        plain:"Alterations to constituency boundaries take effect after the next elections following the completion of the review — not immediately.",
+        realTalk:"Constituency boundary changes don't disrupt ongoing electoral cycles. They apply prospectively, ensuring stability while still allowing the system to adapt over time.",
+        official:"Where the boundaries of any Senatorial district or Federal constituency established under section 71 of this Constitution are altered in accordance with the provisions section 73 hereof, the alteration shall come into effect after it has been approved by each House of the National Assembly and after" },
+      { ref:"Section 75", heading:"Population Counts Matter",
+        plain:"The National Population Commission shall ascertain and publish Nigeria's population figures, which determine constituency boundaries and resource allocation.",
+        realTalk:"Nigeria's census is constitutionally significant — it affects how resources are shared and how constituencies are drawn. Accurate, credible census data is a matter of constitutional importance.",
+        official:"For the purposes of section 72 of this Constitution, the number of inhabitants of Nigeria or any part thereof shall be ascertained by reference to the 1991 census of the population of Nigeria or the latest census held in pursuance of an Act of the National Assembly after the coming into force of the" },
+      { ref:"Section 76", heading:"When National Assembly Elections Are Held",
+        plain:"Elections to the National Assembly shall be held on a date not earlier than 150 days and not later than 30 days before the current term expires.",
+        realTalk:"Elections must happen within a specific window before terms end. This prevents the government from postponing elections indefinitely — a critical safeguard for democracy.",
+        official:"(1) Elections to each House of the National Assembly shall be held on a date to be appointed by the Independent National Electoral Commission. (2) The date mentioned in subsection (1) of this section shall not be earlier than sixty days before and not later than the date on which the House stands di" },
+      { ref:"Section 77", heading:"Direct Election by Registered Voters",
+        plain:"Members of the National Assembly shall be directly elected by registered voters in their constituencies through secret ballot.",
+        realTalk:"Every Nigerian adult can register and vote directly for their lawmaker. There's no electoral college — your vote is your direct voice. Register, vote, and hold your rep accountable.",
+        official:"(1) Subject to the provisions of this Constitution, every Senatorial district or Federal constituency established in accordance with the provisions of this Part of this Chapter shall return a member who shall be directly elected to the Senate or the House of Representatives  in such manner as may be" },
+      { ref:"Section 78", heading:"INEC Supervises Elections",
+        plain:"Elections to the National Assembly shall be conducted by the Independent National Electoral Commission (INEC).",
+        realTalk:"INEC is constitutionally mandated to run free and fair elections. Any political interference with INEC's independence is an attack on Nigeria's constitutional order.",
+        official:"The registration of voters and the conduct of elections shall be subject to the direction and supervision of Independent National Electoral Commission." },
+      { ref:"Section 79", heading:"Election Disputes Go to Court",
+        plain:"The Federal High Court has jurisdiction to determine questions as to whether any person has been validly elected as a member of the National Assembly.",
+        realTalk:"Election results can be challenged in court. If you believe an election was rigged or conducted improperly, the legal process exists to contest it — use it.",
+        official:"The National Assembly shall make provisions in respects – (a) persons who may apply to an election tribunal for determination of any question as to whether – (i) any person has been validly elected as a member of the Senate or of the House of Representatives, (ii) the term of office of any person ha" },
+      { ref:"Section 80", heading:"Nigeria Has a Central Revenue Account",
+        plain:"All revenues or other moneys raised or received by the Federation shall be paid into and form one Consolidated Revenue Fund of the Federation.",
+        realTalk:"All federal money goes into one pot — the Consolidated Revenue Fund. This prevents ministries from hiding or diverting funds outside the formal budget process.",
+        official:"(1) All revenues or other moneys raised or received by the Federation (not being revenues or other moneys payable under this Constitution or any Act of the National Assembly into any other public fund of the Federation established for a specific purpose) shall be paid into and form one Consolidated" },
+      { ref:"Section 81", heading:"Spending Needs Appropriation",
+        plain:"No money shall be withdrawn from the Consolidated Revenue Fund unless approved by the National Assembly through an Appropriation Act.",
+        realTalk:"The government cannot spend public money without parliamentary approval. Budget padding, hidden spending, and off-budget expenditure are all unconstitutional violations of this section.",
+        official:"(1) The President shall cause to be prepared and laid before each House of the National Assembly at any time in each financial year estimates of the revenues and expenditure of the Federation for the next following financial year. (2) The heads of expenditure contained in the estimates (other than e" },
+      { ref:"Section 82", heading:"Emergency Spending Has Limits",
+        plain:"In the absence of an Appropriation Act, government may spend for up to 6 months at the previous year's approved levels — but no longer.",
+        realTalk:"If a budget isn't passed on time, government isn't paralyzed — but there's a 6-month limit on running on the old budget. This creates pressure on both executive and legislature to pass budgets promptly.",
+        official:"If the Appropriation Bill in respect of any financial year has not been passed into law by the beginning of the financial year, the President may authorised the withdrawal of moneys in the Consolidated Revenue Fund of the Federation for the purpose of meeting expenditure necessary to carry on the se" },
+      { ref:"Section 83", heading:"There's a Contingencies Fund",
+        plain:"The National Assembly may establish a Contingencies Fund for meeting unforeseen urgent expenditure, subject to replenishment by a supplementary appropriation.",
+        realTalk:"Emergency spending is allowed but must be accounted for. Governments can't use 'emergencies' as an excuse for unchecked spending — contingency funds must be repaid through proper appropriation.",
+        official:"(1) The National Assembly may by law make provisions for the establishment of a Contingencies Fund for the Federation and for authorizing the President, if satisfied that there has arisen an urgent and unforeseen need for expenditure for which no other provision exists, to make advances from the Fun" },
+      { ref:"Section 84", heading:"President & Key Officers' Pay Is Protected",
+        plain:"The salaries and allowances of the President, Vice-President, Chief Justice, and certain other officers are charged to the Consolidated Revenue Fund and cannot be varied to their disadvantage.",
+        realTalk:"Key constitutional officers get paid regardless of politics — their pay can't be cut as punishment for decisions. This independence is crucial for separation of powers to function.",
+        official:"(1) There shall be paid to the holders of the offices mentioned in this section such remuneration, salaries and allowances as may be prescribed by the National Assembly, but not exceeding the amount as shall have been determined by the Revenue Mobilization Allocation and Fiscal Commission. (2) The r" },
+      { ref:"Section 85", heading:"Government Accounts Must Be Audited",
+        plain:"The accounts of the Federation shall be audited by the Auditor-General for the Federation, who shall submit reports to the National Assembly.",
+        realTalk:"Public money must be independently verified. The Auditor-General's reports expose wastage and corruption — parliament is supposed to act on those reports, and citizens should demand they do.",
+        official:"(1) There shall be an Auditor-General for the Federation who shall be appointed in accordance with the provisions of section 86 of this Constitution. (2) The public accounts of the Federation and of all offices and courts of the Federation shall be audited and reported on to the Auditor-General who" },
+      { ref:"Section 86", heading:"Auditor-General Is Independently Appointed",
+        plain:"The Auditor-General of the Federation is appointed by the President on the recommendation of the Finance Minister, subject to Senate confirmation.",
+        realTalk:"The person auditing government must be confirmed by the Senate — not just appointed by the President alone. This independence is meant to ensure honest accounting of public funds.",
+        official:"(1) The Auditor-General for the Federation shall be appointed by the President on the recommendation of the Federal Civil Service Commission subject to confirmation by the Senate. (2) The power to appoint persons to act in the office of the Auditor-General shall vest in the President. (3) Except wit" },
+      { ref:"Section 87", heading:"Auditor-General Has Tenure Protection",
+        plain:"The Auditor-General shall not be removed from office except on the recommendation of the National Assembly — protecting their independence.",
+        realTalk:"An Auditor-General who can be fired by the President for honest reporting is useless. Tenure protection is what makes this role meaningful in fighting corruption.",
+        official:"(1) A person holding the office of the Auditor-General for the Federation shall be removed from office by the President acting on an address supported by two-thirds majority of the Senate praying that he be so removed for inability to discharge the functions of his office (whether arising from infir" },
+      { ref:"Section 88", heading:"Parliament Can Investigate Anything",
+        plain:"Each House has the power to conduct investigations into any matter or thing with respect to which it has power to make laws, including government departments.",
+        realTalk:"Parliamentary inquiries are powerful. They can summon ministers, demand documents, and expose wrongdoing. When lawmakers actually use this power, it's democracy working as it should.",
+        official:"(1) Subject to the provisions of this Constitution, each House of the National Assembly shall have power by resolution published in its journal or in the Official Gazette of the Government of the Federation to direct or cause to be directed investigation into – (a) any matter or thing with respect t" },
+      { ref:"Section 89", heading:"Parliament Can Compel Evidence",
+        plain:"In exercising investigative powers, each House may procure attendance of witnesses, examine them under oath, and require documents to be produced.",
+        realTalk:"Parliament can legally compel people to testify and produce evidence — similar to a court. Ignoring a parliamentary summons is a serious legal matter.",
+        official:"(1) For the purposes of any investigation under section 88 of this Constitutional and subject to the provisions thereof, the Senate or the House of Representatives or a committee appointed in accordance with section 62 of this Constitution shall have power to (a) procure all such evidence, written o" },
+      { ref:"Section 90", heading:"Every State Has a Legislature",
+        plain:"There shall be a House of Assembly for each of the 36 States of the Federation.",
+        realTalk:"Your state has its own parliament. State lawmakers pass state budgets, state laws, and oversight of state government. Your vote for state assembly members matters as much as federal votes.",
+        official:"There shall be a House of Assembly for each of the States of the Federation." },
+      { ref:"Section 91", heading:"State Assemblies Have At Least 24 Members",
+        plain:"A State House of Assembly shall consist of three times the number of federal constituencies within the state — but not less than 24 members.",
+        realTalk:"Smaller states still have meaningful representation in their own legislature. Every state has a functioning parliament regardless of size.",
+        official:"Subject to the provisions of this Constitution, a House of Assembly of a State shall consist of three or four times the number of seats which that State has in the House of Representatives divided in a way to reflect, as far as possible nearly equal population: Provided that a House of Assembly of a" },
+      { ref:"Section 92", heading:"State Assembly Has a Speaker",
+        plain:"There shall be a Speaker and Deputy Speaker of a House of Assembly, elected by members of the House from among themselves.",
+        realTalk:"State speakers are elected by state lawmakers — not appointed by governors. A governor who controls the state legislature's speaker undermines the separation of powers at the state level.",
+        official:"(1) There shall be a Speaker and a Deputy Speaker of a House of Assembly who shall be elected by the members of the House from among themselves. (2) The Speaker or Deputy Speaker of the House of Assembly shall vacate his office – (a) if he ceases to be a member of the House of Assembly otherwise tha" },
+      { ref:"Section 93", heading:"State Legislature Has Independent Staff",
+        plain:"There shall be a Clerk and other staff of a House of Assembly as prescribed by the State House of Assembly Service Commission.",
+        realTalk:"State parliaments have their own staff — not appointed by the governor. This independence enables effective legislative oversight of the executive at the state level.",
+        official:"There shall be a Clerk to a House of Assembly and such other staff as may be prescribed by a Law enacted by the House of Assembly, and the method of appointment of the Clerk and other staff of the House shall be as prescribed by that Law. B - Procedure for Summoning and Dissolution of House of Assem" },
+      { ref:"Section 94", heading:"State Lawmakers Must Declare Assets",
+        plain:"Every member of a State House of Assembly must declare their assets and liabilities, and swear the oath of allegiance before taking their seat.",
+        realTalk:"State legislators, like federal ones, must legally declare what they own. Hold your state representatives to this — unexpected wealth after election is a red flag worth scrutinizing.",
+        official:"(1) Every person elected to a House of Assembly shall before taking his seat in that House, declare his assets and liabilities in the manner prescribed in this Constitution and subsequently take and subscribe before the Speaker of the House, the Oath of Allegiance and oath of membership prescribed i" },
+      { ref:"Section 95", heading:"Who Chairs State Assembly Sessions",
+        plain:"The Speaker presides at sittings of a State House of Assembly. In the Speaker's absence, the Deputy Speaker takes over.",
+        realTalk:"The Speaker controls the state legislature's agenda. Understanding who holds this position and how they use it is key to understanding state-level governance in your area.",
+        official:"(1) At any sitting of a House of Assembly, the Speaker of that House shall preside, and in his absence the Deputy Speaker shall preside. (2) In the absence of the Speaker and Deputy Speaker of the House, such member of the House as the House may elect for a purpose shall preside." },
+      { ref:"Section 96", heading:"State Legislature Quorum Rules",
+        plain:"The quorum for a State House of Assembly is one-third of all members. Without this minimum, business cannot validly proceed.",
+        realTalk:"State lawmakers must show up for their jobs. Quorum rules mean at least a third of members must be present for decisions affecting your state to be validly made.",
+        official:"(1) The quorum of a House of Assembly shall be one-third of all the members of the House. (2) If objection is taken by any member of a House of Assembly present that there are present in that House (besides the person presiding) fewer than one-third of all the members of that House and that it is no" },
+      { ref:"Section 97", heading:"Languages in State Assemblies",
+        plain:"State House of Assembly business shall be conducted in English, but the House may additionally conduct business in any other language spoken in the State.",
+        realTalk:"State legislatures can use local languages alongside English. This is particularly relevant in states with strong linguistic identities — business can be conducted in Yoruba, Igbo, Hausa, or other languages.",
+        official:"The business of a House of Assembly shall be conducted in English, but the House may in addition to English conduct the business of the House in one or more other languages spoken in the State as the House may by resolution approve." },
+      { ref:"Section 98", heading:"How State Assemblies Vote",
+        plain:"Questions in a State House of Assembly are decided by majority votes, with the Speaker having a casting vote in case of a tie.",
+        realTalk:"Majority rules in state legislatures. If your state representative consistently votes against the interests of their constituents, that's a legitimate basis for recall or voting them out.",
+        official:"(1) Except as otherwise provided by this Constitution, any question proposed for decision in a House of Assembly shall be determined by the required majority of the members present and voting; and the person presiding shall cast a vote whenever necessary to avoid an equality of votes but shall not v" },
+      { ref:"Section 99", heading:"Unqualified State Lawmakers Face Fines",
+        plain:"Any person who sits and votes in a State House of Assembly knowing they are not qualified commits an offence punishable by fine.",
+        realTalk:"Fraudulent lawmakers face legal consequences. If you know someone is sitting in your state assembly without proper qualification, that's grounds for an official challenge.",
+        official:"Any person who sits or votes in a House of Assembly of a State knowing or having reasonable grounds for knowing that he is not entitled to do so commits an offence and is liable on conviction to such punishment as shall be prescribed by a Law of the House of Assembly." },
+      { ref:"Section 100", heading:"How State Laws Are Made",
+        plain:"State laws are made through bills passed by the State House of Assembly and assented to by the Governor. The Governor can withhold assent, but the House can override.",
+        realTalk:"The Governor cannot unilaterally make laws for your state — they need the legislature. Governors who govern by executive orders without legislative backing are overstepping their authority.",
+        official:"(1) The power of a House of Assembly to make laws shall be exercised by bills passed by the House of Assembly and, except as otherwise provided by this section, assented to by the Governor. (2) A bill shall not become Law unless it has been duly passed and, subject to subsection (1) of this section," },
+      { ref:"Section 101", heading:"State Assemblies Control Their Own Rules",
+        plain:"A State House of Assembly may make its own standing orders to regulate its proceedings, provided they don't contradict the Constitution.",
+        realTalk:"State legislatures have procedural independence from governors. The rules a state assembly sets for itself matter — transparent rules mean more accessible and accountable governance.",
+        official:"Subject to the provisions of this Constitution, a House of Assembly shall have power to regulate its own procedure, including the procedure for summoning and recess of the House." },
+      { ref:"Section 102", heading:"State Assembly Proceedings Remain Valid",
+        plain:"Vacancies or strangers' presence don't invalidate State Assembly proceedings if the required quorum was present.",
+        realTalk:"State laws don't get invalidated just because some members were absent — provided quorum was met. Procedural technicalities cannot be used to nullify valid legislative decisions.",
+        official:"A House of Assembly may act notwithstanding any vacancy in its membership, and the presence or participation of any person not entitled to be present at or to participate in the proceedings of the House shall not invalidate such proceedings." },
+      { ref:"Section 103", heading:"State Assemblies Have Committees",
+        plain:"A State House of Assembly may appoint committees of its members to examine government departments and report back to the full House.",
+        realTalk:"State assembly committees can and should investigate state government ministries and agencies. Active, empowered committees are a sign of a healthy state legislature.",
+        official:"(1) A House of Assembly may appoint a committee of its members for any special or general purpose as in its opinion would be better regulated and managed by means of such a committee, and may by resolution, regulation or otherwise as it thinks fit delegate any functions exercisable by it to any such" },
+      { ref:"Section 104", heading:"State Legislature Must Meet Regularly",
+        plain:"A State House of Assembly shall hold at least two regular sessions every year, with no more than 6 months between sessions.",
+        realTalk:"State legislators can't disappear for months. Regular sessions mean continuous oversight of your state government. Demand your state assembly actually meets and does its work.",
+        official:"A House of Assembly shall sit for a period of not less than one hundred and eighty-one days in a year." },
+      { ref:"Section 105", heading:"Governor Can Dissolve State Assembly",
+        plain:"The Governor may by proclamation dissolve a State House of Assembly — but this triggers fresh elections within 90 days.",
+        realTalk:"Dissolution means new elections — it's not a tool for silencing opposition. A Governor who dissolves the legislature to prevent accountability must immediately call elections.",
+        official:"(1) A House of Assembly shall stand dissolved at the expiration of a period of four years commencing from the date of the first sitting of the House. (2) If the Federation is at war in which the territory of Nigeria is physically involved and the President considers that it is not practicable to hol" },
+      { ref:"Section 106", heading:"Who Can Run for State Assembly",
+        plain:"To run for a State House of Assembly, you must be a citizen, at least 25 years old, have at least a School Certificate, and be a party member.",
+        realTalk:"State assembly elections are accessible to ordinary Nigerians. You don't need a university degree — School Certificate level qualifies you. Age 25 is the minimum.",
+        official:"Subject to the provisions of section 107 of this Constitution, a person shall be qualified for election as a member of a House of Assembly if – (a) he is a citizen of Nigeria; (b) he has attained the age of thirty years; (c) he has been educated up to at least the School Certificate level or its equ" },
+      { ref:"Section 107", heading:"Who Cannot Serve in State Assembly",
+        plain:"Disqualifications for state assembly mirror those for the National Assembly — dual citizenship, criminal conviction, bankruptcy, mental incapacity, or secret society membership.",
+        realTalk:"The same integrity standards apply at state level. Secret society members, convicted criminals, and undischarged bankrupts cannot legally sit in your state assembly.",
+        official:"(1) No person shall be qualified for election to a House of Assembly if – (a) subject to the provisions of Section 28 of this Constitution, he has voluntarily acquired the citizenship of a country other than Nigeria or, except in such cases as may be prescribed by the National Assembly, has made a d" },
+      { ref:"Section 108", heading:"Governor Can Address State Assembly",
+        plain:"The Governor may address the State House of Assembly at any time on any matter, and may do so at a joint sitting.",
+        realTalk:"Governors must be able to communicate with the legislature — but must also face scrutiny. State assembly address sessions are important democratic accountability moments.",
+        official:"(1) The Governor of a State may attend a meeting of a House of Assembly of the State either to deliver an address on State affairs or to make such statement on the policy of government as he may consider to be of importance to the State. (2) A Commissioner of the Government of a State shall attend t" },
+      { ref:"Section 109", heading:"When State Legislators Lose Their Seats",
+        plain:"State assembly members vacate their seats under the same conditions as federal legislators — disqualification, resignation, prolonged absence, or party-switching.",
+        realTalk:"State representatives who defect to other parties mid-term face losing their seats. Constituents elected them on a specific platform — party loyalty matters constitutionally.",
+        official:"(1) A member of a House of Assembly shall vacate his seat in the House if – (a) he becomes a member of another legislative house; (b) any other circumstances arise that, if he were not a member of that House, would cause him to be disqualified for election as such a member; (c) he ceases to be a cit" },
+      { ref:"Section 110", heading:"State Legislators Can Also Be Recalled",
+        plain:"A member of a State House of Assembly can be recalled by more than half the registered voters in their constituency signing a recall petition.",
+        realTalk:"The recall power applies at state level too. If your state representative is consistently failing you, over 50% of registered voters in the constituency can remove them. Organize and use this power.",
+        official:"A member of the House of Assembly may be recalled as such a member if – (a) there is presented to the Chairman of the Independent National Electoral Commission a petition in that behalf signed by more than one-half of the persons registered to vote in that members's constituency alleging their loss" },
+      { ref:"Section 111", heading:"State Lawmakers' Pay Is Regulated",
+        plain:"Members of State Houses of Assembly receive salaries and allowances as determined by the Revenue Mobilisation Allocation and Fiscal Commission.",
+        realTalk:"State legislators' pay is set by the same independent commission as federal lawmakers. Exorbitant allowances being paid by states beyond the commission's guidelines warrant public scrutiny.",
+        official:"A member of the House of Assembly shall receive such salary and other allowances as the Revenue Mobilization Allocation and Fiscal Commission may determine. D - Elections to a House of Assembly" },
+      { ref:"Section 112", heading:"State Constituencies Are Defined",
+        plain:"Each State is divided into state constituencies for state House of Assembly elections by INEC.",
+        realTalk:"Your state constituency is where you vote for your state lawmaker. Know it, know your representative, and engage with them on state-level issues that affect your daily life.",
+        official:"Subject to the provisions of sections 91 and 113 of this Constitution, the Independent National Electoral Commission shall divide every state in the federation into such number of state constituencies as is equal to three or four times the number of Federal constituencies within that state." },
+      { ref:"Section 113", heading:"State Constituencies Must Be Equal in Population",
+        plain:"State constituencies should be as equal in population as reasonably practicable, with adjustments for geographic and administrative factors.",
+        realTalk:"Population equality in state constituencies ensures your vote has roughly equal weight to anyone else's in your state. Unequal constituency sizes distort democratic representation.",
+        official:"The boundaries of each State constituency shall be such that the number of inhabitants thereof is as nearly equal to the population quota as is reasonably practicable." },
+      { ref:"Section 114", heading:"State Constituencies Are Periodically Reviewed",
+        plain:"INEC must review state constituency boundaries after each census to reflect population changes.",
+        realTalk:"State constituency maps must keep up with population growth and migration. Outdated boundaries that favour certain communities over others undermine fair state-level representation.",
+        official:"(1) The Independent National Electoral Commission shall review the division of every State into constituencies at intervals of not less than ten years, and may alter such constituencies in accordance with the provisions of this section to such extent as it may consider desirable in the light of the" },
+      { ref:"Section 115", heading:"When State Constituency Changes Take Effect",
+        plain:"Alterations to state constituency boundaries take effect at the next elections following the review — not immediately.",
+        realTalk:"Changes to state electoral maps apply going forward, not retroactively. This protects ongoing electoral processes from being disrupted by boundary reviews.",
+        official:"Where the boundaries of any State constituency established under section 112 of this Constitution are altered in accordance with the provisions of section 114 of this Constitution, that alteration shall come into effect after it has been approved by the National Assembly and after the current life o" },
+      { ref:"Section 116", heading:"State Assembly Elections Timeline",
+        plain:"State House of Assembly elections shall be held on a date not earlier than 150 days before, and not later than 30 days before, the current term expires.",
+        realTalk:"The same constitutional election timeline that applies federally applies at the state level. State elections cannot be indefinitely postponed without violating the Constitution.",
+        official:"(1) Elections to a House of Assembly shall be held on a date to be appointed by the Independent National Electoral Commission. (2) The date mentioned in subsection (1) of this section shall not be earlier than sixty days before and not later than the date on which the House of Assembly stands dissol" },
+      { ref:"Section 117", heading:"State Elections Are Direct",
+        plain:"Members of State Houses of Assembly are directly elected by registered voters in their state constituencies by secret ballot.",
+        realTalk:"You vote directly for your state representative — no intermediaries. Secret ballot protects you from intimidation. Every registered voter's ballot counts equally.",
+        official:"(1) Subject to the provisions of this Constitution, every State constituency established in accordance with the provisions of this part of this Chapter shall return one member who shall be directly elected to a House of Assembly in such manner as may be prescribed by an Act of the National Assembly." },
+      { ref:"Section 118", heading:"INEC Supervises State Elections Too",
+        plain:"State House of Assembly elections are also conducted by INEC under the authority of the Electoral Act.",
+        realTalk:"INEC's constitutional mandate covers state elections too. Political parties and governors who interfere with INEC's conduct of state elections are acting unconstitutionally.",
+        official:"The registration of voters and the conduct of elections shall be subject to the direction and supervision of the Independent National Electoral Commission." },
+      { ref:"Section 119", heading:"State Election Disputes Go to Court",
+        plain:"The Federal High Court has jurisdiction to determine questions about the validity of elections to State Houses of Assembly.",
+        realTalk:"You can challenge a rigged state election in court. Use it. Election petition tribunals exist specifically for this purpose, and the process has produced successful outcomes.",
+        official:"The National Assembly shall make provisions as respects – (a) persons who may apply to an election tribunal for the determination of any question as to whether – (i) any person has been validly elected as a member of a House of Assembly, (ii) the term of office of any person has ceased, or (iii) the" },
+      { ref:"Section 120", heading:"States Have Their Own Revenue Funds",
+        plain:"All revenues raised by a State shall be paid into a State Consolidated Revenue Fund, which can only be spent through appropriation by the State Assembly.",
+        realTalk:"State money must go into one transparent fund and be spent only with legislative approval. Governors who spend state funds without legislative appropriation are violating the Constitution.",
+        official:"(1) All revenues or other moneys raised or received by a State (not being revenues or other moneys payable under this Constitution or any Law of a House of Assembly into any other public fund of the State established for a specific purpose) shall be paid into and form one Consolidated Revenue Fund o" },
+      { ref:"Section 121", heading:"State Spending Needs Assembly Approval",
+        plain:"No money shall be withdrawn from a State Consolidated Revenue Fund except as authorised by the State House of Assembly through an Appropriation Law.",
+        realTalk:"State budgets must be approved by the state assembly. Governors who spend without a state budget law, or who bypass the assembly on major expenditure, are acting unconstitutionally.",
+        official:"(1) The Governor shall cause to be prepared and laid before the House of Assembly at any time before the commencement of each financial year estimates of the revenues and expenditure of the State for the next following financial year. (2) The heads of expenditure contained in the estimates, other th" },
+      { ref:"Section 122", heading:"State Emergency Spending Has Limits",
+        plain:"If a state Appropriation Law is not passed on time, government may operate for up to 6 months based on the previous year's approved budget.",
+        realTalk:"States can't be paralyzed if a budget is delayed, but there's a 6-month limit. This protects services while maintaining pressure on both governor and assembly to pass budgets promptly.",
+        official:"If the Appropriation Bill in respect of any financial year has not been passed into Law by the beginning of the financial year, the Governor may authorise the withdrawal of moneys from the Consolidated Revenue Fund of the State for the purpose of meeting expenditure necessary to carry on the service" },
+      { ref:"Section 123", heading:"States Have Contingency Funds Too",
+        plain:"A State House of Assembly may establish a Contingencies Fund for urgent, unforeseen expenditure at state level.",
+        realTalk:"State emergencies can be funded without a full budget process — but the money must be repaid through supplementary appropriation. Emergency funds can't become a slush fund for governors.",
+        official:"(1) A House of Assembly may by Law make provisions for the establishment of a Contingencies Fund for the State and for authorising the Governor, if satisfied that there has arisen an urgent and unforeseen need for expenditure for which no other provision exists, to make advances from the Fund to mee" },
+      { ref:"Section 124", heading:"Governor's Pay Is Constitutionally Protected",
+        plain:"The Governor, Deputy Governor, and other specified state officers' salaries are charged to the State Consolidated Revenue Fund and cannot be reduced to their disadvantage.",
+        realTalk:"State leaders' pay is protected from political manipulation — opponents can't starve them into submission by cutting their salaries. But this also means their pay doesn't require a budget vote every year.",
+        official:"(1) There shall be paid to the holders of the offices mentioned in this section such remuneration and salaries as may be prescribed by a House of Assembly, but not exceeding the amount as shall have been determined by the Revenue Mobilisation Allocation and Fiscal Commission. (2) The remuneration, s" },
+      { ref:"Section 125", heading:"State Accounts Must Be Audited",
+        plain:"The accounts of a State shall be audited by the Auditor-General for the State, who shall submit reports to the State House of Assembly.",
+        realTalk:"State finances must be independently verified. State Auditor-Generals' reports are public documents — demand your state assembly actually act on audit findings instead of filing them away.",
+        official:"(1) There shall be an Auditor-General for each State who shall be appointed in accordance with the provisions of section 126 of this Constitution. (2) The public accounts of a State and of all offices and courts of the State shall be audited by the Auditor-General for the State who shall submit his" },
+      { ref:"Section 126", heading:"State Auditor-General's Appointment",
+        plain:"The Auditor-General for a State is appointed by the Governor on the recommendation of the State Civil Service Commission, subject to State Assembly confirmation.",
+        realTalk:"The state assembly must confirm the person who audits the state's finances. This confirmation power is a crucial check — assemblies should scrutinize appointments carefully.",
+        official:"(1) The Auditor-General for a State shall be appointed by the Governor of the State on the recommendation of the State Civil Service Commission subject to confirmation by the House of Assembly of the State. (2) The power to appoint persons to act in the office of the Auditor-General for a State shal" },
+      { ref:"Section 127", heading:"State Auditor-General Has Tenure Protection",
+        plain:"A State Auditor-General shall not be removed except on a resolution of the State House of Assembly — protecting their independence from the Governor.",
+        realTalk:"Governors can't fire state auditors who expose wrongdoing. The state assembly must vote to remove them. This protection is what makes honest state auditing possible.",
+        official:"(1) A person holding the office of Auditor-General under section 126 (1) of this Constitution shall be removed from office by the Governor of the State acting on an address supported by two-thirds majority of the House of Assembly praying that he be so removed for inability to discharge the function" },
+      { ref:"Section 128", heading:"State Assemblies Can Investigate",
+        plain:"Each State House of Assembly has the power to conduct investigations into state government ministries, departments, and agencies.",
+        realTalk:"State assembly investigations can expose corruption in state government — contracts, projects, finances. When state lawmakers use this power, they're doing their constitutional job.",
+        official:"(1) Subject to the provisions of this Constitution, a House of Assembly shall have power by resolution published in its journal or in the Office Gazette of the Government of the State to direct or cause to be directed an inquiry or investigation into – (a) any matter or thing with respect to which i" },
+      { ref:"Section 129", heading:"State Assemblies Can Compel Evidence",
+        plain:"In exercising investigative powers, a State House of Assembly may summon witnesses, take evidence under oath, and demand production of documents.",
+        realTalk:"State lawmakers can legally compel governors' appointees to testify and provide documents. Ignoring a state assembly summons is a legal offence — this power must be used and respected.",
+        official:"(1) For the purposes of any investigation under section 128 of this Constitution, and subject to the provisions thereof, a House of Assembly or a committee appointed in accordance with section 103 of this Constitution shall have power to – (a) procure all such evidence, written or oral, direct or ci" },
+    ],
+  },
+  {
+    id:6, chapter:"Chapter VI", title:"The Executive", icon:"👑", tag:"Executive",
+    sections:[
+      { ref:"Section 130", heading:"Nigeria Has a President",
+        plain:"There shall be a President of the Federal Republic of Nigeria, in whom shall be vested the executive powers of the Federation.",
+        realTalk:"The President's power comes from the Constitution — and only from it. No military leader, kingmaker, or political party can vest executive power in someone outside this constitutional framework.",
+        official:"(1) There shall be for the Federation a President. (2) The President shall be the Head of State, the Chief Executive of the Federation and Commander-in-Chief of the Armed Forces of the Federation." },
+      { ref:"Section 131", heading:"Who Can Be President",
+        plain:"To run for President you must be a Nigerian citizen by birth, at least 40 years old, a member of a political party, and have at least a School Certificate education.",
+        realTalk:"Being born a Nigerian is non-negotiable for the presidency. Age 40 is the minimum. Note: school certificate level suffices — a university degree is NOT constitutionally required for the presidency.",
+        official:"A person shall be qualified for election to the office of the President if – (a) he is a citizen of Nigeria by birth; (b) he has attained the age of forty years; (c) he is a member of a political party and is sponsored by that political party; and (d) he has been educated up to at least School Certi" },
+      { ref:"Section 132", heading:"How Presidential Elections Work",
+        plain:"Presidential elections are conducted by INEC. Voting is direct, by registered voters across Nigeria, using a secret ballot.",
+        realTalk:"Nigerians vote directly for their President. No electoral college. Your vote is your direct voice. Presidential mandate comes from the people — not from party backrooms or military councils.",
+        official:"(1) An election to the office of President shall be held on a date to be appointed by the Independent National Electoral Commission. (2) An election to the said office shall be held on a date not earlier than sixty days and not later than thirty days before the expiration of the term of office of th" },
+      { ref:"Section 133", heading:"Single Presidential Candidate Rules",
+        plain:"If there is only one presidential candidate, INEC must still hold an election — and the candidate wins only if they receive at least 25% of votes cast.",
+        realTalk:"Even a sole candidate must earn public support. If Nigerians vote against them in sufficient numbers, the election fails and a new process must begin. Legitimacy requires genuine voter approval.",
+        official:"A candidate for an election to the office of President shall be deemed to have been duly elected to such office where, being the only candidate nominated for the election – (a) he has a majority of YES votes over NO votes cast at the election; and (b) he has not less than one-quarter of the votes ca" },
+      { ref:"Section 134", heading:"How a President Wins With Multiple Candidates",
+        plain:"To win the presidency, a candidate must win the highest number of votes AND get at least 25% of votes in at least two-thirds (24) of the 36 states plus FCT.",
+        realTalk:"The 25%-in-24-states rule ensures the President has broad national support — not just from a regional bloc. A purely regional candidate cannot win the Nigerian presidency by numbers alone.",
+        official:"(1) A candidate for an election to the office of President shall be deemed to have been  duly elected, where, there being only two candidates for the election – (a) he has the majority of votes cast at the election; and (b) he has not less than one-quarter of the votes cast at the election in each o" },
+      { ref:"Section 135", heading:"President Serves Maximum Two 4-Year Terms",
+        plain:"The President holds office for 4 years and may be re-elected only once. A total maximum of 8 years is allowed. No exceptions.",
+        realTalk:"Two terms maximum — constitutionally absolute. Any attempt to extend presidential tenure beyond 8 years requires a constitutional amendment that needs broad supermajority support.",
+        official:"(1) Subject to the provisions of this Constitution, a person shall hold the office of President until – (a) when his successor in office takes the oath of that office; (b) he dies whilst holding such office; or (c) the date when his resignation from office takes effect; Or (d) he otherwise ceases to" },
+      { ref:"Section 136", heading:"What Happens If President-Elect Dies Before Swearing In",
+        plain:"If a President-elect dies or is unable to assume office before being sworn in, the Vice-President-elect shall be sworn in instead.",
+        realTalk:"This continuity provision ensures there's no power vacuum even before formal assumption of office. The Vice President is the constitutionally designated backup from before day one.",
+        official:"(1) If a person duly elected as President dies before taking and subscribing the Oath of Allegiance and oath of office, or is for any reason whatsoever unable to be sworn in, the person elected with him as Vice-President shall be sworn in as President and he shall nominate a new Vice-President who s" },
+      { ref:"Section 137", heading:"Presidential Disqualifications",
+        plain:"A person cannot run for President if they have dual citizenship, have been sentenced to death or imprisonment for more than 12 months, or are bankrupt, mentally unfit, or belong to a secret society.",
+        realTalk:"Secret society members, convicted criminals, and undischarged bankrupts cannot be President. These aren't just morality rules — they're constitutional requirements. Candidates who lie about these face potential nullification of their election.",
+        official:"(1) A person shall not be qualified for election to the office of President if – (a) subject to the provisions of section 28 of this Constitution, he has voluntarily acquired the citizenship of a country other than Nigeria or, except in such cases as may be prescribed by the National Assembly, he ha" },
+      { ref:"Section 138", heading:"President Can't Hold Another Job",
+        plain:"The President and Vice-President cannot hold any other office or employment — in public or private — while in office.",
+        realTalk:"The President must be fully devoted to governing Nigeria. Running a private business or holding other positions while President is constitutionally prohibited — a conflict of interest concern enshrined in law.",
+        official:"The President shall not, during his tenure of office, hold any other executive office or paid employment in any capacity whatsoever." },
+      { ref:"Section 139", heading:"Presidential Election Disputes Go to Court",
+        plain:"Questions about the validity of a presidential election shall be determined by the Court of Appeal, and ultimately by the Supreme Court.",
+        realTalk:"Presidential election results can be challenged in court. Nigeria has successfully overturned gubernatorial and even presidential election results through the courts — the process exists and has worked.",
+        official:"The National Assembly shall by an Act make provisions as respects – (a) persons who may apply to the Court of Appeal for the determination of any question as to whether; (i) any person has been validly elected to the office of President or Vice-President (ii) the term of office of the President or V" },
+      { ref:"Section 140", heading:"President Must Declare Assets and Swear Oath",
+        plain:"The President must declare their assets and liabilities and take the oath of allegiance and oath of office before assuming the Presidency.",
+        realTalk:"Asset declaration at entry creates a legal baseline. Any President who acquires unexplained wealth after taking office can be compared against their declared assets. This is a crucial anti-corruption mechanism.",
+        official:"(1) A person elected to the office of President shall not begin to perform the functions of that office until he has declared his assets and liabilities as prescribed in this Constitution and he has taken and subscribed the Oath of Allegiance and the oath of office prescribed in the Seventh Schedule" },
+      { ref:"Section 141", heading:"Nigeria Has a Vice President",
+        plain:"There shall be a Vice-President, who shall exercise the powers delegated by the President and perform functions as specified in the Constitution.",
+        realTalk:"The Vice President is constitutionally recognized — not just a political position. When the President is absent or incapacitated, the VP steps in with constitutional authority, not just as a courtesy.",
+        official:"There shall be for the Federation a Vice-President." },
+      { ref:"Section 142", heading:"VP Runs on Same Ticket as President",
+        plain:"The presidential candidate nominates a Vice-Presidential candidate, who must meet all the requirements for the presidency. Both run on the same ticket.",
+        realTalk:"Nigerians vote for both President and VP at once. The VP must be independently qualified — they could become President. Voters should evaluate both candidates before casting their ballot.",
+        official:"(1) In any election to which the foregoing provisions of this Part of this Chapter relate, a candidate for an election to the office of President shall not be deemed to be validly nominated unless he nominates another candidate as his associate from the same political party for his running for the o" },
+      { ref:"Section 143", heading:"How the President Can Be Removed",
+        plain:"The President can be removed by impeachment — a process requiring investigation by a panel, followed by a two-thirds majority vote of both the Senate and House sitting jointly.",
+        realTalk:"Presidential impeachment is constitutionally possible in Nigeria. It requires building a case, an independent panel, and a two-thirds supermajority across both chambers. It's deliberately difficult to prevent abuse.",
+        official:"(1) The President or Vice-President may be removed from office in accordance with the provisions of this section. (2) Whenever a notice of any allegation in writing signed by not less than one-third of the members of the National Assembly:- (a) is presented to the President of the Senate; (b) statin" },
+      { ref:"Section 144", heading:"Permanent Incapacity of President",
+        plain:"If the President is unable to discharge the functions of office due to mental or physical incapacity, they shall be removed after certification by a medical panel.",
+        realTalk:"A President who is genuinely incapacitated cannot hold onto power indefinitely. This provision prevents a situation where a sick leader's inner circle runs the country without constitutional authority.",
+        official:"(1) The President or Vice-President shall cease to hold office, if – (a) by a resolution passed by two-thirds majority of all the members of the executive council of the Federation it is declared that the President or Vice-President is incapable of discharging the functions of his office; and (b) th" },
+      { ref:"Section 145", heading:"Acting President During Absence",
+        plain:"When the President is temporarily absent from Nigeria, the Vice-President shall perform the functions of the President as Acting President.",
+        realTalk:"Nigeria cannot have an ungoverned presidency. When the President travels abroad, the VP must formally assume acting duties — this isn't optional and must be communicated to the National Assembly.",
+        official:"Whenever the President transmits to the President of the Senate and the Speaker of the House of Representatives a written declaration that he is proceeding on vacation or that he is otherwise unable to discharge the functions of his office, until he transmits to them a written declaration to the con" },
+      { ref:"Section 146", heading:"What Happens When President's Office Is Vacant",
+        plain:"If the office of President is vacant — due to death, resignation, removal, or inability — the Vice-President is sworn in and serves out the remainder of the term.",
+        realTalk:"When a President dies or is removed, the VP steps in — not a military council, not a Senate President permanently. Constitutional succession must be followed, with fresh elections if needed.",
+        official:"(1) The Vice-President shall hold the office of President if the office of President becomes vacant by reason of death or resignation, impeachment, permanent incapacity or the removal of the President from office for any other reason in accordance with section 143 of this Constitution. (2) Where any" },
+      { ref:"Section 147", heading:"President Appoints Ministers",
+        plain:"There shall be Ministers of the Federal Government appointed by the President, subject to Senate confirmation, with at least one from each State of the Federation.",
+        realTalk:"Ministers require Senate approval — your senators vote on who manages federal ministries. Every state must have at least one minister — the Federal Character principle applies to cabinet composition.",
+        official:"(1) There shall be such offices of Ministers of the Government of the Federation as may be established by the President. (2) Any appointment to the office of Minister of the Government of the Federation shall, if the nomination of any person to such office is confirmed by the Senate, be made by the" },
+      { ref:"Section 148", heading:"Ministers Are Accountable to the President",
+        plain:"The President may assign to the Vice-President or any Minister responsibility for any business of the Federation, and they shall be answerable to him for their departments.",
+        realTalk:"Ministers serve at the President's pleasure but must also be accountable to parliament through committee oversight. A minister who defies parliamentary oversight undermines democratic accountability.",
+        official:"(1) The President may, in his discretion, assign to the Vice-President or any Minister of the Government of the Federation responsibility for any business of the Government of the Federation, including the administration of any department of government. (2) The President shall hold regular meetings" },
+      { ref:"Section 149", heading:"Ministers Must Declare Assets and Swear Oath",
+        plain:"Ministers must declare their assets and liabilities and swear oaths before assuming office.",
+        realTalk:"Like the President, ministers must declare what they own from day one. Acquisition of unexplained wealth after assuming ministerial office should be compared against their declaration.",
+        official:"A Minister of the Government of the Federation shall not enter upon the duties of his office, unless he has declared his assets and liabilities as prescribed in this Constitution and has subsequently taken and subscribed the Oath of Allegiance and the oath of office for the due execution of the duti" },
+      { ref:"Section 150", heading:"Attorney-General of the Federation",
+        plain:"The Attorney-General of the Federation is the Chief Law Officer of the Federation and a member of the Federal Executive Council.",
+        realTalk:"The AGF is Nigeria's top lawyer and has vast powers including prosecutions. Their decisions on who to prosecute — and who not to — carry enormous political weight and must be exercised independently.",
+        official:"(1) There shall be an Attorney-General of the Federation who shall be the Chief Law Officer of the Federation and a Minister of the Government of the Federation. (2) A person shall not be qualified to hold or perform the functions of the office of the Attorney-General of the Federation unless he is" },
+      { ref:"Section 151", heading:"President Can Appoint Special Advisers",
+        plain:"The President may appoint any person as a Special Adviser to assist him in the performance of his functions, subject to Senate confirmation.",
+        realTalk:"Presidential aides are not without oversight — they require Senate confirmation. Unprecedentedly large advisory teams that are appointed without confirmation raise constitutional questions.",
+        official:"(1) The President may appoint any person as a Special Adviser to assist him in the performance of his functions. (2) The number of such Advisers and their remuneration and allowances shall be as prescribed by law or by resolution of the National Assembly. (3) Any appointment made pursuant to the pro" },
+      { ref:"Section 152", heading:"Special Advisers Must Also Declare Assets",
+        plain:"Special Advisers must declare their assets and liabilities and take their oaths before assuming office.",
+        realTalk:"The same accountability standards apply to presidential advisers as to ministers. These aren't just formalities — they create legal obligations and paper trails.",
+        official:"A person appointed as Special Adviser under section 151 of this Constitution shall not begin to perform the functions of his office until he has declared his assets and liabilities as prescribed in this Constitution and has subsequently taken and subscribed the Oath of Allegiance and oath of office" },
+      { ref:"Section 153", heading:"Independent Commissions Exist to Check Power",
+        plain:"The Constitution establishes independent Federal Commissions and Councils including INEC, the National Judicial Council, Police Service Commission, Federal Civil Service Commission, and others.",
+        realTalk:"Nigeria's constitution deliberately creates independent bodies to manage key functions without direct political control. When governments undermine INEC or NJC independence, they're attacking the constitutional order.",
+        official:"(1) There shall be established for the Federation the following bodies, namely: (a) Code of Conduct Bureau; (b) Council of State; (c) Federal Character Commission; (d) Federal Civil Service Commission; (e) Federal Judicial Service Commission; (f) Independent National Electoral Commission; (g) Nation" },
+      { ref:"Section 154", heading:"How Commission Members Are Appointed",
+        plain:"Members of Federal Commissions are appointed by the President subject to Senate confirmation. The process is designed to be merit-based and representative.",
+        realTalk:"Your senators vote on who sits on key constitutional commissions. Follow confirmation hearings — they reveal both the quality of presidential nominees and the diligence of your senators.",
+        official:"(1) Except in the case of ex officio members or where other provisions are made in this Constitution, the Chairman and members of any of the bodies so established shall, subject to the provisions of this Constitution, be appointed by the President and the appointment shall be subject to confirmation" },
+      { ref:"Section 155", heading:"Commission Members Have Tenure Protection",
+        plain:"Members of Federal Commissions serve fixed terms and cannot be arbitrarily removed — protecting their independence.",
+        realTalk:"Constitutional commission members can't be fired just because their decisions displease the President. This protection is what makes independent oversight institutions actually independent.",
+        official:"(1) A person who is a member of any of the bodies established as aforesaid shall, subject to the provisions of this Part, remain a member thereof – (a) in the case of an ex officio member, whilst he holds the office by virtue of which he is a member of the body; (b) in the case of a person who is a" },
+      { ref:"Section 156", heading:"Who Qualifies for Commission Membership",
+        plain:"Commission members must be Nigerians of proven integrity and specific expertise relevant to the commission's functions.",
+        realTalk:"Integrity and expertise are constitutional requirements for commission membership — not political loyalty. Appointing party loyalists with no relevant expertise violates the spirit and letter of this provision.",
+        official:"(1) No person shall be qualified for appointment as a member of any of the bodies aforesaid if – (a) he is not qualified or if he is disqualified for election as a member of the House of Representatives; (b) within the preceding ten years, he has been removed as a member of any of the bodies or as t" },
+      { ref:"Section 157", heading:"How Commission Members Can Be Removed",
+        plain:"Commission members can only be removed for misconduct or inability to discharge functions, following a defined constitutional process.",
+        realTalk:"You can't remove a commission member just because they made decisions you dislike. There must be genuine misconduct, proven through a proper process. This protects institutional independence.",
+        official:"(1) Subject to the provisions of subsection (3) of this section, a person holding any of the offices to which this section applies may only be removed from that office by the President acting on an address supported by two-thirds majority of the Senate praying that he be so removed for inability to" },
+      { ref:"Section 158", heading:"Key Bodies Must Be Independent",
+        plain:"INEC and the Revenue Mobilisation Allocation and Fiscal Commission must be independent — they may not take direction from the President or any government authority.",
+        realTalk:"INEC's constitutional independence is absolute. Any President or governor who tries to direct INEC's decisions is committing an unconstitutional act. INEC must be protected and must protect itself.",
+        official:"(1) In exercising its power to make appointments or to exercise disciplinary control over persons, the Code of Conduct Bureau, the National Judicial Council, the Federal Civil Service Commission, the Federal Judicial Service Commission, the Revenue Mobilization and Fiscal Commission, the Federal Cha" },
+      { ref:"Section 159", heading:"How Commissions Make Decisions",
+        plain:"A quorum for a Federal Commission is minimum one-third of its members. Decisions are by majority vote.",
+        realTalk:"Commission decisions require enough members to be present and a majority to agree. This prevents a handful of political appointees from ramming through decisions without proper deliberation.",
+        official:"(1) The quorum for a meeting of any of the bodies established by section 153 of this Constitution shall be not less than one-third of the total number of members of that body at the date of the meeting. (2) A member of such a body shall be entitled to one vote, and a decision of the meeting may be t" },
+      { ref:"Section 160", heading:"Commissions Have Regulatory Powers",
+        plain:"Each Federal Commission may regulate its own procedure and establish sub-committees as needed to carry out its functions effectively.",
+        realTalk:"Constitutional commissions are self-governing bodies — they set their own internal rules. This autonomy is what allows them to function independently of political interference.",
+        official:"(1) Subject to subsection (2) of this section, any of the bodies may, with the approval of the President, by rules or otherwise regulate its own procedure or confer powers and impose duties on any officer or authority for the purpose of discharging its functions. (2) In the exercise of any powers un" },
+      { ref:"Section 161", heading:"Terms Used in Executive Chapter",
+        plain:"This section provides definitions for terms used throughout Chapter VI — such as what constitutes 'election' or how periods are counted.",
+        realTalk:"Legal definitions matter enormously in constitutional law. When you're reading about executive powers, these definitions determine exactly what the provisions mean and how they apply.",
+        official:"In this Part of this Chapter, unless the context otherwise requires – (a) any reference to \"ex officio member\" shall be construed as a reference to a person who is a member by virtue of his holding or performing, the functions of an office in the public service of the Federation; (b) \"office\" means" },
+      { ref:"Section 162", heading:"How Federal Revenue Is Shared",
+        plain:"All federation revenues are paid into the Federation Account and shared among the Federal Government, States, and Local Governments according to a formula determined by law.",
+        realTalk:"The revenue sharing formula determines how much money your state and LGA receive from Abuja. This is among the most politically contested aspects of Nigerian federalism — how the formula is set directly affects your community.",
+        official:"(1) The Federation shall maintain a special account to be called \"the Federation Account\" into which shall be paid all revenues collected by the Government of the Federation, except the proceeds from the personal income tax of the personnel of the armed forces of the Federation, the Nigeria Police F" },
+      { ref:"Section 163", heading:"Other Revenues Are Also Distributed",
+        plain:"Revenues from natural resources (like oil) are distributed to producing states with a derivation principle of not less than 13%.",
+        realTalk:"Oil-producing states get at least 13% of oil revenues that come from their territory. This is the constitutional minimum derivation — the basis of the resource control debate in the Niger Delta.",
+        official:"Where under an Act of the National Assembly, tax or duty is imposed in respect of any of the matters specified in item D of Part II of the Second Schedule to this Constitution, the net proceeds of such tax or duty shall be distributed among the States on the basis of derivation and accordingly – (a)" },
+      { ref:"Section 164", heading:"Federal Government Can Give Grants to States",
+        plain:"The Federal Government may grant financial aid to States to supplement their revenue — particularly for educational development.",
+        realTalk:"Federal grants to states must be properly accounted for. When states receive federal education grants but schools remain underfunded, that money trail must be investigated.",
+        official:"(1) The Federation may make grants to a State to supplement the revenue of that State in such sum and subject to such terms and conditions as may be prescribed by the National Assembly. (2) The Federation may make external grants to a foreign State or any international body in furtherance of the for" },
+      { ref:"Section 165", heading:"Costs of Collecting Revenue Are Deducted First",
+        plain:"The costs of collecting revenues on behalf of the Federation Account are deducted before distribution to the three tiers of government.",
+        realTalk:"Collection costs come off the top before sharing. This affects how much your state actually receives. Transparency in collection cost accounting is essential to prevent diversion of public funds.",
+        official:"Each State shall, in respect of each financial year, pay to the Federation an amount equal to such part of the expenditure incurred by the Federation during that financial year for the purpose of collection of taxes or duties which are wholly or partly payable to the State pursuant to the provisions" },
+      { ref:"Section 166", heading:"Debts Can Be Set Off Against Revenue",
+        plain:"Any debt a State owes the Federal Government may be deducted from that State's share of the Federation Account.",
+        realTalk:"States that owe federal debts can have money deducted directly from their revenue allocations. This affects how much reaches your state — understanding your state's debt position matters.",
+        official:"(1) Any payment that is required by this Part of this Chapter to be made by the Federation to a State may be set-off by the Federation in or towards payment of any sum that is due from that State to the Federation in respect of any loan made by the Federation to that State. (2) The right of set-off" },
+      { ref:"Section 167", heading:"Some Costs Are Charged to the Consolidated Fund",
+        plain:"Certain charges — such as the national debt, salaries of constitutional officers, and pensions — are automatically charged to the Consolidated Revenue Fund without appropriation.",
+        realTalk:"First charges on national revenue include the national debt and key officers' pay. These are paid before any discretionary spending. Nigeria's debt profile directly affects what's left for services.",
+        official:"Any payment that is required by this Part of this Chapter to be made by the Federation to a State shall be a charge upon the Consolidated Revenue Fund of the Federation and any payment that is so required to be made by a State to the Federation shall be a charge upon the Consolidated Revenue Fund of" },
+      { ref:"Section 168", heading:"How Revenue Payments Are Made",
+        plain:"Revenue allocations to States and Local Governments must be paid directly to them and cannot be withheld by the Federal Government.",
+        realTalk:"Federal government cannot withhold states' constitutional allocations as a political punishment. When allocations are delayed or reduced beyond formula calculations, states have a constitutional remedy.",
+        official:"Section 168 of the Constitution of the Federal Republic of Nigeria 1999." },
+      { ref:"Section 169", heading:"Federal Civil Service Exists",
+        plain:"There shall be a civil service of the Federation, headed by a Head of Service of the Federation, to provide continuity in government administration.",
+        realTalk:"Nigeria's federal civil service provides stability beyond political cycles. Civil servants serve regardless of who is president — their permanent role is to implement government policy professionally.",
+        official:"There shall be a civil service of the Federation." },
+      { ref:"Section 170", heading:"Civil Service Commission Can Delegate",
+        plain:"The Federal Civil Service Commission may delegate its powers of appointment and discipline to any officer in the civil service, subject to conditions.",
+        realTalk:"Delegation of civil service powers means ministries can handle their own staffing needs — but accountability remains. Delegation doesn't eliminate the commission's oversight role.",
+        official:"Subject to the provisions of this Constitution, the Federal Civil Service Commission may, with the approval of the President and subject to such conditions as it may deem fit, delegate any of the powers conferred upon it by this Constitution to any of its members or to any officer in the civil servi" },
+      { ref:"Section 171", heading:"President Makes Key Appointments",
+        plain:"The President appoints key federal offices including Heads of extra-ministerial departments and the Secretary to the Government of the Federation, subject to Senate confirmation.",
+        realTalk:"Presidential appointments shape the government bureaucracy. Senate confirmation is a democratic check. Follow these appointments — who runs key agencies directly affects service delivery.",
+        official:"(1) Power to appoint persons to hold or act in the offices to which this section applies and to remove persons so appointed from any such office shall vest in the President. (2) The offices to which this section applies are, namely – (a) Secretary to the Government of the Federation; (b) Head of the" },
+      { ref:"Section 172", heading:"Civil Servants Must Follow the Code of Conduct",
+        plain:"Persons in the public service of the Federation must comply with the Code of Conduct established by the Constitution — requiring integrity, transparency, and avoidance of conflicts of interest.",
+        realTalk:"Public servants — from the President to the lowest clerk — are legally bound by a Code of Conduct. The Code of Conduct Bureau and Tribunal exist to enforce this. Corruption by public officials violates this section.",
+        official:"A person in the public service of the Federation shall observe and conform to the Code of Conduct." },
+      { ref:"Section 173", heading:"Pension Rights Are Protected",
+        plain:"The right to a pension as confirmed by the government is a constitutional right. Pension benefits cannot be withheld or reduced unilaterally.",
+        realTalk:"Retired public servants' pensions are constitutionally protected — not a favour from the government. Governors or agencies that withhold or delay pension payments are violating constitutional rights.",
+        official:"(1) Subject to the provisions of this Constitution, the right of a person in the public service of the Federation to receive pension or gratuity shall be regulated by law. (2) Any benefit to which a person is entitled in accordance with or under such law as is referred to in subsection (1) of this s" },
+      { ref:"Section 174", heading:"Federal Government Controls Prosecutions",
+        plain:"The Attorney-General of the Federation has the power to institute, take over, or discontinue criminal proceedings against any person before any court.",
+        realTalk:"The AGF's power to discontinue prosecutions is among the most controversial in Nigeria. This power has been used to shield powerful individuals. A properly functioning democracy requires this power to be exercised independently.",
+        official:"(1) The Attorney-General of the Federation shall have power – (a) to institute and undertake criminal proceedings against any person before any court of law in Nigeria, other than a court-martial, in respect of any offence created by or under any Act of the National Assembly; (b) to take over and co" },
+      { ref:"Section 175", heading:"President Can Pardon Criminals",
+        plain:"The President may grant a pardon, reprieve, a respite, or substitute a less severe punishment for any person convicted of a federal offence.",
+        realTalk:"Presidential pardons are real and have been used for politically connected individuals. This power must be exercised transparently and with justification — pardoning cronies undermines justice.",
+        official:"(1) The President may - (a) grant any person concerned with or convicted of any offence created by an Act of the National Assembly a pardon, either free or subject to lawful conditions; (b) grant to any person a respite, either for an indefinite or for a specified period, of the execution of any pun" },
+      { ref:"Section 176", heading:"States Have Governors",
+        plain:"There shall be a Governor for each of the 36 States, in whom the executive powers of the State shall be vested.",
+        realTalk:"State executive power rests with the Governor — not traditional rulers, not federal appointees. Everything your state government does is legally the Governor's constitutional responsibility.",
+        official:"(1) There shall be for each State of the Federation a Governor. (2) The governor of a shall be the Chief Executive of that state" },
+      { ref:"Section 177", heading:"Who Can Be Governor",
+        plain:"To be Governor, you must be a Nigerian citizen, at least 35 years old, educated to at least School Certificate level, and a member of a political party.",
+        realTalk:"Governorship is open to Nigerians at 35 — younger than the presidential age requirement. School Certificate is still the minimum education requirement, not a degree.",
+        official:"A person shall be qualified for election to the office of Governor of a State if (a) he is a citizen of Nigeria by birth; (b) he has attained the age of thirty-five years; (c) he is a member of a political party and is sponsored by that political party; and (d) he has been educated up to at least Sc" },
+      { ref:"Section 178", heading:"How Gubernatorial Elections Work",
+        plain:"Gubernatorial elections are conducted by INEC, with direct voting by registered voters in the state, using a secret ballot.",
+        realTalk:"You vote directly for your Governor. Your vote is your direct say in who runs your state — register, vote, and demand clean elections from INEC.",
+        official:"(1) An election to the office of Governor of a State shall be held on a date to be appointed by the Independent National Electoral Commission. (2) An election to the office of Governor of a State shall be held on a date not earlier than sixty days and not later than thirty days before the expiration" },
+      { ref:"Section 179", heading:"How a Governor Wins",
+        plain:"A gubernatorial candidate must win the most votes AND get at least 25% of votes in at least two-thirds of all local government areas in the state.",
+        realTalk:"Like the President, Governors need broad support across their state — not just one dominant city or region. The LGA spread requirement ensures statewide legitimacy.",
+        official:"(1) A candidate for an election to the office of Governor of a State shall be deemed to have been duly elected to such office where, being the only candidate nominated for the election- (a) he has a majority of YES votes over NO votes cast at the election; and (b) he has not less than one-quarter of" },
+      { ref:"Section 180", heading:"Governors Serve Maximum Two 4-Year Terms",
+        plain:"A Governor holds office for 4 years and may only be re-elected once — a maximum of 8 years total.",
+        realTalk:"No Governor can be perpetual — 8 years maximum. Any attempt to extend a governorship beyond two terms, including through constitutional amendments at state level, faces serious legal challenges.",
+        official:"(1) subject to the provisions of this Constitution, a person shall hold the office of Governor of a State until – (a) When his successor in office takes the oath of that office; or (b) he dies whilst holding such office; or (c) the date when his resignation from office takes effect; or (d) he otherw" },
+      { ref:"Section 181", heading:"What Happens If Governor-Elect Dies",
+        plain:"If a Governor-elect dies before being sworn in, the Deputy Governor-elect shall be sworn in as Governor.",
+        realTalk:"Constitutional succession begins before day one in office. The Deputy Governor-elect is ready to step in from election day — no power vacuum, no military intervention.",
+        official:"(1) If a person duly elected as Governor dies before taking and subscribing the Oath of Allegiance and oath of office, or is unable for any reason whatsoever to be sworn in, the person elected with him as Deputy governor shall be sworn in as Governor and he shall nominate a new Deputy-Governor who s" },
+      { ref:"Section 182", heading:"Gubernatorial Disqualifications",
+        plain:"The same disqualifications that apply to presidential candidates apply to gubernatorial candidates — dual citizenship, criminal conviction, bankruptcy, mental incapacity, secret society membership.",
+        realTalk:"Integrity requirements for governors mirror presidential standards. Secret society members, convicted criminals, and undischarged bankrupts cannot legally run for governor.",
+        official:"(1) No person shall be qualified for election to the office of Governor of a State if – (a) subject to the provisions of section 28 of this Constitution, he has voluntarily acquired the citizenship of a country other than Nigeria or, except in such cases as may be prescribed by the National Assembly" },
+      { ref:"Section 183", heading:"Governors Can't Hold Other Jobs",
+        plain:"A Governor and Deputy Governor cannot hold any other office or employment — in the public or private sector — while in office.",
+        realTalk:"Governors must devote themselves exclusively to running their states. Running a private business while serving as governor is constitutionally prohibited — a conflict of interest the law recognized from the start.",
+        official:"The governor shall not, during the period when he holds office, hold any other executive office or paid employment in any capacity whatsoever." },
+      { ref:"Section 184", heading:"Gubernatorial Election Disputes Go to Court",
+        plain:"Questions about the validity of gubernatorial elections are determined by the Court of Appeal, with the Supreme Court as the final arbiter.",
+        realTalk:"Rigged governorship elections can be overturned in court. Several Nigerian governors have lost their seats through election petitions — the process works when people use it.",
+        official:"The National Assembly shall make provisions in respect of – (a) persons who may apply to an election tribunal for the determination of any question as to whether (i) any person has been validly elected to the office of Governor or Deputy Governor, (ii) the term of office of a Governor or Deputy Gove" },
+      { ref:"Section 185", heading:"Governors Must Declare Assets and Swear Oath",
+        plain:"The Governor and Deputy Governor must declare their assets and liabilities and swear the oath of allegiance and oath of office before assuming office.",
+        realTalk:"Governors must declare what they own before they take office. This baseline makes post-office wealth comparisons possible and is a foundational anti-corruption requirement.",
+        official:"(1) A person elected to the office of the Governor of a State shall not begin to perform the functions of that until he has declared his assets and liabilities as prescribed in the Constitution and has subsequently taken and subscribed the Oath of Allegiance and oath of office prescribed in the Seve" },
+      { ref:"Section 186", heading:"States Have Deputy Governors",
+        plain:"There shall be a Deputy Governor for each State who shall exercise such functions as the Governor may assign and perform the Governor's functions in their absence.",
+        realTalk:"The Deputy Governor is a constitutional office — not just a political concession. When a Governor is absent or incapacitated, the Deputy steps in with full constitutional authority.",
+        official:"There shall be for each State of the Federation a Deputy Governor." },
+      { ref:"Section 187", heading:"Deputy Governor Runs on Same Ticket",
+        plain:"The gubernatorial candidate nominates a Deputy Governor candidate who runs on the same ticket and must independently meet governorship qualifications.",
+        realTalk:"Your vote for Governor is also a vote for Deputy Governor. The Deputy must be independently qualified to be Governor — they could become Governor. Know who's on the ticket before you vote.",
+        official:"(1) In any election to which the foregoing provisions of this part of this Chapter relate a candidate for the office of Governor of a State shall not be deemed to have been validly nominated for such office unless he nominates another candidate as his associate for his running for the office of Gove" },
+      { ref:"Section 188", heading:"How a Governor Can Be Removed",
+        plain:"A Governor can be impeached through an investigation by a panel, followed by a two-thirds majority vote of the State House of Assembly.",
+        realTalk:"State assemblies can remove governors. The process has been used in Nigeria — sometimes legitimately, sometimes politically. A well-functioning state assembly provides a real check on gubernatorial power.",
+        official:"(1) The Governor or Deputy Governor of a state may Removal of Governor be removed from office in accordance with the provisions or Deputy Governor of this section. from office. (2) Whenever a notice of any allegation in writing signed by not less than one-third of the members of the House of Assembl" },
+      { ref:"Section 189", heading:"Permanent Incapacity of Governor",
+        plain:"If a Governor is certified medically unable to discharge duties, they shall be removed after confirmation by a medical panel appointed by the National Judicial Council.",
+        realTalk:"A Governor who is genuinely incapacitated cannot hold onto power through proxies. Medical incapacity is a constitutional ground for removal — protecting the state from de facto vacancy in governance.",
+        official:"(1) The Governor or Deputy Governor of a State shall cease to hold office if (a) by a resolution passed by two-thirds majority of all members of the executive council of the State, it is declared that the Governor or Deputy Governor is incapable of discharging the functions of his office; and (b) th" },
+      { ref:"Section 190", heading:"Acting Governor When Governor Is Away",
+        plain:"When the Governor is temporarily absent from the state, the Deputy Governor shall perform the functions of the Governor as Acting Governor.",
+        realTalk:"States cannot be ungoverned. When a Governor leaves the state, the Deputy must formally act. Governors who travel without delegating authority to their deputy create unconstitutional governance gaps.",
+        official:"Whenever the Governor transmits to the Speaker of the House of Assembly a written declaration that he is proceeding on vacation or that he is otherwise unable to discharge the functions of his office, until he transmits to the Speaker of the House of Assembly a written declaration to the contrary su" },
+      { ref:"Section 191", heading:"What Happens When Governor's Office Is Vacant",
+        plain:"If the office of Governor becomes vacant through death, resignation, removal, or inability, the Deputy Governor is sworn in as Governor.",
+        realTalk:"Constitutional succession in states mirrors the federal level. The Deputy Governor steps up automatically — no power vacuum, no emergency rule, no presidential interference in state succession.",
+        official:"(1) The Deputy Governor of a State shall hold the office of Governor of the State if the office of Governor becomes vacant by reason of death, resignation, impeachment, permanent incapacity or removal of the governor from office for any other reason in accordance with section 188 or 189 of this cons" },
+      { ref:"Section 192", heading:"Governors Appoint Commissioners",
+        plain:"There shall be Commissioners for each State, appointed by the Governor with the approval of the State House of Assembly.",
+        realTalk:"State ministers (commissioners) require state assembly approval. Your state representatives vote on who runs state ministries. Track these confirmations — they reveal both gubernatorial priorities and assembly diligence.",
+        official:"(1) There shall be such offices of Commissioners of the Government of a State as may be established by the Governor of the State (2) Any appointment to the office of Commissioner of the Government of a State shall, if the nomination of any person to such office is confirmed by the House of Assembly" },
+      { ref:"Section 193", heading:"Commissioners Are Accountable to Governor",
+        plain:"The Governor may assign responsibilities to the Deputy Governor and Commissioners, who are answerable to the Governor for their departments.",
+        realTalk:"State commissioners run state ministries under the Governor's direction. When state ministries underperform or are corrupt, the chain of accountability goes directly to the Governor.",
+        official:"(1) The Governor of a State may, in his discretion, assign to the Deputy Governor or any Commissioner of the Government of the State responsibility for any business of the Government of that State, including the administration of any department of Government. (2) The Governor of a State shall hold r" },
+      { ref:"Section 194", heading:"Commissioners Must Declare Assets",
+        plain:"State Commissioners must declare their assets and liabilities and swear oaths before assuming their roles.",
+        realTalk:"State-level ministers must meet the same declaration requirements as federal ministers. This applies to commissioners in your state — their asset declarations are a matter of public interest.",
+        official:"A Commissioner of the Government of a State shall not enter upon the duties of his office unless he has declared his assets and liabilities as prescribed in this Constitution and has subsequently taken and subscribed the oath of Allegiance and the oath for the due execution of the duties of his offi" },
+      { ref:"Section 195", heading:"States Have an Attorney-General",
+        plain:"Each State has an Attorney-General who is the Chief Law Officer of the State and a Commissioner in the State's Executive Council.",
+        realTalk:"Your state has its own chief lawyer. The State AG controls state prosecutions — who gets charged and who doesn't at the state level. AG appointments reveal a Governor's approach to law and accountability.",
+        official:"(1) There shall be an Attorney-General for each State who shall be the Chief Law Officer of the State and Commissioner for Justice of the Government of that State. (2) A person shall not be qualified to hold or perform the functions of the office of the Attorney-General of a State unless he is quali" },
+      { ref:"Section 196", heading:"Governors Have Special Advisers",
+        plain:"Governors may appoint Special Advisers to assist them, subject to state assembly confirmation.",
+        realTalk:"State-level special advisers require assembly confirmation too. Bloated advisory teams of unconfirmed aides are a constitutional concern and a waste of state resources.",
+        official:"(1) The Governor of a State may appoint any person as a Special Adviser to assist him in the performance of his functions. (2) The number of such Advisers and their remuneration and allowances shall be as prescribed by law or by resolution of the House of Assembly of the State. (3) Any appointment m" },
+      { ref:"Section 197", heading:"States Have Independent Commissions Too",
+        plain:"The Constitution establishes State Independent Electoral Commissions (SIECs), State Civil Service Commissions, and other state-level independent bodies.",
+        realTalk:"SIECs conduct local government elections at the state level. Their independence — or lack thereof — determines whether local government elections are free and fair. This is where democratic accountability begins.",
+        official:"(1) There shall be established for each State of the Federation the following bodies, namely – (a) State Civil Service Commission; (b) State Independent Electoral Commission; and (c) State Judicial Service Commission. (2) The composition and powers of each body established by subsection (1) of this" },
+      { ref:"Section 198", heading:"State Commission Members Are Appointed",
+        plain:"State commission members are appointed by the Governor subject to State House of Assembly confirmation.",
+        realTalk:"State assemblies confirm state commission members. An assembly that rubber-stamps all gubernatorial nominees without scrutiny is failing its constitutional oversight role.",
+        official:"Except in the case of ex-officio members or where other provisions are made in this Constitution, the Chairman and members of any of the bodies so established shall, subject to the provisions of this Constitution, be appointed by the Governor of the State and the appointment shall be subject to conf" },
+      { ref:"Section 199", heading:"State Commission Members Have Tenure",
+        plain:"State commission members serve fixed terms and enjoy the same protection from arbitrary removal as their federal counterparts.",
+        realTalk:"State commission members can't be fired for inconvenient decisions. Tenure protection is what makes state-level oversight bodies actually function independently.",
+        official:"(1) A person who is a member of any of the bodies established as aforesaid shall, subject to the provisions of this Part, remain a member thereof – (a) in the case of an ex-officio member, whilst he holds the office by virtue of which he is a member of the body; (b) in the case of a person who is a" },
+      { ref:"Section 200", heading:"Who Qualifies for State Commission Membership",
+        plain:"State commission members must be Nigerians of integrity and relevant expertise, meeting requirements equivalent to federal commission members.",
+        realTalk:"Merit and integrity are constitutional standards for state commission appointments too. Political appointments without relevant expertise undermine the constitutional purpose of these bodies.",
+        official:"(1) No person shall be qualified for appointment as a member of any of the bodies aforesaid if – (a) he is not qualified or if he is disqualified for election as a member of a House of Assembly; (b) he has within the preceding ten years, been removed as a member of any of the bodies or as the holder" },
+      { ref:"Section 201", heading:"How State Commission Members Are Removed",
+        plain:"State commission members can only be removed through a formal process involving the State House of Assembly — not by the Governor alone.",
+        realTalk:"The Governor cannot unilaterally remove independent commission members. Assembly involvement is constitutionally required — protecting state institutions from executive overreach.",
+        official:"(1) Any person holding any of the offices to which this section applies shall only be removed from that office by the Governor of that State acting on an address supported by two-thirds majority of the House of Assembly of the State praying that he be so removed for inability to discharge the functi" },
+      { ref:"Section 202", heading:"State Commissions Must Also Be Independent",
+        plain:"The State Independent Electoral Commission (SIEC) must be independent and not subject to the direction of any authority in exercising its functions.",
+        realTalk:"SIECs are supposed to be independent — but in practice, many are seen as tools of incumbent governors. This constitutional provision provides grounds to challenge gubernatorial interference in local elections.",
+        official:"In exercising its power to make appointments or to exercise disciplinary control over persons the State Civil Service Commission, the State Independent Electoral Commission and the State Judicial Service Commission shall not be subject to the direction and control of any other authority or person." },
+      { ref:"Section 203", heading:"State Commission Quorum and Decisions",
+        plain:"State commissions require at least one-third of their members present for valid decisions, with majority votes determining outcomes.",
+        realTalk:"State commission decisions require proper quorum — small backroom gatherings of a few members cannot make binding constitutional decisions on behalf of the full commission.",
+        official:"(1) The quorum for a meeting of any of the bodies established by section 197 of this Constitution shall not be less than one-third of the total number of members of that body at the date of the meeting. (2) A member of such a body shall be entitled to one vote and a decision of the meeting may be ta" },
+      { ref:"Section 204", heading:"State Commission Procedures",
+        plain:"State Commissions may regulate their own procedures and establish sub-committees to carry out their functions effectively.",
+        realTalk:"State-level independent bodies set their own internal procedures. Transparency in how these bodies operate determines whether they fulfill their constitutional mandate.",
+        official:"(1) Subject to subsection (2) of this section, any of the bodies may, with the approval of the Governor, by rules or otherwise regulate its own procedure or confer powers or impose duties on any officer or authority for the purpose of discharging its functions. (2) In the exercise of any powers unde" },
+      { ref:"Section 205", heading:"Terms in State Executive Chapter",
+        plain:"This section provides definitions for key terms used throughout the state executive provisions of Chapter VI.",
+        realTalk:"Legal precision in constitutional definitions matters. How 'election,' 'member,' and other terms are defined determines how state executive provisions are interpreted and applied.",
+        official:"In this Part of this Chapter, unless the context otherwise requires:- (a) any reference to ex officio member shall be construed as a reference to a person who is a member by virtue of his holding or performing the functions of an office in the public service of a State; (b) office means an office in" },
+      { ref:"Section 206", heading:"States Have Their Own Civil Service",
+        plain:"There shall be a civil service for each State, headed by a Head of Service, to provide continuity in state administration.",
+        realTalk:"State civil servants serve your state government across administrations. When governors politicize the civil service — replacing professionals with political appointees — service delivery suffers.",
+        official:"There shall be for each State of the Federation a Civil Service." },
+      { ref:"Section 207", heading:"State Civil Service Commission Can Delegate",
+        plain:"The State Civil Service Commission may delegate appointment and disciplinary powers to officers within the state civil service.",
+        realTalk:"Delegated civil service management allows state ministries to handle their own staffing efficiently — but delegation doesn't eliminate the commission's oversight and accountability responsibilities.",
+        official:"Subject to the provisions of this Constitution, a State Civil Service Commission may, with the approval of the Governor and subject to such conditions as it may deem fit, delegate any of the powers conferred upon it by this Constitution to any of its members or to any officer in the civil service of" },
+      { ref:"Section 208", heading:"Governor Makes Key State Appointments",
+        plain:"The Governor appoints the Head of Service and Permanent Secretaries in the state, subject to State Civil Service Commission approval.",
+        realTalk:"Key state civil service appointments require commission approval — not just gubernatorial decree. Proper process in these appointments protects the professionalism of the state bureaucracy.",
+        official:"(1) Power to appoint persons to hold or act in the offices to which this section applies and to remove persons so appointed from any such office shall vest in the Governor of the State. (2) The offices to which this section applies are, namely – (a) Secretary to the Government of the State; (b) Head" },
+      { ref:"Section 209", heading:"State Officials Follow Code of Conduct",
+        plain:"Persons in the public service of a State must comply with the Code of Conduct Bureau requirements — the same integrity standards that apply to federal officials.",
+        realTalk:"State government workers — including commissioners, special advisers, and civil servants — are bound by the Code of Conduct. Corruption at state level is as constitutionally prohibited as at federal level.",
+        official:"A person in the public service of a State shall observe and conform to the Code of Conduct." },
+      { ref:"Section 210", heading:"State Pension Rights Are Also Protected",
+        plain:"Pension rights in the state public service are constitutionally protected — state governments cannot unilaterally withhold or reduce earned pensions.",
+        realTalk:"State pensioners have the same constitutional protection as federal pensioners. When state governments owe pension arrears and fail to pay, they are violating constitutional rights — and pensioners can seek redress.",
+        official:"(1) Subject to the provisions of subsection (2) of this section, the right of a person in the public service of a State to receive pension or gratuity shall be regulated by law. (2) Any benefit to which a person is entitled in accordance with or under such law as is referred to in subsection (1) of" },
+      { ref:"Section 211", heading:"State Attorneys-General Control State Prosecutions",
+        plain:"The Attorney-General of each State has the power to institute, take over, or discontinue criminal proceedings for state offences.",
+        realTalk:"State-level prosecutions are controlled by the State AG. Politically motivated prosecutions — or politically motivated non-prosecutions — are a real concern at state level and can be challenged.",
+        official:"(1) The Attorney General of a state shall have power (a) to institute and undertake criminal proceedings against any person before any court of law in Nigeria other than a court-martial in respect of any offence created by or under any law of the House of Assembly; (b) to take over and continue any" },
+      { ref:"Section 212", heading:"Governors Can Grant Pardons for State Offences",
+        plain:"The Governor may grant pardons, reprieves, or reduced sentences to persons convicted of state offences.",
+        realTalk:"Gubernatorial pardons for state crimes are real. When governors use this power to shield allies or political supporters convicted of offences, it represents abuse of a constitutional power.",
+        official:"(1) The Governor may - (a) Grant any person concerned with or convicted of any offence created by any law of a state a pardon, either free or subject to lawful conditions; (b) grant to any person a respite, of the execution of any punishment imposed on that person for such an offence; (c) substitute" },
+      { ref:"Section 213", heading:"Population Census is a Federal Matter",
+        plain:"The President shall, when directed by an Act of the National Assembly, cause a census of the population of Nigeria to be taken.",
+        realTalk:"Nigeria's census is a federal constitutional responsibility. Accurate census data affects constituency delineation, revenue allocation, and service planning. Political manipulation of census counts has lasting consequences.",
+        official:"(1) Any report of the National Population Commission containing the population census after every census shall be delivered to the President by the Chairman of the commission . (2) The President shall within a period of thirty days after receipts of the report lay copies of the report before the Cou" },
+      { ref:"Section 214", heading:"One National Police Force",
+        plain:"There shall be a single Nigeria Police Force for the entire Federation. No state or other entity may establish its own separate police force.",
+        realTalk:"Nigeria constitutionally has only one national police force. The debate about state police — policing your own community — requires a constitutional amendment. Amotekun and similar bodies exist in a constitutional grey area.",
+        official:"(1) There shall be a police force for Nigeria, which shall be known as the Nigeria Police Force, and subject to the provisions of this section no other police force shall be established for the Federation or any part thereof. (2) Subject to the provisions of this Constitution – (a) the Nigeria Polic" },
+      { ref:"Section 215", heading:"Inspector-General Commands the Police",
+        plain:"The Inspector-General of Police commands the Nigeria Police Force. The President may give the IGP general directions in maintaining public order but cannot give operational directions.",
+        realTalk:"The President can set broad policing policy but cannot direct specific police operations. Presidential orders to arrest specific individuals through the police are constitutionally questionable.",
+        official:"(1) There shall be – (a) an Inspector-General of Police who, subject to section 216(2) of this Constitution shall be appointed by the President on the advice of the Nigeria Police Council from among serving members of the Nigeria Police Force; (b) a Commissioner of Police for each state of the Feder" },
+      { ref:"Section 216", heading:"Inspector-General Can Delegate Powers",
+        plain:"The Inspector-General of Police may delegate policing powers to state commissioners of police for law enforcement within their states.",
+        realTalk:"State Commissioners of Police have delegated authority within their states. Governors cannot directly command the commissioner of police in their state — this is a constitutional boundary frequently tested.",
+        official:"(1) Subject to the provisions of this constitution, the Nigeria Police Council may, with the approval of the President and subject to such conditions as it may think fit, delegate any of the powers conferred upon it by this Constitution to any of its members or to the Inspector-General of Police or" },
+      { ref:"Section 217", heading:"Nigeria Has Armed Forces",
+        plain:"The Federation shall maintain an Army, Navy, and Air Force — the Armed Forces of the Federation — for the defence of Nigeria.",
+        realTalk:"Nigeria's military exists to defend the nation — not to govern it or back political actors. Military involvement in civilian politics is a direct violation of the spirit and letter of this constitutional provision.",
+        official:"(1) There shall be an armed forces for the Federation which shall consist of an army, a navy, an Air Force and such other branches of the armed forces of the Federation as may be established by an Act of the National Assembly. (2) The Federation shall, subject to an Act of the National Assembly made" },
+      { ref:"Section 218", heading:"President Commands the Military",
+        plain:"The President is the Supreme Commander of the Armed Forces of the Federation. Operational control is through the Chief of Defence Staff.",
+        realTalk:"Civilian control of the military is constitutionally mandated. The President — an elected civilian — commands Nigeria's forces. Military officials who take political positions undermine this constitutional order.",
+        official:"(1) The powers of the President as the Commissioner-in-Chief of the Armed Forces of the Federation shall include power to determine the operational use of the armed forces of the Federation. (2) The powers conferred on the President by subsection (1) of this section shall include power to appoint th" },
+      { ref:"Section 219", heading:"Armed Forces Must Reflect Federal Character",
+        plain:"A body shall be established to ensure that appointments in the armed forces reflect Nigeria's diversity — the federal character principle applies to the military.",
+        realTalk:"Military appointments must reflect Nigeria's diversity — no ethnic group should dominate. When appointments persistently favour one region or group, it violates the constitutional federal character principle.",
+        official:"The National Assembly shall – (a) in giving effect to the functions specified in section 217 of this Constitution; and (b) with respect to the powers exercisable by the President under section 218of this Constitution, by an Act, established a body which shall comprise such members as The National As" },
+      { ref:"Section 220", heading:"Compulsory Military Service Can Be Required",
+        plain:"An Act of the National Assembly may provide for compulsory military service for Nigerians in times of need.",
+        realTalk:"Conscription — mandatory military service — is constitutionally possible through parliamentary legislation. It has never been invoked but remains a constitutional option for national emergencies.",
+        official:"(1) The Federation shall establish and maintain adequate facilities for carrying into effect any Act of the National Assembly providing for compulsory military training or military service for citizens of Nigeria. (2) Until an Act of the National Assembly is made in that behalf the President may mai" },
+      { ref:"Section 221", heading:"Certain Groups Cannot Do Politics",
+        plain:"No association shall retain, organize, or train men for political strikes, coercion, or intimidation. Political violence organizations are unconstitutional.",
+        realTalk:"Political thuggery is constitutionally prohibited. Parties and politicians who organize, fund, or use youth groups for political violence and intimidation are violating the Constitution.",
+        official:"No association, other than a political party, shall canvass for votes for any candidate at any election or contribute to the funds of any political party or to the election expenses of any candidate at an election." },
+      { ref:"Section 222", heading:"Rules for Forming Political Parties",
+        plain:"No association shall operate as a political party unless registered by INEC, with members in all 36 states and a name that doesn't relate to any religion, ethnic group, or region.",
+        realTalk:"No ethnic or religious parties are constitutionally permitted. A party must be genuinely national — with membership across all states. Tribal or regional political movements cannot register as parties.",
+        official:"No association by whatever name called shall function as a party, unless - (a) the names and addresses of its national officers are registered with the Independent National Electoral Commission; (b) the membership of the association is open to every citizen of Nigeria irrespective of his place of or" },
+      { ref:"Section 223", heading:"Political Party Rules Must Be Democratic",
+        plain:"The constitution and rules of a political party must provide for democratic elections of its principal officers and members, at reasonable intervals.",
+        realTalk:"Party democracy is a constitutional requirement. Parties that impose candidates through imposition rather than primary elections are violating the Constitution — and the courts have recognized this.",
+        official:"(1) The constitution and rules of a political party shall- (a) provide for the periodical election on a democratic basis of the principal officers and members of the executive committee or other governing body of the political party; and (b) ensure that the members of the executive committee or othe" },
+      { ref:"Section 224", heading:"Parties Must Have a National Manifesto",
+        plain:"The aims and objects of a political party shall not breach constitutional provisions — they must be lawful, non-sectarian, and genuinely national.",
+        realTalk:"Party manifestos must be consistent with the Constitution. Parties that campaign on ethnic supremacy, religious dominance, or regional secession cannot legally exist as registered parties.",
+        official:"The programme as well as the aims and objects of a political party shall conform with the provisions of Chapter II of this Constitution." },
+      { ref:"Section 225", heading:"Party Finances Must Be Transparent",
+        plain:"Every political party shall give to INEC full disclosure of their assets, liabilities, and sources of funds, and must publish annual statements.",
+        realTalk:"Party funding transparency is constitutional. INEC has the right to demand party accounts. Secret donors and anonymous funding violate the constitutional framework for political financing.",
+        official:"(1) Every political party shall, at such times and in such manner as the independent National Electoral Commission and publish a statement of its assets and liabilities. (2) Every political party shall submit to the Independent National Electoral Commission a detailed annual statement and analysis o" },
+      { ref:"Section 226", heading:"Parties Must File Annual Financial Reports",
+        plain:"Every political party shall, not later than 6 months after each year, submit to INEC a statement of its assets and liabilities.",
+        realTalk:"Annual financial disclosure for parties is mandatory. Parties that fail to file or file inaccurate returns can be sanctioned by INEC. This accountability mechanism matters for clean democracy.",
+        official:"(1) The Independent National Electoral commission, shall in every year prepare and submit to the National Assembly a report on the accounts and balance sheet of every political party. (2) It shall be the duty of the commission, in preparing its report under this section, to carry out such investigat" },
+      { ref:"Section 227", heading:"No Private Armies Allowed",
+        plain:"No person or group shall establish or maintain a private army, militia, or armed force outside the constitutionally established armed forces.",
+        realTalk:"Private armed groups — whether political, ethnic, or religious — are unconstitutional. This covers everything from political militia to armed ethnic groups. They have no legal standing in Nigeria's constitutional order.",
+        official:"No association shall retain, organize, train or equip any person or group of persons for the purpose of enabling them to be employed for the use or display of physical force or coercion in promoting any political objective or interest or in such manner as to arouse reasonable apprehension that they" },
+      { ref:"Section 228", heading:"Parliament Regulates Political Parties",
+        plain:"The National Assembly may by law provide for additional requirements for political parties, including rules about funding, conduct, and registration.",
+        realTalk:"The Electoral Act is the main legislation governing parties under this section. When parties violate electoral laws, they're violating legislation built on this constitutional mandate.",
+        official:"The National Assembly may by law provide – (a) for the punishment of any person involved in the management or control of any political party found after due inquiry to have contravened any of the provisions of sections 221, 225(3) and 227 of this Constitution; (b) for the disqualification of any per" },
+      { ref:"Section 229", heading:"Party-Related Terms Defined",
+        plain:"This section provides definitions for terms used in the political parties provisions of Chapter VI — including what constitutes a 'political party' and 'public officer.'",
+        realTalk:"Constitutional definitions are precise and binding. How the Constitution defines 'political party' determines who must follow these party rules — understanding these terms helps in challenging party violations.",
+        official:"In this Part of this chapter, unless the context otherwise requires - \"association\" means any body of persons corporate or unincorporate who agree to act together for any commission purpose, and includes an association formed for any ethnic, social, cultural, occupational religious purpose; and \"pol" },
+    ],
+  },
+  {
+    id:7, chapter:"Chapter VII", title:"The Judiciary", icon:"⚖️", tag:"Courts",
+    sections:[
+      { ref:"Section 230", heading:"Nigeria Has a Supreme Court",
+        plain:"There shall be a Supreme Court of Nigeria consisting of the Chief Justice of Nigeria and up to 21 Justices, constituting the apex court of the land.",
+        realTalk:"The Supreme Court is the final word on Nigerian law. Its decisions on constitutional questions cannot be appealed further. The quality and integrity of Supreme Court justices is of national constitutional importance.",
+        official:"(1) There shall be a Supreme Court of Nigeria. (2) The Supreme Court of Nigeria shall consist of – (a) the Chief Justice of Nigeria; and (b) such number of Justices of the Supreme Court, not exceeding twenty-one, as may be prescribed by an Act of the National Assembly." },
+      { ref:"Section 231", heading:"Chief Justice Is Appointed Carefully",
+        plain:"The Chief Justice of Nigeria is appointed by the President on the recommendation of the National Judicial Council, subject to Senate confirmation.",
+        realTalk:"The top judge in Nigeria must be confirmed by the Senate. Presidential attempts to bypass the NJC process or Senate confirmation in appointing the CJN are unconstitutional.",
+        official:"(1) The appointment of a person to the office of Chief Justice of Nigeria shall be made by the President on the recommendation of the National Judicial Council subject to confirmation of such appointment by the Senate. (2) The appointment of a person to the office of a Justice of the Supreme Court s" },
+      { ref:"Section 232", heading:"Supreme Court Has Original Jurisdiction",
+        plain:"The Supreme Court has exclusive original jurisdiction to hear disputes between the Federation and States, or between States themselves.",
+        realTalk:"When states fight each other or fight the federal government, it goes straight to the Supreme Court. This protects against lower courts being used as political tools in federal-state or inter-state disputes.",
+        official:"(1) The Supreme Court shall, to the exclusion of any other court, have original jurisdiction in any dispute between the Federation and a state or between states if and in so far as that dispute involves any question (whether of law or fact) on which the existence or extent of a legal right depends." },
+      { ref:"Section 233", heading:"Supreme Court Hears Major Appeals",
+        plain:"The Supreme Court is the final court of appeal on questions of fundamental constitutional importance and other specified matters.",
+        realTalk:"Presidential election petitions ultimately reach the Supreme Court. This court's decisions on elections, rights, and constitutional interpretation are final and binding on the entire nation.",
+        official:"(1) The Supreme Court shall have jurisdiction, to the exclusion of any other court of law in Nigeria, to hear and determine appeals from the Court of Appeal. (2) An appeal shall lie form decisions of the Court of Appeal to the Supreme Court as of right in the following cases – (a) where the ground o" },
+      { ref:"Section 234", heading:"Supreme Court Quorum Rules",
+        plain:"The Supreme Court shall be duly constituted if it consists of not less than five Justices of the Supreme Court.",
+        realTalk:"Major constitutional matters need at least five Supreme Court justices. Full panels of all available justices sit for the most important constitutional cases — especially presidential election petitions.",
+        official:"For the purpose of exercising any jurisdiction conferred upon it by this Constitution or any Law, the Supreme Court shall be duly constituted if it consists of not less than five Justices of the Supreme Court: Provided that where the Supreme Court is sitting to consider  an appeal brought under 233(" },
+      { ref:"Section 235", heading:"Supreme Court Decisions Are Final",
+        plain:"Determinations of the Supreme Court shall be final and conclusive on questions of law — no higher court exists in Nigeria.",
+        realTalk:"Once the Supreme Court decides, that's it. No appeals, no reviews by another court. The only way to overturn a Supreme Court decision on a constitutional question is to amend the Constitution.",
+        official:"Without prejudice to the powers of the President or of the Governor of a state with respect to prerogative of mercy, no appeal shall lie to any other body or person from any determination of the Supreme Court." },
+      { ref:"Section 236", heading:"Supreme Court Sets Its Own Rules",
+        plain:"The Chief Justice may make rules for regulating the practice and procedure of the Supreme Court.",
+        realTalk:"Judicial procedures are set by the judiciary itself — not by the executive or legislature. This procedural independence is essential to judicial independence as a whole.",
+        official:"Subject to the provisions of any Act of the National Assembly, the Chief Justice of Nigeria may make rules for regulating the practise and procedure of the Supreme Court. B - The Court of Appeal" },
+      { ref:"Section 237", heading:"Nigeria Has a Court of Appeal",
+        plain:"There shall be a Court of Appeal consisting of a President of the Court of Appeal and at least 49 Justices, hearing appeals from Federal and State High Courts.",
+        realTalk:"The Court of Appeal is where most appeals go before reaching the Supreme Court. It sits in divisions across Nigeria — making justice more geographically accessible than a single apex court.",
+        official:"(1) There shall be a Court of Appeal. (2) The Court of Appeal shall consist of – (a) a President of the Court of Appeal; and (b) such number of Justices of the Court of Appeal, not less than forty-nine of which not less than three shall be learned I Islamic personal law, and not less than three shal" },
+      { ref:"Section 238", heading:"Court of Appeal Justices Are Appointed Carefully",
+        plain:"The President of the Court of Appeal and its Justices are appointed by the President on NJC recommendation, subject to Senate confirmation.",
+        realTalk:"Court of Appeal appointments follow the same careful process — NJC recommendation plus Senate confirmation. Political manipulation of these appointments corrupts the entire judicial hierarchy.",
+        official:"(1) The appointment of a person to the office of President of the Court of appeal shall be made by the President o the recommendation of the National Judicial Council subject to confirmation of such appointment by the senate. (2) The appointment of a person to the office of a Justice of the Court of" },
+      { ref:"Section 239", heading:"Court of Appeal's Original Jurisdiction",
+        plain:"The Court of Appeal has exclusive original jurisdiction to hear presidential and vice-presidential election petitions.",
+        realTalk:"If you're challenging a presidential election result, it starts at the Court of Appeal — not a lower court. This specialized jurisdiction ensures presidential election petitions are handled at an appropriately senior level.",
+        official:"(1) Subject to the provisions of this Constitution, the Court of Appeal shall, to the exclusion of any other court of Law in Nigeria, have original jurisdiction to hear and determine any question as to whether – (a) any person has been validity elected to the office of President or Vice-President un" },
+      { ref:"Section 240", heading:"Court of Appeal Hears Most Appeals",
+        plain:"The Court of Appeal has appellate jurisdiction over decisions of Federal High Courts, State High Courts, and Sharia and Customary Courts of Appeal.",
+        realTalk:"Most significant federal and state court decisions can be appealed to the Court of Appeal. This creates a consistent national standard in applying law across Nigeria's diverse court system.",
+        official:"Subject to the provisions of this Constitution, the Court of Appeal shall have jurisdiction to the exclusion of any other court of law in Nigeria, to hear and determine appeals from the Federal High Court, the High Court of the Federation Capital Territory, Abuja, High Court of a state, Sharia Court" },
+      { ref:"Section 241", heading:"Right to Appeal Certain Cases",
+        plain:"Appeals to the Court of Appeal from Federal High Courts or State High Courts are available as of right for certain matters, particularly where fundamental rights are concerned.",
+        realTalk:"You have an automatic right of appeal in fundamental rights cases — no permission needed. This ensures constitutional rights disputes always have access to higher courts for review.",
+        official:"(1) An appeal shall lie from decisions of the Federal High Court or a High Court to the Court of Appeal as of right in the following cases – (a) final decisions in any civil or criminal proceedings before the Federal High Court or a High Court or a High Court sitting at first instance; (b) where the" },
+      { ref:"Section 242", heading:"Some Appeals Need Permission",
+        plain:"For appeals beyond those available as of right, leave of the Court of Appeal or the lower court is required.",
+        realTalk:"Not every case automatically goes to higher courts — some need the court's permission (leave). This manages caseloads while ensuring the most important cases can always be heard.",
+        official:"(1) Subject to the provisions of section 241 of this Constitution, an appeal shall lie from decisions of the Federal High Court or a High Court to the Court of Appeal with leave of the Federal High Court or that Court or the Court Appeal (2) The Court of Appeal may dispose of any application for lea" },
+      { ref:"Section 243", heading:"Gubernatorial Election Appeals Go Here",
+        plain:"The Court of Appeal has jurisdiction over all appeals from election tribunals, including gubernatorial election petitions.",
+        realTalk:"If a gubernatorial election petition goes against you at the tribunal, you appeal to the Court of Appeal. This court has made historic decisions overturning rigged governorship elections.",
+        official:"Any right of appeal to the Court of Appeal from the decisions of the Federal High Court or a High Court conferred by this Constitution shall be – (a) exercisable in the case of civil proceedings at the instance of a party thereto, or with the leave of the Federal High Court or High Court or the Cour" },
+      { ref:"Section 244", heading:"Sharia Court Appeals Are Handled",
+        plain:"The Court of Appeal has jurisdiction to hear appeals from the Sharia Court of Appeal in states where it exists.",
+        realTalk:"Northern states with Sharia courts have a constitutionally defined appeals path to the Court of Appeal. This ensures national judicial oversight of all judicial decisions regardless of their religious context.",
+        official:"(1) An appeal shall lie from decisions of a Sharia Court of Appeal to the Court of Appeal as of right in any civil proceedings before the Sharia Court of Appeal with respect to any question of Islamic personal law which the Sharia Court of Appeal is competent to decide. (2) Any right of appeal to th" },
+      { ref:"Section 245", heading:"Customary Court Appeals Are Handled",
+        plain:"The Court of Appeal hears appeals from Customary Courts of Appeal in states that have them.",
+        realTalk:"Decisions of customary courts affecting inheritance, land, and family matters can ultimately reach the Court of Appeal. This constitutional oversight ensures customary courts don't violate fundamental rights.",
+        official:"(1) An appeal shall lie from decisions of a customary Court of Appeal to the Court of Appeal as of right in any civil proceedings before the customary Court of Appeal with respect to any question of Customary law and such other matters as may be prescribed by an Act of the National Assembly. (2) Any" },
+      { ref:"Section 246", heading:"Code of Conduct Tribunal Appeals",
+        plain:"Appeals from the Code of Conduct Tribunal — which handles corruption charges against public officials — go to the Court of Appeal.",
+        realTalk:"When public officials are found guilty of misconduct by the Code of Conduct Tribunal, they can appeal to the Court of Appeal. This tribunal is a constitutional anti-corruption mechanism.",
+        official:"(1) An appeal to the Court of Appeal shall lie as of right from – (a) decisions of the Code of Conduct Tribunal established in the Fifth Schedule to this Constitution; (b) decisions of the National Assembly Election Tribunals and Governorship and Legislative Houses Election Tribunals on any question" },
+      { ref:"Section 247", heading:"Court of Appeal Composition",
+        plain:"The Court of Appeal shall be duly constituted if it consists of not less than three Justices of the Court of Appeal.",
+        realTalk:"At least three justices must sit for Court of Appeal decisions. Presidential election petitions typically use a full panel of five — the most important cases deserve the most judicial attention.",
+        official:"(1) For the purpose of exercising any jurisdiction conferred upon it by this Constitution or any other law, the Court of Appeal shall be duly constituted if it consists of not less than three Justices of the Court of Appeal and in the case of appeals from – (a) a sharia Court of Appeal if it consist" },
+      { ref:"Section 248", heading:"Court of Appeal Has Its Own Rules",
+        plain:"The President of the Court of Appeal may make rules regulating practice and procedure for the Court.",
+        realTalk:"The Court of Appeal's internal procedures are judicially determined, not politically dictated. Court rules govern how your appeal will be heard — know your rights in the process.",
+        official:"Subject to the provisions of any Act of the National Assembly, the president of the Court of Appeal may make rules for regulating the practise and procedure of the Court of Appeal. C - The Federal High Court" },
+      { ref:"Section 249", heading:"Nigeria Has a Federal High Court",
+        plain:"There shall be a Federal High Court with jurisdiction over federal matters — including revenue, banking, admiralty, and constitutional questions.",
+        realTalk:"The Federal High Court handles key federal matters including tax disputes, banking regulation, election issues, and cases involving federal government agencies. Knowing which court has jurisdiction is critical.",
+        official:"(1) There shall be a Federal High Court. (2) The Federal High Court shall consist of - (a) a Chief Judge of the Federal High Court; and (b) such number of Judges of the Federal High Court as may be prescribed by the an Act of the National Assembly." },
+      { ref:"Section 250", heading:"Federal High Court Judges Are Appointed Properly",
+        plain:"The Chief Judge and Judges of the Federal High Court are appointed by the President on NJC recommendation, subject to Senate confirmation.",
+        realTalk:"Federal High Court appointments follow the same integrity process. The NJC recommendation and Senate confirmation create two checkpoints against purely political judicial appointments.",
+        official:"(1) The appointment of a person to the office of Chief Judge of the Federal High Court shall be made by the President on the recommendation of the National Judicial Council, subject to confirmation of such appointment by the Senate. (2) The appointment of a person to the office of a Judge of the Fed" },
+      { ref:"Section 251", heading:"Federal High Court's Jurisdiction",
+        plain:"The Federal High Court has exclusive jurisdiction over revenue matters, admiralty, banking, and matters involving federal government or its agencies.",
+        realTalk:"Tax disputes with FIRS, banking regulation cases, and matters involving NNPC, CBN, or other federal agencies go to the Federal High Court. Know this when choosing where to file your case.",
+        official:"(1) Notwithstanding anything to the contained in this Constitution and in addition to such other jurisdiction as may be conferred upon it by an Act of the National Assembly, the Federal High Court shall have and exercise jurisdiction to the exclusion of any other court in civil causes and matters –" },
+      { ref:"Section 252", heading:"Federal High Court Has Broad Powers",
+        plain:"The Federal High Court may exercise its jurisdiction in civil or criminal matters, and may use any remedies that justice requires.",
+        realTalk:"Federal court power is broad and flexible. Courts can grant injunctions, make declarations, award damages — whatever justice requires in the circumstances. Courts are empowered to deliver real remedies.",
+        official:"(1)For the purpose of exercising any jurisdiction conferred upon it by this Constitution or as may be conferred by an Act of the National Assembly, the Federal High Court shall have all the powers of the High Court of a state. (2) Notwithstanding subsection (1) of this section, the National Assembly" },
+      { ref:"Section 253", heading:"Federal High Court Quorum",
+        plain:"The Federal High Court is duly constituted when presided over by a single judge — unlike appellate courts which require panels.",
+        realTalk:"A single judge handles Federal High Court matters. This efficiency allows the court to process the large volume of federal cases while maintaining judicial independence for each case.",
+        official:"The Federal High Court shall be duly constituted if it consists of at least one Judge of that Court." },
+      { ref:"Section 254", heading:"Federal High Court Procedure",
+        plain:"The Chief Judge of the Federal High Court may make rules of court governing its practice and procedure.",
+        realTalk:"Federal High Court procedures are set by the judiciary. Understanding court rules in your specific type of case determines how to effectively use this court to protect your rights.",
+        official:"Subject to the provisions of any Act of the National Assembly, the Chief Judge of the Federal High Court may make rules for regulating the practise and procedure of the Federal High Court. D - The High Court of the Federal Capital Territory, Abuja" },
+      { ref:"Section 255", heading:"FCT Has Its Own High Court",
+        plain:"There shall be a High Court for the Federal Capital Territory, Abuja — separate from state high courts.",
+        realTalk:"Abuja residents are not without a state high court just because they live in the FCT. The FCT High Court handles the same matters as state high courts for FCT residents.",
+        official:"(1)There shall be a High Court of the Federal Capital Territory, Abuja. (2) The High Court of the Federal Capital Territory, Abuja shall consist of – (a) a Chief Judge of the High Court of the Federal Capital Territory, Abuja; and (b) such number of Judges of the High Court as may be prescribed by a" },
+      { ref:"Section 256", heading:"FCT High Court Judges Are Appointed",
+        plain:"The Chief Judge and Judges of the FCT High Court are appointed by the President on NJC recommendation, subject to Senate confirmation.",
+        realTalk:"FCT High Court appointments follow the same NJC + Senate process. Abuja residents deserve the same judicial quality and independence standards as any state in Nigeria.",
+        official:"(1) The appointment of a person to the office of Chief Judge of the High Court of the Federal Capital Territory, Abuja shall be made by the President on the recommendation of the National Judicial council, subject to confirmation of such appointment by the senate. (2) The appointment of a person to" },
+      { ref:"Section 257", heading:"FCT High Court's Jurisdiction",
+        plain:"The FCT High Court has the same jurisdiction as a State High Court — handling civil, criminal, and constitutional matters for FCT residents.",
+        realTalk:"If you live or do business in Abuja and have a legal dispute, the FCT High Court is your first port of call for most matters — the equivalent of a state high court anywhere else.",
+        official:"(1) Subject to the provisions of section 251 and any other provisions of this Constitution and in addition to such other jurisdiction as may be conferred upon it by law, the High Court of the Federal Capital Territory, Abuja shall have jurisdiction to hear and determine any civil proceedings in whic" },
+      { ref:"Section 258", heading:"FCT High Court Quorum",
+        plain:"The FCT High Court is duly constituted when a single judge presides — consistent with other trial courts.",
+        realTalk:"Single-judge trials ensure efficient case management in the FCT. The quality and independence of these judges directly affects justice for Abuja residents and the many federal institutions based there.",
+        official:"The High Court of the Federal Capital Territory, Abuja shall be duly constituted if it consists of at least one Judge of that court." },
+      { ref:"Section 259", heading:"FCT High Court Procedure",
+        plain:"The Chief Judge of the FCT High Court makes rules governing court practice and procedure.",
+        realTalk:"FCT court procedures matter enormously for litigants in Abuja — know the rules of the specific court you're approaching to ensure your case is properly filed and heard.",
+        official:"Subject to the provisions of any Act of the National Assembly, the Chief Judge of the High Court of the Federal Capital Territory, Abuja may make rules for regulating the practise and procedure of the High Court of the Federal Capital Territory, Abuja. E - The Sharia Court of Appeal of the Federal C" },
+      { ref:"Section 260", heading:"FCT Has a Sharia Court of Appeal",
+        plain:"There shall be a Sharia Court of Appeal for the FCT to hear appeals from customary Islamic law decisions made in lower courts.",
+        realTalk:"Muslim residents of the FCT have access to Sharia appellate jurisdiction within the constitutional framework. This court applies Islamic personal law in the constitutional context.",
+        official:"(1) There shall be a Sharia Court of Appeal of the Federal Capital Territory, Abuja. (2) The Sharia Court of Appeal of the Federal Capital Territory, Abuja shall consist of - (a) a Grand Kadi of the Sharia Court of Appeal. and (b) such number of Kadis of the Sharia Court of Appeal as may be prescrib" },
+      { ref:"Section 261", heading:"Grand Kadi of FCT Sharia Court Is Appointed",
+        plain:"The Grand Kadi and Kadis of the FCT Sharia Court of Appeal are appointed by the President on NJC recommendation, subject to Senate confirmation.",
+        realTalk:"Even religious court appointments in the FCT follow the constitutional appointment process. This ensures these courts meet constitutional standards of judicial independence.",
+        official:"(1) The appointment of a person to the office of the Grand Kadi of the Sharia Court of Appeal of the Federal Capital Territory, Abuja shall be made by the President on the recommendation of the National Judicial Council, subject to confirmation of such appointment by the Senate. (2) The appointment" },
+      { ref:"Section 262", heading:"FCT Sharia Court's Jurisdiction",
+        plain:"The FCT Sharia Court of Appeal has jurisdiction in Islamic personal law matters — including marriage, inheritance, and custody for Muslim parties.",
+        realTalk:"For Muslim FCT residents, Sharia appellate courts provide a constitutional avenue for personal law matters. These courts operate within and subject to the broader Nigerian constitutional framework.",
+        official:"(1) The Sharia Court of Appeal shall, in addition to such other jurisdiction as may be conferred upon it by an Act of the National Assembly, exercise such appellate and supervisory jurisdiction in civil proceedings involving questions of Islamic personal law. (2) For the purpose of subsection (1) of" },
+      { ref:"Section 263", heading:"FCT Sharia Court Composition",
+        plain:"The FCT Sharia Court of Appeal is duly constituted when presided over by the Grand Kadi alone or with at least one other Kadi.",
+        realTalk:"The Sharia Court operates with its own quorum rules — ensuring proper judicial consideration of Islamic law matters within its constitutional jurisdiction.",
+        official:"For the purpose of exercising any jurisdiction conferred upon it by this Constitution or any Act of the National Assembly, the Sharia Court of Appeal shall be duly constituted if it consists of at least three Kadis of that Court." },
+      { ref:"Section 264", heading:"FCT Sharia Court Procedure",
+        plain:"The Grand Kadi may make rules regulating the practice and procedure of the FCT Sharia Court of Appeal.",
+        realTalk:"Sharia court procedures are set internally, consistent with Islamic law principles and within the constitutional framework. These rules determine how personal law cases are heard and decided.",
+        official:"Subject to the provisions of any Act of the National Assembly, the Grand Kadi of the Sharia Court of Appeal of the Federal Capital Territory, Abuja may make rules for regulating the practise and procedure of the Sharia Court of Appeal of the Federal Capital Territory, Abuja. F - The Customary Court" },
+      { ref:"Section 265", heading:"FCT Has a Customary Court of Appeal",
+        plain:"There shall be a Customary Court of Appeal for the FCT to hear appeals from customary law decisions in lower courts.",
+        realTalk:"Non-Muslim FCT residents who have customary law disputes have their own appellate court. This ensures equitable access to customary law adjudication in the federal capital.",
+        official:"(1) There shall be a Customary Court of Appeal of the Federal Capital Territory, Abuja. (2) The Customary Court of Appeal of the Federal Capital Territory, Abuja shall consist of - (a) a President of the Customary Court of Appeal; and (b) such number of Judges of the Customary Court of Appeal as may" },
+      { ref:"Section 266", heading:"FCT Customary Court Judges Are Appointed",
+        plain:"The President and Judges of the FCT Customary Court of Appeal are appointed by the President on NJC recommendation, subject to Senate confirmation.",
+        realTalk:"FCT Customary Court appointments follow the full constitutional process — ensuring these courts maintain the independence needed to fairly decide customary law disputes.",
+        official:"(1) The appointment of a person to the office of the President of the Customary Court of Appeal of the Federal Capital Territory, Abuja shall be made by the President on the recommendation of the National Judicial Council, subject to the confirmation of such appointment by the Senate. (2) The appoin" },
+      { ref:"Section 267", heading:"FCT Customary Court's Jurisdiction",
+        plain:"The FCT Customary Court of Appeal has jurisdiction in matters of customary law — including inheritance, land tenure, and marriage under customary law.",
+        realTalk:"FCT residents whose matters are governed by customary law — particularly those from communities around the Abuja area — have constitutional access to customary adjudication in their capital.",
+        official:"The Customary Court of Appeal of the Federal Capital Territory, Abuja shall, in addition to such other jurisdiction as may be conferred upon by an Act of The National Assembly Exercise such appellate and supervisory jurisdiction in civil proceedings involving questions of Customary law." },
+      { ref:"Section 268", heading:"FCT Customary Court Composition",
+        plain:"The FCT Customary Court of Appeal is duly constituted when presided over by the President of the court with at least one other judge.",
+        realTalk:"Customary court decisions require a properly constituted panel. This ensures deliberation on customary law matters — particularly those affecting property, marriage, and inheritance.",
+        official:"For the purpose of exercising any jurisdiction conferred upon it by this Constitution or any Act of the National Assembly, the Customary Court of Appeal shall be duly constituted if it consists of at least three Judges of that Court." },
+      { ref:"Section 269", heading:"FCT Customary Court Procedure",
+        plain:"The President of the FCT Customary Court of Appeal may make rules governing its practice and procedure.",
+        realTalk:"Customary court procedures respect both constitutional requirements and the nature of customary law. Knowing the procedural rules helps litigants navigate these courts effectively.",
+        official:"Subject to the provisions of any Act of the National Assembly, the President of the Customary Court of Appeal of the Federal Capital Territory, Abuja, may make rules for regulating the practise and procedure of the Customary Court of Appeal of the Federal Capital Territory, Abuja. Part II State Cour" },
+    ],
+  },
+];
+const QUICK_FACTS = [
+  { label:"Enacted",             value:"May 29, 1999", icon:"📅" },
+  { label:"Fundamental Rights",  value:"Chapter IV",   icon:"⚖️" },
+  { label:"States",              value:"36 + FCT",     icon:"🗺️" },
+  { label:"Presidential Limit",  value:"2 × 4 yrs",   icon:"🏛️" },
+];
+
+/* ════════════════════════════════════════
+   HISTORY DATA
+════════════════════════════════════════ */
+const ERAS = [
+  { id:"precolonial", label:"Pre-Colonial",  short:"Ancient",    color:"#8B4513", lightColor:"#fdf0e0", dotColor:"#c47c35" },
+  { id:"colonial",    label:"Colonial Era",  short:"Colonial",   color:"#5c1a1a", lightColor:"#fdeaea", dotColor:"#b84040" },
+  { id:"republic1",   label:"1st Republic",  short:"Independ.",  color:"#1a3d5c", lightColor:"#e8f0fd", dotColor:"#3a72b8" },
+  { id:"military",    label:"Military Rule", short:"Military",   color:"#3d3d1a", lightColor:"#fdfae8", dotColor:"#9a8a20" },
+  { id:"democracy",   label:"Democracy",     short:"Today",      color:C.gDark,   lightColor:C.gLight,  dotColor:C.gBright },
+];
+
+const HISTORY_EVENTS = [
+  /* ── PRE-COLONIAL ─────────────────────────────── */
+  {
+    era:"precolonial", year:"500 BC – 200 AD",
+    title:"The Nok Civilisation",
+    summary:"One of Africa's earliest known civilisations flourishes in central Nigeria.",
+    whatHappened:"The Nok people of the Jos Plateau created some of the oldest known terracotta sculptures in sub-Saharan Africa. They were among the first in Africa to smelt iron, which gave them advanced tools and weapons. Their art and technology influenced cultures across the region for centuries.",
+    whyItMatters:"The Nok civilisation proves that Nigeria's people were building complex, advanced societies thousands of years before any European arrived. Nigerian civilisation is ancient.",
+    keyFigures:"The Nok people (named after the village of Nok in Kaduna State where their artefacts were first discovered in 1928).",
+    icon:"🏺",
+  },
+  {
+    era:"precolonial", year:"900 – 1900 AD",
+    title:"The Kanem-Bornu Empire",
+    summary:"One of Africa's longest-lasting empires thrives around Lake Chad for over a thousand years.",
+    whatHappened:"The Kanem-Bornu Empire, centred around Lake Chad, was one of the most powerful and enduring states in African history. At its peak it controlled trade routes connecting North Africa to sub-Saharan Africa. It had a sophisticated government, a standing army, and diplomatic ties with North African states and the Ottoman Empire.",
+    whyItMatters:"Kanem-Bornu shows that the peoples of what is now northeastern Nigeria built one of the world's longest-lasting empires entirely on their own terms — through trade, diplomacy, and statecraft.",
+    keyFigures:"Mai Idris Alooma (reigned 1571–1603) — reformer, military genius, and one of the empire's greatest leaders.",
+    icon:"👑",
+  },
+  {
+    era:"precolonial", year:"1400 – 1836",
+    title:"The Oyo Empire",
+    summary:"The mighty Yoruba empire becomes the dominant power in West Africa.",
+    whatHappened:"The Oyo Empire rose to become the largest and most powerful Yoruba state, dominating much of what is now southwest Nigeria and parts of Benin and Togo. Its military power was built on a formidable cavalry force. Oyo ran a sophisticated constitutional system — the Alafin (king) was kept in check by the Oyo Mesi council, showing early concepts of checks and balances.",
+    whyItMatters:"Oyo's system of governance — where even the king could be removed by a council — is a pre-colonial example of constitutional checks on power, centuries before modern democracy.",
+    keyFigures:"Sango (the legendary warrior-king who became the god of thunder), Abiodun (Alafin at Oyo's peak), Afonja (general whose rebellion began its decline).",
+    icon:"⚔️",
+  },
+  {
+    era:"precolonial", year:"1180 – Present",
+    title:"The Benin Kingdom",
+    summary:"The Kingdom of Benin builds one of the world's greatest artistic civilisations.",
+    whatHappened:"The Benin Kingdom in present-day Edo State developed one of Africa's most sophisticated civilisations. Its bronze casting, ivory carving, and coral bead work were — and remain — among the finest artistic achievements in human history. Benin City was described by early European visitors as a great, well-organised city with wide streets and a disciplined administration.",
+    whyItMatters:"The famous Benin Bronzes, many of which were stolen by British forces in 1897 and are still held in museums around the world, represent the cultural wealth Nigeria lost to colonialism. Their return remains a live global conversation.",
+    keyFigures:"Oba Ewuare the Great (15th century founder of the empire's golden age), Oba Overamwen (the last independent Oba before British conquest).",
+    icon:"🥁",
+  },
+  {
+    era:"precolonial", year:"1000s – 1800s",
+    title:"The Hausa City-States",
+    summary:"Seven major Hausa states build a thriving network of trade, scholarship, and governance.",
+    whatHappened:"The Hausa Bakwai — the seven legitimate Hausa city-states of Biram, Daura, Gobir, Kano, Katsina, Rano, and Zazzau (Zaria) — became major centres of commerce, Islamic scholarship, and craftsmanship. Kano and Katsina were among the most important trading cities in the whole of Africa. The Hausa language became a major trade lingua franca across West Africa.",
+    whyItMatters:"The Hausa city-states demonstrate that the north of Nigeria had urban, literate, and commercially sophisticated societies long before European contact.",
+    keyFigures:"Queen Amina of Zaria (c. 1533–1610) — a warrior queen who expanded Zazzau's territory and built the famous Amina walls around Hausa cities.",
+    icon:"🏙️",
+  },
+  {
+    era:"precolonial", year:"1804 – 1903",
+    title:"The Sokoto Caliphate",
+    summary:"A revolutionary Islamic jihad creates the largest empire in 19th-century Africa.",
+    whatHappened:"Usman Dan Fodio, a Fulani Islamic scholar, launched a jihad against the Hausa rulers he accused of corrupt and un-Islamic governance. By 1808, his forces had conquered most of the Hausa states and built the Sokoto Caliphate — a confederation of emirates stretching across northern Nigeria. At its peak, it was the largest state in Africa and one of the largest in the world.",
+    whyItMatters:"The Sokoto Caliphate's structure — where emirs governed in the name of the Sultan of Sokoto — shaped the entire north of Nigeria. Its legacy is still felt in the emirate system, Islamic law debates, and northern politics today.",
+    keyFigures:"Usman Dan Fodio (founder), Sultan Muhammad Bello (his son and first Sultan of Sokoto), Emir Abdullah (his brother).",
+    icon:"📿",
+  },
+
+  /* ── COLONIAL ─────────────────────────────────── */
+  {
+    era:"colonial", year:"1400s – 1800s",
+    title:"The Transatlantic Slave Trade",
+    summary:"Millions of Nigerians are enslaved and shipped across the Atlantic, devastating entire societies.",
+    whatHappened:"The transatlantic slave trade had a catastrophic impact on what is now Nigeria. The Bight of Benin and the Bight of Biafra — named 'the slave coast' — were among the most active slave-trading regions in Africa. It is estimated that between 3.5 and 5 million people were taken from this region alone. The trade fuelled wars between Nigerian kingdoms, destroyed populations, and warped economies for generations.",
+    whyItMatters:"The slave trade is not just history — its legacy of disrupted communities, distorted economies, and cultural trauma shaped the societies that eventually became Nigeria. It is part of every Nigerian's ancestral story.",
+    keyFigures:"Olaudah Equiano (c.1745–1797) — an Igbo man enslaved as a child who later purchased his freedom and wrote one of history's most powerful anti-slavery memoirs.",
+    icon:"⛓️",
+  },
+  {
+    era:"colonial", year:"1861",
+    title:"Britain Annexes Lagos",
+    summary:"The British seize Lagos, marking the formal beginning of colonial rule in Nigeria.",
+    whatHappened:"After years of pressure and gunboat diplomacy, the British forced Oba Dosunmu of Lagos to sign a treaty ceding Lagos to the British Crown. Lagos was then declared a British colony — the first piece of Nigerian territory officially under British rule. Britain justified the annexation as a move against slave trading, but its primary interest was commerce and control of West African trade routes.",
+    whyItMatters:"The annexation of Lagos was the first domino. Within 50 years, Britain would claim the entire territory that became Nigeria. Everything that followed — the amalgamation, independence, the military coups — begins here.",
+    keyFigures:"Oba Dosunmu (the Oba forced to sign the treaty), Consul Benjamin Campbell (the British official who orchestrated the annexation).",
+    icon:"🚢",
+  },
+  {
+    era:"colonial", year:"1886 – 1900",
+    title:"The Royal Niger Company",
+    summary:"A private British trading company is given authority to rule millions of Nigerians.",
+    whatHappened:"The United Africa Company, later renamed the Royal Niger Company, was granted a royal charter by the British government to administer and trade in the Niger Delta and the interior. The company effectively governed large parts of Nigeria — collecting taxes, running courts, and commanding its own armed forces — all in pursuit of profit. It violently suppressed any resistance.",
+    whyItMatters:"Nigeria was literally incorporated as a business operation. The idea that the territory of Nigeria existed first as a commercial enterprise before it was a nation shapes how its resources — especially oil — have been managed ever since.",
+    keyFigures:"Sir George Goldie (founder of the Royal Niger Company), Lord Lugard (first used military force on behalf of the company before becoming governor).",
+    icon:"🏴",
+  },
+  {
+    era:"colonial", year:"January 1, 1914",
+    title:"The Amalgamation",
+    summary:"Britain merges the Northern and Southern Protectorates into one country: Nigeria.",
+    whatHappened:"On January 1, 1914, British Governor-General Frederick Lugard amalgamated the Colony and Protectorate of Southern Nigeria with the Protectorate of Northern Nigeria into a single administrative unit called the Colony and Protectorate of Nigeria. The name 'Nigeria' had been coined by journalist Flora Shaw (later Lady Lugard) in 1897. The two regions had entirely different cultures, religions, legal systems, and governance structures.",
+    whyItMatters:"The amalgamation of 1914 is the founding act of Nigeria as a single political entity. Many of Nigeria's deepest tensions — religious, ethnic, regional — come directly from the forced union of populations that had never been a single state. The 'mistake of 1914' debate continues to this day.",
+    keyFigures:"Lord Frederick Lugard (British Governor-General), Flora Shaw (coined the name 'Nigeria').",
+    icon:"🗺️",
+  },
+  {
+    era:"colonial", year:"1923 – 1957",
+    title:"The Rise of Nigerian Nationalism",
+    summary:"Nigerians begin organising to demand self-rule and end colonial domination.",
+    whatHappened:"The first major Nigerian political party — the Nigerian National Democratic Party (NNDP) — was founded by Herbert Macaulay in 1923. The National Council of Nigeria and the Cameroons (NCNC), led by Nnamdi Azikiwe, was formed in 1944. The Action Group (AG), led by Obafemi Awolowo, emerged in 1951. In the north, Ahmadu Bello founded the Northern People's Congress (NPC) in 1949. These movements, along with newspapers and civic organisations, built momentum for independence.",
+    whyItMatters:"Nigerian independence was not handed over — it was demanded, organised, and won by Nigerians who sacrificed careers and freedom to challenge British rule. Understanding this is understanding where civic power comes from.",
+    keyFigures:"Herbert Macaulay (father of Nigerian nationalism), Nnamdi Azikiwe (Zik of Africa), Obafemi Awolowo, Ahmadu Bello, Margaret Ekpo (women's rights activist and nationalist).",
+    icon:"✊",
+  },
+
+  /* ── 1ST REPUBLIC ─────────────────────────────── */
+  {
+    era:"republic1", year:"October 1, 1960",
+    title:"Independence Day",
+    summary:"Nigeria gains independence from Britain after 99 years of colonial rule.",
+    whatHappened:"At midnight on October 1, 1960, the Union Jack was lowered and the green-white-green Nigerian flag was raised for the first time. Nigeria became an independent nation within the British Commonwealth. Sir Abubakar Tafawa Balewa became the first Prime Minister, and Nigeria adopted a Westminster-style parliamentary constitution. The world's most populous Black nation was born.",
+    whyItMatters:"October 1 is Nigeria's Independence Day — celebrated annually. Understanding what was sacrificed and what was gained on that day is essential to understanding what Nigeria is supposed to be.",
+    keyFigures:"Sir Abubakar Tafawa Balewa (first Prime Minister), Dr. Nnamdi Azikiwe (became first President in 1963), Princess Alexandra (represented the Queen at independence).",
+    icon:"🇳🇬",
+  },
+  {
+    era:"republic1", year:"1960 – 1966",
+    title:"The First Republic",
+    summary:"Nigeria's first attempt at democratic governance — a parliamentary system built on shaky foundations.",
+    whatHappened:"The First Republic was governed by a coalition of the Northern People's Congress (NPC) and the NCNC. The federation had three powerful regions — North, East, and West — each with its own government, budget, and strong identity. Political competition quickly became intensely ethnic and regional. The 1964 federal elections were marred by violence and rigging. The 1965 Western Region elections descended into crisis, with widespread thuggery and the region declared ungovernable.",
+    whyItMatters:"The First Republic's failure wasn't inevitable. It showed that democratic institutions without strong civic trust and cross-ethnic coalitions are fragile. The lessons apply just as much today.",
+    keyFigures:"Tafawa Balewa (PM), Nnamdi Azikiwe (President), Obafemi Awolowo (jailed opposition leader), Ahmadu Bello (Premier of the North).",
+    icon:"🗳️",
+  },
+  {
+    era:"republic1", year:"January 15, 1966",
+    title:"The First Military Coup",
+    summary:"A group of young military officers overthrows the civilian government — and changes Nigeria forever.",
+    whatHappened:"On January 15, 1966, a group of army majors — mostly Igbo — staged Nigeria's first military coup. Prime Minister Tafawa Balewa, Premier Ahmadu Bello, and Premier Samuel Akintola of the West were assassinated. General J.T.U. Aguiyi-Ironsi, an Igbo army commander, assumed power. The coup was widely welcomed in the South, where it was seen as a response to corrupt elections. In the North, it was viewed as an Igbo plot to dominate Nigeria.",
+    whyItMatters:"The January 1966 coup was the moment Nigeria's democratic experiment collapsed. It opened a cycle of military interventions that would last — with one interruption — until 1999. The trauma of that cycle is still written into Nigeria's politics.",
+    keyFigures:"Maj. Chukwuma Kaduna Nzeogwu (led the coup), Gen. J.T.U. Aguiyi-Ironsi (assumed power), Tafawa Balewa (assassinated).",
+    icon:"🪖",
+  },
+
+  /* ── MILITARY ─────────────────────────────────── */
+  {
+    era:"military", year:"May – July 1966",
+    title:"Counter-Coup & Northern Massacres",
+    summary:"Northern soldiers overthrow Ironsi; thousands of Igbo are killed in the North.",
+    whatHappened:"In July 1966, Northern army officers staged a counter-coup, killing Ironsi and seizing power. Lt. Col. Yakubu Gowon became Head of State. Around the same time, anti-Igbo pogroms broke out in the North — thousands of Igbo living in the North were killed and over a million fled back to the Eastern Region. These events would directly lead to the Civil War.",
+    whyItMatters:"The 1966 killings and counter-coup created a crisis of trust between ethnic groups that has never been fully resolved. Understanding this is key to understanding why Nigeria's unity is constantly negotiated.",
+    keyFigures:"Gen. Yakubu Gowon (became Head of State), Lt. Col. Odumegwu Ojukwu (Eastern Region military governor who would declare Biafra).",
+    icon:"🔴",
+  },
+  {
+    era:"military", year:"1967 – 1970",
+    title:"The Nigerian Civil War (Biafra)",
+    summary:"The Eastern Region declares independence as Biafra. Three years of devastating war follow.",
+    whatHappened:"On May 30, 1967, Lt. Col. Odumegwu Ojukwu declared the independent Republic of Biafra. The Nigerian federal government, led by Gowon, immediately launched a military campaign to reunite the country. The war lasted three years. Biafra was systematically blockaded; the resulting famine — particularly affecting children — killed between 500,000 and 2 million people, mostly civilians. On January 15, 1970, Biafra surrendered. Gowon famously declared: 'No victor, no vanquished.'",
+    whyItMatters:"The Civil War is the defining trauma of Nigerian national history. It established that Nigeria's unity is non-negotiable under the constitution — but also left deep wounds around how minority rights and self-determination are handled. Over 50 years later, secessionist movements still cite Biafra.",
+    keyFigures:"Odumegwu Ojukwu (Biafran leader), Yakubu Gowon (federal commander), Emeka Anyaoku (Biafran diplomat, later Commonwealth Secretary-General).",
+    icon:"🕊️",
+  },
+  {
+    era:"military", year:"1975 – 1979",
+    title:"Murtala, Obasanjo & Transition",
+    summary:"A reforming general is assassinated; his deputy peacefully hands power back to civilians.",
+    whatHappened:"Gen. Murtala Mohammed seized power in 1975 with widespread popular support. He launched anti-corruption purges, removed thousands of corrupt civil servants, and accelerated the transition to civilian rule. In February 1976, he was assassinated in a failed coup. His deputy, Gen. Olusegun Obasanjo, assumed power and continued the transition plan. In 1979, Obasanjo handed power to the elected civilian government of Shehu Shagari — the only such peaceful transfer by a Nigerian military leader at the time.",
+    whyItMatters:"Murtala Mohammed remains one of Nigeria's most beloved leaders — proof that Nigerians respond to decisive, anti-corruption leadership. Obasanjo's handover in 1979 showed that military-to-civilian transition was possible.",
+    keyFigures:"Gen. Murtala Mohammed (assassinated 1976), Gen. Olusegun Obasanjo, Shehu Shagari (civilian president 1979–1983).",
+    icon:"🤝",
+  },
+  {
+    era:"military", year:"1983 – 1993",
+    title:"Buhari & Babangida",
+    summary:"Two coups end civilian rule again, as military leaders tighten their grip on power.",
+    whatHappened:"In December 1983, Gen. Muhammadu Buhari overthrew President Shagari, citing corruption and mismanagement. Buhari's regime was austere and authoritarian — press freedom was curtailed and political opponents detained. In 1985, Gen. Ibrahim Babangida ousted Buhari in a palace coup, promising a faster democratic transition. Babangida's years were marked by structural adjustment programmes (SAP) that caused mass economic hardship, and a seemingly endless 'transition' to democracy that was repeatedly postponed.",
+    whyItMatters:"This era entrenched the military's grip on the economy and institutions. The debt from SAP, the habits of impunity, and the weakening of civilian institutions all have direct consequences Nigerians still live with.",
+    keyFigures:"Gen. Muhammadu Buhari, Gen. Ibrahim Babangida (IBB), Dele Giwa (journalist killed by parcel bomb in 1986).",
+    icon:"⚠️",
+  },
+  {
+    era:"military", year:"June 12, 1993",
+    title:"The June 12 Election",
+    summary:"Nigeria holds its freest and fairest election — then the result is annulled.",
+    whatHappened:"On June 12, 1993, Nigerians voted in what is widely regarded as the most free and fair election in Nigerian history. Business mogul Moshood Kashimawo Olawale (MKO) Abiola won a clear majority, with unprecedented cross-ethnic and cross-regional support. Twelve days later, Babangida annulled the results without explanation. The annulment triggered mass protests, strikes, and a constitutional crisis. Babangida eventually 'stepped aside' but installed an Interim National Government under Ernest Shonekan.",
+    whyItMatters:"June 12 became a symbol of stolen democracy and Nigerians' resilience. In 2018, President Buhari officially declared June 12 Nigeria's Democracy Day (replacing October 1), and posthumously awarded Abiola Nigeria's highest honour — the GCFR.",
+    keyFigures:"MKO Abiola (winner of the election, died in detention in 1998), Gen. Babangida (annulled the results), Gani Fawehinmi (legal activist who fought for democracy).",
+    icon:"🗳️",
+  },
+  {
+    era:"military", year:"1993 – 1998",
+    title:"The Abacha Years",
+    summary:"Nigeria's darkest years: a brutal dictatorship, international isolation, and stolen billions.",
+    whatHappened:"General Sani Abacha seized power in November 1993. His five-year rule was defined by brutal repression of political opposition, mass detention of activists and politicians, the execution of environmental activist Ken Saro-Wiwa and eight other Ogoni leaders in 1995, and the imprisonment of MKO Abiola. Nigeria was suspended from the Commonwealth and internationally isolated. Abacha looted an estimated $3–5 billion from Nigerian government accounts into private foreign accounts. He died suddenly in June 1998, widely believed to have been poisoned.",
+    whyItMatters:"Abacha's stolen billions are still being recovered from Switzerland, Jersey, and other offshore locations decades later. His regime is a masterclass in how concentrated power without accountability destroys a nation.",
+    keyFigures:"Gen. Sani Abacha, Ken Saro-Wiwa (executed activist and writer), MKO Abiola (died in detention one month after Abacha), Wole Soyinka (exiled Nobel laureate).",
+    icon:"💀",
+  },
+
+  /* ── DEMOCRACY ────────────────────────────────── */
+  {
+    era:"democracy", year:"May 29, 1999",
+    title:"Return to Democracy",
+    summary:"Nigeria begins its longest unbroken democratic period — the Fourth Republic.",
+    whatHappened:"After Abacha's death, Gen. Abdulsalami Abubakar oversaw a rapid transition to civilian rule. On May 29, 1999, Olusegun Obasanjo — the same man who had handed over power in 1979 — was inaugurated as President under a new constitution. The Fourth Republic began. May 29 became known as Democracy Day (now observed on June 12). For the first time since the First Republic, Nigerians had constitutional governance, freedom of the press, and civilian control of the military.",
+    whyItMatters:"Every election since 1999 — flawed as many have been — is part of a democratic continuity that Nigeria has never before sustained. The constitution you are reading was enacted on this day.",
+    keyFigures:"Gen. Abdulsalami Abubakar (transition leader), Olusegun Obasanjo (first elected president), Gani Fawehinmi (pro-democracy hero).",
+    icon:"🕊️",
+  },
+  {
+    era:"democracy", year:"2007 – 2010",
+    title:"Yar'Adua & the First Transfer of Power",
+    summary:"Obasanjo hands power to an elected successor — Nigeria's first democratic transfer.",
+    whatHappened:"In 2007, Umaru Musa Yar'Adua was elected President in a controversial but ultimately accepted election, receiving power from Obasanjo. This was the first time in Nigerian history that one elected civilian transferred power to another. Yar'Adua launched the 7-Point Agenda, began electoral reforms, and declared the Niger Delta amnesty programme. He fell critically ill in 2009 and died in office in May 2010. His Vice President, Goodluck Jonathan, constitutionally assumed the presidency.",
+    whyItMatters:"The Yar'Adua–Jonathan transfer — though messy and contested — demonstrated that Nigeria's constitutional succession provisions could work, even when a president was incapacitated.",
+    keyFigures:"Umaru Musa Yar'Adua (died in office), Goodluck Jonathan (became president through succession), Dora Akunyili (information minister who fought for transparency).",
+    icon:"🤝",
+  },
+  {
+    era:"democracy", year:"March 28, 2015",
+    title:"Historic Power Shift",
+    summary:"For the first time in Nigerian history, a sitting president is defeated at the polls.",
+    whatHappened:"In a landmark election, former military head of state Muhammadu Buhari — running under the newly formed All Progressives Congress (APC) — defeated incumbent President Goodluck Jonathan. Jonathan conceded defeat before the results were fully announced, making a phone call to Buhari that was seen as one of the most significant acts in Nigerian democratic history. It was the first time an opposition candidate had defeated a sitting president through the ballot box.",
+    whyItMatters:"Jonathan's concession call is considered the single most important democratic act in Nigerian history. It proved that peaceful transfer of power through elections is possible in Nigeria — a message that cannot be overstated.",
+    keyFigures:"Goodluck Jonathan (conceded gracefully), Muhammadu Buhari (won the election), Attahiru Jega (INEC chairman who ran a credible election).",
+    icon:"🏆",
+  },
+  {
+    era:"democracy", year:"February 25, 2023",
+    title:"The 2023 General Election",
+    summary:"A disputed election produces a new president as Nigeria debates its democratic future.",
+    whatHappened:"Bola Ahmed Tinubu, former governor of Lagos State and APC chieftain, won the 2023 presidential election with 36.6% of the vote in a three-way race against Atiku Abubakar (PDP) and Peter Obi (Labour Party). Peter Obi's candidacy energised a new generation of voters, especially young Nigerians, under the #ObiDient movement. Tinubu's victory was contested in court by both Atiku and Obi, citing irregularities in the election. The Supreme Court upheld Tinubu's election in October 2023.",
+    whyItMatters:"The 2023 election showed the growing power of Nigerian youth to organise politically, and the increasing demand for accountability in electoral processes. It also highlighted ongoing challenges with INEC's electronic result transmission system.",
+    keyFigures:"Bola Ahmed Tinubu (elected President), Peter Obi (Labour Party candidate who galvanised youth), Atiku Abubakar (PDP candidate), Mahmood Yakubu (INEC chairman).",
+    icon:"🗳️",
+  },
+];
+
+/* ════════════════════════════════════════
+   APP
+════════════════════════════════════════ */
+
+/* ════════════════════════════════════════
+   TOP BAR
+════════════════════════════════════════ */
+function TopBar() {
+  return (
+    <div style={{
+      position:"fixed", top:0, left:"50%", transform:"translateX(-50%)",
+      width:"100%", maxWidth:430,
+      background:"rgba(255,255,255,0.96)", backdropFilter:"blur(20px)",
+      borderBottom:`1px solid ${C.border}`,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      padding:"7px 16px", zIndex:300,
+      boxShadow:"0 2px 12px rgba(0,0,0,0.06)"
+    }}>
+      <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, color:C.textGhost, textTransform:"uppercase", textAlign:"center" }}>
+        Created by El Zenitho
+      </span>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <UserProvider>
+      <AppInner />
+    </UserProvider>
+  );
+}
+
+function AppInner() {
+  const { user } = useUser();
+  const [tab, setTab]               = useState("home");
+  const [chapterIdx, setChapterIdx] = useState(null);
+  const [expandedSec, setExpanded]  = useState(null);
+
+  if (!user.setupComplete) {
+    return (
+      <>
+        <FontLoader />
+        <SetupScreen />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <FontLoader />
+      <TopBar />
+      <div style={{ background: C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", fontFamily:"'Inter', sans-serif", overflowX:"hidden" }}>
+        <div style={{ paddingBottom:90, paddingTop:46 }}>
+          {tab === "home"         && <HomeScreen setTab={setTab} />}
+          {tab === "constitution" && <ConstitutionScreen chapterIdx={chapterIdx} setChapterIdx={setChapterIdx} expandedSec={expandedSec} setExpanded={setExpanded} />}
+          {tab === "history"      && <HistoryScreen />}
+          {tab === "games"        && <GameZone />}
+          {tab === "ask"          && <AskTheLaw />}
+          {tab === "profile"      && <ProfileScreen setTab={setTab} />}
+        </div>
+        <Nav tab={tab} setTab={setTab} setChapterIdx={setChapterIdx} />
+      </div>
+    </>
+  );
+}
+
+/* ════════════════════════════════════════
+   HOME
+════════════════════════════════════════ */
+function HomeScreen({ setTab }) {
+  const { user, readPct, readCount, totalSections } = useUser();
+  return (
+    <div>
+      <div style={{
+        background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 55%, ${C.gMain} 100%)`,
+        padding:"60px 28px 52px",
+        display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
+        position:"relative", overflow:"hidden",
+      }}>
+        <div style={{ position:"absolute", top:-50, right:-50, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:20, padding:"4px 14px", marginBottom:22 }}>
+          <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0a8" }} />
+          <span style={{ fontSize:10, letterSpacing:2, color:"#d4f7d4", fontWeight:700, textTransform:"uppercase" }}>Phase 5 — Live</span>
+        </div>
+        <div style={{ width:72, height:72, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, marginBottom:22 }}>🇳🇬</div>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:40, fontWeight:900, color:"#ffffff", lineHeight:1.1, marginBottom:14, letterSpacing:-0.5 }}>
+  {user.name ? `Welcome,\n${user.name.split(' ')[0]}.` : "Know Your\nNigeria."}
+</h1>
+        <p style={{ fontSize:15, fontWeight:500, color:"rgba(255,255,255,0.75)", lineHeight:1.7, maxWidth:270, marginBottom:30 }}>Your rights, your constitution,<br />your history — in everyday language.</p>
+        <button onClick={() => setTab("constitution")} style={{ background:C.card, color:C.gDark, fontSize:15, fontWeight:700, padding:"13px 32px", borderRadius:14, boxShadow:"0 8px 24px rgba(0,0,0,0.2)", letterSpacing:0.1 }}>Explore Your Rights →</button>
+      </div>
+
+      <div style={{ padding:"28px 20px 0" }}>
+        <Label>Quick Facts</Label>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:14 }}>
+          {QUICK_FACTS.map((f,i) => (
+            <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
+              <div style={{ fontSize:17, fontWeight:700, color:C.textPrimary, letterSpacing:-0.3 }}>{f.value}</div>
+              <div style={{ fontSize:12, fontWeight:500, color:C.textGhost, marginTop:3 }}>{f.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding:"28px 20px 0" }}>
+        <Label>Explore</Label>
+        <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:10 }}>
+          {/* Constitution */}
+          <div onClick={() => setTab("constitution")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:18, padding:"20px", cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", right:-10, top:"50%", transform:"translateY(-50%)", width:80, height:80, borderRadius:"50%", background:C.gLight, pointerEvents:"none" }} />
+            <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:`0 6px 20px ${C.gMain}44` }}>📜</div>
+            <div style={{ flex:1, position:"relative" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                <span style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:700, color:C.textPrimary }}>Constitution</span>
+                <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.2, background:C.gLight, color:C.gMain, border:`1px solid ${C.borderLit}`, padding:"2px 9px", borderRadius:20 }}>LIVE</span>
+              </div>
+              <div style={{ fontSize:13, color:C.textMuted, fontWeight:500 }}>Know your rights in plain English</div>
+            </div>
+            <div style={{ fontSize:22, color:C.gMain, position:"relative" }}>›</div>
+          </div>
+
+          {/* History — NOW LIVE */}
+          <div onClick={() => setTab("history")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:18, padding:"20px", cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", right:-10, top:"50%", transform:"translateY(-50%)", width:80, height:80, borderRadius:"50%", background:"#fdf0e0", pointerEvents:"none" }} />
+            <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:"linear-gradient(135deg, #8B4513, #c47c35)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:"0 6px 20px rgba(139,69,19,0.35)" }}>📚</div>
+            <div style={{ flex:1, position:"relative" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                <span style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:700, color:C.textPrimary }}>History</span>
+                <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.2, background:"#fdf0e0", color:"#8B4513", border:"1px solid #d4a870", padding:"2px 9px", borderRadius:20 }}>LIVE</span>
+              </div>
+              <div style={{ fontSize:13, color:C.textMuted, fontWeight:500 }}>Nigeria's full story, simplified</div>
+            </div>
+            <div style={{ fontSize:22, color:"#c47c35", position:"relative" }}>›</div>
+          </div>
+
+          {/* Games + Ask */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div onClick={() => setTab("games")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"18px 16px", cursor:"pointer", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", right:-8, top:-8, width:60, height:60, borderRadius:"50%", background:"rgba(232,93,4,0.08)", pointerEvents:"none" }} />
+              <div style={{ fontSize:28, marginBottom:10 }}>🎮</div>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:700, color:C.textPrimary }}>Game Zone</div>
+                <span style={{ fontSize:8, fontWeight:700, letterSpacing:1, background:"#fff3ee", color:"#c44d00", border:"1px solid #f0c0a0", padding:"2px 6px", borderRadius:20 }}>LIVE</span>
+              </div>
+              <div style={{ fontSize:11, color:C.textGhost, fontWeight:500 }}>Quiz & earn points</div>
+            </div>
+            <div onClick={() => setTab("ask")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"18px 16px", cursor:"pointer", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", right:-8, top:-8, width:60, height:60, borderRadius:"50%", background:"rgba(26,92,107,0.08)", pointerEvents:"none" }} />
+              <div style={{ fontSize:28, marginBottom:10 }}>🤖</div>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:700, color:C.textPrimary }}>Ask the Law</div>
+                <span style={{ fontSize:8, fontWeight:700, letterSpacing:1, background:"#e0f5f9", color:"#1a5c6b", border:"1px solid #a0d4e0", padding:"2px 6px", borderRadius:20 }}>LIVE</span>
+              </div>
+              <div style={{ fontSize:11, color:C.textGhost, fontWeight:500 }}>AI-powered legal Q&A</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ height:8 }} />
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   HISTORY SCREEN
+════════════════════════════════════════ */
+function HistoryScreen() {
+  const [activeEra, setActiveEra] = useState("all");
+  const [expanded, setExpanded]   = useState(null);
+
+  const filtered = activeEra === "all"
+    ? HISTORY_EVENTS
+    : HISTORY_EVENTS.filter(e => e.era === activeEra);
+
+  const getEra = (id) => ERAS.find(e => e.id === id);
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        background:"linear-gradient(160deg, #2c1a0e 0%, #5a3010 55%, #8B4513 100%)",
+        padding:"52px 28px 40px", position:"relative", overflow:"hidden",
+        display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
+      }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <div style={{ fontSize:42, marginBottom:14 }}>📚</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>Nigerian History</h2>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:280 }}>From ancient kingdoms to the Fourth Republic — Nigeria's full story in plain language.</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18 }}>
+            <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>{HISTORY_EVENTS.length} Events</span>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>500 BC – 2023 AD</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Era Filter Tabs */}
+      <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:"0 20px" }}>
+        <div style={{ display:"flex", gap:0, overflowX:"auto", paddingBottom:0 }}>
+          {[{ id:"all", label:"All", short:"All", color:C.gDark, lightColor:C.gLight, dotColor:C.gBright }, ...ERAS].map(era => {
+            const active = activeEra === era.id;
+            return (
+              <button key={era.id} onClick={() => { setActiveEra(era.id); setExpanded(null); }} style={{
+                padding:"14px 14px 12px",
+                fontSize:12, fontWeight:700,
+                color: active ? era.color : C.textGhost,
+                borderBottom: active ? `2px solid ${era.dotColor || era.color}` : "2px solid transparent",
+                whiteSpace:"nowrap",
+                transition:"all 0.2s",
+                flexShrink:0,
+              }}>{era.short || era.label}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div style={{ padding:"20px 20px 8px", position:"relative" }}>
+        {/* Vertical line */}
+        <div style={{
+          position:"absolute", left:44, top:20, bottom:8,
+          width:2,
+          background:`linear-gradient(to bottom, ${C.borderLit}, ${C.border})`,
+          zIndex:0,
+        }} />
+
+        {filtered.map((event, idx) => {
+          const era     = getEra(event.era);
+          const isOpen  = expanded === `${event.era}-${idx}`;
+          const key     = `${event.era}-${idx}`;
+
+          return (
+            <div key={key} style={{ position:"relative", marginBottom:12, zIndex:1 }}>
+              {/* Timeline dot + card row */}
+              <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+
+                {/* Dot */}
+                <div style={{ flexShrink:0, position:"relative", zIndex:2 }}>
+                  <div style={{
+                    width:26, height:26, borderRadius:"50%",
+                    background:C.card,
+                    border:`3px solid ${era.dotColor}`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontSize:10,
+                    marginLeft:6,
+                    marginTop:14,
+                    boxShadow:`0 0 0 3px ${C.card}`,
+                  }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background:era.dotColor }} />
+                  </div>
+                </div>
+
+                {/* Card */}
+                <div style={{
+                  flex:1,
+                  background:C.card,
+                  border:`1px solid ${isOpen ? era.dotColor + "88" : C.border}`,
+                  borderRadius:16,
+                  overflow:"hidden",
+                  boxShadow: isOpen ? `0 4px 20px rgba(0,0,0,0.1)` : "0 1px 4px rgba(0,0,0,0.05)",
+                  transition:"all 0.2s",
+                }}>
+                  {/* Card Header */}
+                  <div onClick={() => setExpanded(isOpen ? null : key)} style={{ padding:"14px 16px", cursor:"pointer" }}>
+                    {/* Era + year row */}
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                        <span style={{
+                          fontSize:9, fontWeight:700, letterSpacing:1,
+                          background:era.lightColor, color:era.color,
+                          border:`1px solid ${era.dotColor}44`,
+                          padding:"2px 8px", borderRadius:20,
+                        }}>{era.label.toUpperCase()}</span>
+                        <span style={{ fontSize:11, color:C.textGhost, fontWeight:600 }}>{event.year}</span>
+                      </div>
+                      <span style={{ fontSize:20, transform: isOpen ? "rotate(90deg)" : "none", transition:"transform 0.25s", color: isOpen ? era.dotColor : C.textGhost }}>›</span>
+                    </div>
+
+                    {/* Icon + Title */}
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <div style={{
+                        width:40, height:40, borderRadius:12, flexShrink:0,
+                        background:era.lightColor,
+                        border:`1px solid ${era.dotColor}33`,
+                        display:"flex", alignItems:"center", justifyContent:"center",
+                        fontSize:20,
+                      }}>{event.icon}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:700, color:C.textPrimary, lineHeight:1.3, marginBottom:3 }}>{event.title}</div>
+                        <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.5, fontWeight:500 }}>{event.summary}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Content */}
+                  {isOpen && (
+                    <div style={{ borderTop:`1px solid ${C.border}` }}>
+
+                      {/* What Happened */}
+                      <div style={{ padding:"16px 18px", borderBottom:`1px solid ${C.border}` }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+                          <div style={{ width:7, height:7, borderRadius:"50%", background:era.dotColor, flexShrink:0 }} />
+                          <span style={{ fontSize:10, letterSpacing:2, color:era.color, textTransform:"uppercase", fontWeight:700 }}>What Happened</span>
+                        </div>
+                        <p style={{ fontSize:14, color:C.textBody, lineHeight:1.85, fontWeight:500 }}>{event.whatHappened}</p>
+                      </div>
+
+                      {/* Why It Matters */}
+                      <div style={{ padding:"16px 18px", background:era.lightColor, borderBottom:`1px solid ${C.border}` }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+                          <span style={{ fontSize:14 }}>💡</span>
+                          <span style={{ fontSize:10, letterSpacing:2, color:"#b87a00", textTransform:"uppercase", fontWeight:700 }}>Why It Matters</span>
+                        </div>
+                        <p style={{ fontSize:14, color:C.textBody, lineHeight:1.85, fontWeight:500 }}>{event.whyItMatters}</p>
+                      </div>
+
+                      {/* Key Figures */}
+                      <div style={{ padding:"16px 18px", background:C.cardAlt }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+                          <span style={{ fontSize:14 }}>👤</span>
+                          <span style={{ fontSize:10, letterSpacing:2, color:C.textGhost, textTransform:"uppercase", fontWeight:700 }}>Key Figures</span>
+                        </div>
+                        <p style={{ fontSize:13, color:C.textMuted, lineHeight:1.75, fontWeight:500, fontStyle:"italic" }}>{event.keyFigures}</p>
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height:8 }} />
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   CONSTITUTION SCREEN
+════════════════════════════════════════ */
+function ConstitutionScreen({ chapterIdx, setChapterIdx, expandedSec, setExpanded }) {
+  if (chapterIdx !== null) {
+    return <ChapterDetail chapter={CHAPTERS[chapterIdx]} chapterIdx={chapterIdx} onBack={() => { setChapterIdx(null); setExpanded(null); }} expandedSec={expandedSec} setExpanded={setExpanded} />;
+  }
+  return (
+    <div>
+      <div style={{ background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`, padding:"52px 28px 40px", position:"relative", overflow:"hidden",
+        display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <div style={{ fontSize:42, marginBottom:14 }}>📜</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>The Constitution</h2>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:280 }}>Nigeria's supreme law — explained in plain, everyday language.</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18 }}>
+            <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>{CHAPTERS.length} Chapters</span>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>1999 Constitution</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding:"24px 20px" }}>
+        <Label>Choose a Chapter</Label>
+        <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:10 }}>
+          {CHAPTERS.map((ch, idx) => (
+            <div key={ch.id} onClick={() => setChapterIdx(idx)} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"18px", cursor:"pointer", display:"flex", alignItems:"center", gap:14, boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+              <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:`0 6px 20px ${C.gMain}33` }}>{ch.icon}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                  <span style={{ fontFamily:"'Playfair Display', serif", fontSize:16, fontWeight:700, color:C.textPrimary }}>{ch.title}</span>
+                  <span style={{ fontSize:9, fontWeight:700, letterSpacing:1, color:C.gMain, background:C.gLight, border:`1px solid ${C.borderLit}`, padding:"2px 8px", borderRadius:20 }}>{ch.tag}</span>
+                </div>
+                <div style={{ fontSize:12, color:C.textGhost, fontWeight:500 }}>{ch.chapter} · {ch.sections.length} sections</div>
+              </div>
+              <div style={{ fontSize:22, color:C.gMain }}>›</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChapterDetail({ chapter, chapterIdx, onBack, expandedSec, setExpanded }) {
+  const { markRead, toggleBookmark, user } = useUser();
+  return (
+    <div>
+      <div style={{ background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`, padding:"52px 28px 40px", position:"relative", overflow:"hidden",
+        display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <button onClick={onBack} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:12, padding:"7px 16px", color:"#fff", fontSize:14, fontWeight:600, marginBottom:22 }}>← Back</button>
+          <div style={{ width:62, height:62, borderRadius:20, marginBottom:16, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>{chapter.icon}</div>
+          <div style={{ fontSize:10, letterSpacing:2, color:"rgba(255,255,255,0.55)", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>{chapter.chapter}</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1.15, marginBottom:10 }}>{chapter.title}</h2>
+          <p style={{ fontSize:13, color:"rgba(255,255,255,0.6)", fontWeight:500, maxWidth:260 }}>Tap any section to read more</p>
+        </div>
+      </div>
+      <div style={{ padding:"20px", display:"flex", flexDirection:"column", gap:8 }}>
+        {chapter.sections.map((sec, idx) => {
+          const open = expandedSec === idx;
+          return (
+            <div key={idx} style={{ background:C.card, border:`1px solid ${open ? C.borderLit : C.border}`, borderRadius:16, overflow:"hidden", boxShadow: open ? "0 4px 16px rgba(0,0,0,0.08)" : "0 1px 4px rgba(0,0,0,0.04)", transition:"all 0.2s" }}>
+              <div onClick={() => { if (!open) markRead(chapterIdx, idx); setExpanded(open ? null : idx); }} style={{ padding:"16px 18px", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ width:40, height:40, borderRadius:12, flexShrink:0, background:C.gLight, border:`1px solid ${C.borderLit}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:C.gMain }}>§</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:10, letterSpacing:1.5, color:C.gMain, textTransform:"uppercase", fontWeight:700, marginBottom:4 }}>{sec.ref}</div>
+                  <div style={{ fontSize:15, fontWeight:600, color:C.textPrimary, lineHeight:1.3 }}>{sec.heading}</div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  {user.readSections[`${chapterIdx}_${idx}`] && <div style={{ width:7, height:7, borderRadius:"50%", background:C.gBright, flexShrink:0 }} title="Read" />}
+                  <div style={{ fontSize:20, color: open ? C.gMain : C.textGhost, transform: open ? "rotate(90deg)" : "none", transition:"transform 0.25s, color 0.25s" }}>›</div>
+                </div>
+              </div>
+              {open && (
+                <div style={{ borderTop:`1px solid ${C.border}` }}>
+                  <div style={{ padding:"18px", borderBottom:`1px solid ${C.border}` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+                      <div style={{ width:7, height:7, borderRadius:"50%", background:C.gBright }} />
+                      <span style={{ fontSize:10, letterSpacing:2, color:C.gMain, textTransform:"uppercase", fontWeight:700 }}>Plain English</span>
+                    </div>
+                    <p style={{ fontSize:14, color:C.textBody, lineHeight:1.8, fontWeight:500 }}>{sec.plain}</p>
+                  </div>
+                  <div style={{ padding:"18px", background:C.gLight, borderBottom:`1px solid ${C.border}` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+                      <span style={{ fontSize:14 }}>🔥</span>
+                      <span style={{ fontSize:10, letterSpacing:2, color:"#b87a00", textTransform:"uppercase", fontWeight:700 }}>Real Talk</span>
+                    </div>
+                    <p style={{ fontSize:14, color:C.textBody, lineHeight:1.8, fontWeight:500 }}>{sec.realTalk}</p>
+                  </div>
+                  <div style={{ padding:"18px", background:C.cardAlt }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+                      <div style={{ width:7, height:7, borderRadius:"50%", background:C.textGhost }} />
+                      <span style={{ fontSize:10, letterSpacing:2, color:C.textGhost, textTransform:"uppercase", fontWeight:700 }}>Official Text</span>
+                    </div>
+                    <p style={{ fontFamily:"'Playfair Display', serif", fontSize:13, fontStyle:"italic", color:C.textMuted, lineHeight:1.85, borderLeft:`2px solid ${C.borderLit}`, paddingLeft:14 }}>"{sec.official}"</p>
+                  </div>
+                  {/* Bookmark row */}
+                  <div style={{ padding:"12px 18px", display:"flex", justifyContent:"flex-end", background:C.cardAlt }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleBookmark(chapterIdx, idx); }}
+                      style={{ display:"flex", alignItems:"center", gap:6, background: user.bookmarks[`${chapterIdx}_${idx}`] ? C.gLight : "transparent", border:`1px solid ${user.bookmarks[`${chapterIdx}_${idx}`] ? C.borderLit : C.border}`, borderRadius:20, padding:"6px 14px", cursor:"pointer" }}>
+                      <span style={{ fontSize:14 }}>{user.bookmarks[`${chapterIdx}_${idx}`] ? "🔖" : "📌"}</span>
+                      <span style={{ fontSize:11, fontWeight:700, color: user.bookmarks[`${chapterIdx}_${idx}`] ? C.gMain : C.textGhost }}>
+                        {user.bookmarks[`${chapterIdx}_${idx}`] ? "Bookmarked" : "Bookmark"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <div style={{ height:8 }} />
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   GAME ZONE — QUESTIONS
+════════════════════════════════════════ */
+const ALL_QUESTIONS = [
+  /* ── HISTORY ── */
+  { id:1,  cat:"history", difficulty:"easy",
+    q:"What year did Nigeria gain independence from Britain?",
+    options:["1957","1960","1963","1965"], answer:1,
+    fact:"Nigeria gained independence on October 1, 1960. Sir Abubakar Tafawa Balewa became the first Prime Minister." },
+  { id:2,  cat:"history", difficulty:"easy",
+    q:"Who coined the name 'Nigeria'?",
+    options:["Lord Lugard","Herbert Macaulay","Flora Shaw","Nnamdi Azikiwe"], answer:2,
+    fact:"Flora Shaw (later Lady Lugard) coined the name 'Nigeria' in an 1897 article in The Times of London." },
+  { id:3,  cat:"history", difficulty:"easy",
+    q:"On what date was the Amalgamation of Nigeria signed?",
+    options:["January 1, 1900","January 1, 1914","October 1, 1960","May 29, 1999"], answer:1,
+    fact:"On January 1, 1914, Lord Lugard merged the Northern and Southern Protectorates into a single country called Nigeria." },
+  { id:4,  cat:"history", difficulty:"medium",
+    q:"Which civilisation, centred on the Jos Plateau, created some of Africa's earliest known terracotta sculptures?",
+    options:["Benin Kingdom","Oyo Empire","Nok Civilisation","Kanem-Bornu"], answer:2,
+    fact:"The Nok civilisation flourished from around 500 BC to 200 AD and were among the first in Africa to smelt iron." },
+  { id:5,  cat:"history", difficulty:"medium",
+    q:"Who led the 1804 jihad that created the Sokoto Caliphate?",
+    options:["Ahmadu Bello","Usman Dan Fodio","Sultan Bello","Emir Katsina"], answer:1,
+    fact:"Usman Dan Fodio launched a jihad in 1804 against the Hausa rulers, eventually creating the largest empire in 19th-century Africa." },
+  { id:6,  cat:"history", difficulty:"medium",
+    q:"What is the name of the Igbo writer enslaved as a child who later published a famous anti-slavery memoir?",
+    options:["Chinua Achebe","Olaudah Equiano","Wole Soyinka","Buchi Emecheta"], answer:1,
+    fact:"Olaudah Equiano (c.1745–1797) was an Igbo man who purchased his freedom and wrote one of history's most powerful anti-slavery memoirs." },
+  { id:7,  cat:"history", difficulty:"medium",
+    q:"Nigeria's Civil War (Biafra) lasted from 1967 to which year?",
+    options:["1968","1969","1970","1972"], answer:2,
+    fact:"The Nigerian Civil War ended on January 15, 1970. Gowon declared 'No victor, no vanquished' after Biafra surrendered." },
+  { id:8,  cat:"history", difficulty:"medium",
+    q:"Which general was assassinated in February 1976 after launching popular anti-corruption purges?",
+    options:["Yakubu Gowon","Murtala Mohammed","Olusegun Obasanjo","Sani Abacha"], answer:1,
+    fact:"Gen. Murtala Mohammed, who assumed power in 1975, was assassinated on February 13, 1976 in a failed coup attempt." },
+  { id:9,  cat:"history", difficulty:"hard",
+    q:"The Oyo Empire had a council that could remove the Alafin (king) from power. What was this council called?",
+    options:["The Ogboni","The Oyo Mesi","The Ekimogun","The Egungun"], answer:1,
+    fact:"The Oyo Mesi was a council of state that served as a check on the Alafin's power — an ancient form of checks and balances." },
+  { id:10, cat:"history", difficulty:"hard",
+    q:"In which year was the June 12 election held, widely regarded as Nigeria's freest and fairest?",
+    options:["1991","1992","1993","1995"], answer:2,
+    fact:"The June 12, 1993 election was won by MKO Abiola but annulled by Gen. Babangida 12 days later, triggering a constitutional crisis." },
+  { id:11, cat:"history", difficulty:"hard",
+    q:"How much is Sani Abacha estimated to have looted from Nigeria during his rule?",
+    options:["$500 million","$1 billion","$3–5 billion","$10 billion"], answer:2,
+    fact:"Abacha looted an estimated $3–5 billion from Nigerian government accounts into private foreign accounts during his 1993–1998 rule." },
+  { id:12, cat:"history", difficulty:"easy",
+    q:"What was the name of the first major Nigerian political party, founded in 1923?",
+    options:["NCNC","Action Group","NPC","NNDP"], answer:3,
+    fact:"Herbert Macaulay founded the Nigerian National Democratic Party (NNDP) in 1923 — the first major Nigerian political party." },
+  { id:13, cat:"history", difficulty:"medium",
+    q:"Which warrior queen of Zazzau expanded Hausa city-state territories around 1533?",
+    options:["Princess Alexandra","Queen Moremi","Queen Amina","Efunsetan Aniwura"], answer:2,
+    fact:"Queen Amina of Zaria (c.1533–1610) was a warrior queen who expanded Zazzau's territory and built the famous Amina walls." },
+  { id:14, cat:"history", difficulty:"easy",
+    q:"Who was Nigeria's first President?",
+    options:["Tafawa Balewa","Ahmadu Bello","Nnamdi Azikiwe","Obafemi Awolowo"], answer:2,
+    fact:"Dr. Nnamdi Azikiwe became Nigeria's first President in 1963 when Nigeria became a republic. Tafawa Balewa was the first Prime Minister." },
+  { id:15, cat:"history", difficulty:"medium",
+    q:"In 2015, who made the historic concession call to Buhari, marking Nigeria's first democratic power transfer?",
+    options:["Olusegun Obasanjo","Umaru Yar'Adua","Goodluck Jonathan","Atiku Abubakar"], answer:2,
+    fact:"President Goodluck Jonathan's concession call to Buhari before results were fully announced is considered the most significant democratic act in Nigerian history." },
+
+  /* ── CONSTITUTION ── */
+  { id:16, cat:"constitution", difficulty:"easy",
+    q:"According to the Nigerian Constitution, what is the PRIMARY purpose of government?",
+    options:["Economic growth","Security and welfare of the people","Building infrastructure","Maintaining order"], answer:1,
+    fact:"Section 14 states: 'The security and welfare of the people shall be the primary purpose of government.'" },
+  { id:17, cat:"constitution", difficulty:"easy",
+    q:"Which chapter of the Nigerian Constitution contains Fundamental Rights?",
+    options:["Chapter I","Chapter II","Chapter III","Chapter IV"], answer:3,
+    fact:"Chapter IV (Sections 33–46) contains all Fundamental Rights, including the right to life, dignity, liberty, fair hearing, and privacy." },
+  { id:18, cat:"constitution", difficulty:"easy",
+    q:"Under Section 35, within how many hours must an arrested person be informed of why they were arrested?",
+    options:["12 hours","24 hours","48 hours","72 hours"], answer:1,
+    fact:"Section 35(3) states that any person arrested must be informed IN WRITING within 24 hours of the facts and grounds for their arrest." },
+  { id:19, cat:"constitution", difficulty:"medium",
+    q:"According to Section 36 of the Constitution, every person charged with a criminal offence is presumed to be…?",
+    options:["Guilty until proven innocent","Innocent until proven guilty","Guilty by default","A suspect"], answer:1,
+    fact:"Section 36(5): 'Every person who is charged with a criminal offence shall be presumed to be innocent until he is proved guilty.'" },
+  { id:20, cat:"constitution", difficulty:"medium",
+    q:"Which section of the Constitution protects the privacy of your home and phone calls?",
+    options:["Section 34","Section 35","Section 36","Section 37"], answer:3,
+    fact:"Section 37 guarantees: 'The privacy of citizens, their homes, correspondence, telephone conversations and telegraphic communications is hereby guaranteed and protected.'" },
+  { id:21, cat:"constitution", difficulty:"medium",
+    q:"If your fundamental rights are violated, which court do you apply to for redress?",
+    options:["Magistrate Court","Customary Court","High Court","Supreme Court"], answer:2,
+    fact:"Section 46 gives the High Court original jurisdiction to hear fundamental rights enforcement applications in any state." },
+  { id:22, cat:"constitution", difficulty:"easy",
+    q:"When was Nigeria's current constitution enacted?",
+    options:["October 1, 1960","January 1, 1980","May 29, 1999","June 12, 1993"], answer:2,
+    fact:"The 1999 Constitution of the Federal Republic of Nigeria was enacted on May 29, 1999, when Olusegun Obasanjo was inaugurated." },
+  { id:23, cat:"constitution", difficulty:"medium",
+    q:"According to Section 44, if the government compulsorily acquires your property, what must they do?",
+    options:["Give you 6 months notice","Pay you prompt compensation","Relocate you","Request permission from NASS"], answer:1,
+    fact:"Section 44 requires that any compulsory acquisition of property must be accompanied by PROMPT payment of compensation." },
+  { id:24, cat:"constitution", difficulty:"hard",
+    q:"Section 14(3) of the Constitution requires government composition to reflect what principle?",
+    options:["Electoral mandate","Federal Character","Population size","Regional quota"], answer:1,
+    fact:"Section 14(3) mandates Federal Character — that government composition must reflect Nigeria's diversity so no few states or ethnic groups dominate." },
+  { id:25, cat:"constitution", difficulty:"hard",
+    q:"Under the Constitution, how many states does Nigeria have?",
+    options:["30","32","36","40"], answer:2,
+    fact:"Section 3 states there shall be 36 states in Nigeria, plus the Federal Capital Territory, Abuja. There are also 768 Local Government Areas." },
+  { id:26, cat:"constitution", difficulty:"medium",
+    q:"Which section forbids the government from adopting any religion as state religion?",
+    options:["Section 8","Section 9","Section 10","Section 11"], answer:2,
+    fact:"Section 10 states: 'The Government of the Federation or of a State shall not adopt any religion as State Religion.'" },
+  { id:27, cat:"constitution", difficulty:"hard",
+    q:"According to Section 18, government is constitutionally required to work towards providing what type of primary education?",
+    options:["Subsidised","Paid","Free and compulsory","Private"], answer:2,
+    fact:"Section 18(3)(a) commits government to providing 'free, compulsory and universal primary education' — a constitutional obligation, not a policy." },
+  { id:28, cat:"constitution", difficulty:"easy",
+    q:"Section 34 of the Constitution protects your right to…?",
+    options:["Own property","Freedom of speech","Dignity of person","A fair trial"], answer:2,
+    fact:"Section 34 protects the dignity of every individual — no person shall be subject to torture, inhuman treatment, slavery, or forced labour." },
+  { id:29, cat:"constitution", difficulty:"medium",
+    q:"Section 42 protects Nigerians against discrimination based on all of the following EXCEPT…?",
+    options:["Ethnicity","Place of origin","Age","Sex"], answer:2,
+    fact:"Section 42 covers community, ethnic group, place of origin, sex, religion, and political opinion — but does not explicitly mention age." },
+  { id:30, cat:"constitution", difficulty:"hard",
+    q:"According to Section 20, the State is constitutionally obligated to protect which of the following?",
+    options:["Foreign investments","The environment, water, air, land and wildlife","State borders","Cultural monuments"], answer:1,
+    fact:"Section 20: 'The State shall protect and improve the environment and safeguard the water, air and land, forest and wild life of Nigeria.'" },
+];
+
+const CATEGORIES = [
+  { id:"mixed",        label:"Mixed",         icon:"🎲", desc:"History + Constitution",  color:"#2d7d2d", light:"#e8f5e8",  total: ALL_QUESTIONS.length },
+  { id:"history",      label:"History",       icon:"📚", desc:"Nigerian History only",    color:"#8B4513", light:"#fdf0e0",  total: ALL_QUESTIONS.filter(q=>q.cat==="history").length },
+  { id:"constitution", label:"Constitution",  icon:"📜", desc:"Constitution & Rights",    color:"#1a5c6b", light:"#e0f2f5",  total: ALL_QUESTIONS.filter(q=>q.cat==="constitution").length },
+];
+
+const BADGES = [
+  { id:"first",    icon:"🌱", label:"First Steps",   desc:"Complete your first quiz",          req: s => s.totalGames >= 1 },
+  { id:"perfect",  icon:"⭐", label:"Perfect Round",  desc:"Score 100% in a quiz",              req: s => s.perfectGames >= 1 },
+  { id:"streak5",  icon:"🔥", label:"On Fire",        desc:"Answer 5 in a row correctly",       req: s => s.maxStreak >= 5 },
+  { id:"history",  icon:"📚", label:"Historian",      desc:"Complete a History quiz",           req: s => s.historyGames >= 1 },
+  { id:"scholar",  icon:"📜", label:"Civic Scholar",  desc:"Complete a Constitution quiz",      req: s => s.constitutionGames >= 1 },
+  { id:"veteran",  icon:"🏆", label:"Veteran",        desc:"Play 5 or more quizzes",            req: s => s.totalGames >= 5 },
+];
+
+function shuffle(arr) {
+  const a = [...arr]; for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a;
+}
+
+/* ════════════════════════════════════════
+   GAME ZONE — MAIN
+════════════════════════════════════════ */
+function GameZone() {
+  const [screen, setScreen]   = useState("lobby");   // lobby | quiz | result
+  const [category, setCategory] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [qIdx, setQIdx]       = useState(0);
+  const [selected, setSelected] = useState(null);    // index of chosen option
+  const [revealed, setRevealed] = useState(false);
+  const [score, setScore]     = useState(0);
+  const [streak, setStreak]   = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [answers, setAnswers] = useState([]);        // {correct, chosen}
+  const [stats, setStats]     = useState({
+    totalGames:0, perfectGames:0, maxStreak:0,
+    historyGames:0, constitutionGames:0, totalPoints:0,
+  });
+
+  const QUIZ_SIZE = 10;
+
+  function startQuiz(cat) {
+    const pool = cat === "mixed" ? ALL_QUESTIONS : ALL_QUESTIONS.filter(q => q.cat === cat);
+    setQuestions(shuffle(pool).slice(0, QUIZ_SIZE));
+    setCategory(cat);
+    setQIdx(0); setSelected(null); setRevealed(false);
+    setScore(0); setStreak(0); setMaxStreak(0); setAnswers([]);
+    setScreen("quiz");
+  }
+
+  function choose(optIdx) {
+    if (revealed) return;
+    setSelected(optIdx);
+    setRevealed(true);
+    const q   = questions[qIdx];
+    const correct = optIdx === q.answer;
+    const newStreak = correct ? streak + 1 : 0;
+    const newMax    = Math.max(maxStreak, newStreak);
+    setStreak(newStreak);
+    setMaxStreak(newMax);
+    if (correct) setScore(s => s + 1);
+    setAnswers(prev => [...prev, { correct, chosen: optIdx, answer: q.answer }]);
+  }
+
+  function next() {
+    if (qIdx + 1 >= questions.length) {
+      // finish
+      const finalScore = score + (selected === questions[qIdx].answer ? 1 : 0);
+      const perfect = finalScore === QUIZ_SIZE;
+      setStats(prev => ({
+        totalGames:       prev.totalGames + 1,
+        perfectGames:     prev.perfectGames + (perfect ? 1 : 0),
+        maxStreak:        Math.max(prev.maxStreak, maxStreak),
+        historyGames:     prev.historyGames + (category === "history" ? 1 : 0),
+        constitutionGames:prev.constitutionGames + (category === "constitution" ? 1 : 0),
+        totalPoints:      prev.totalPoints + finalScore,
+      }));
+      saveQuizResult({ date: new Date().toLocaleDateString(), cat: category, score: finalScore, total: QUIZ_SIZE, maxStreak, pts: finalScore });
+      setScreen("result");
+    } else {
+      setQIdx(i => i + 1);
+      setSelected(null);
+      setRevealed(false);
+    }
+  }
+
+  if (screen === "lobby")  return <GameLobby stats={stats} onStart={startQuiz} />;
+  if (screen === "quiz")   return <QuizScreen questions={questions} qIdx={qIdx} selected={selected} revealed={revealed} streak={streak} score={score} choose={choose} next={next} category={category} />;
+  if (screen === "result") return <ResultScreen score={score} total={QUIZ_SIZE} maxStreak={maxStreak} answers={answers} questions={questions} stats={stats} onPlay={() => setScreen("lobby")} />;
+  return null;
+}
+
+/* ── LOBBY ─────────────────────────────── */
+function GameLobby({ stats, onStart }) {
+  const earnedBadges = BADGES.filter(b => b.req(stats));
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background:"linear-gradient(160deg, #1a3020 0%, #2a5035 55%, #3d7a4a 100%)", padding:"52px 28px 40px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <div style={{ fontSize:44, marginBottom:14 }}>🎮</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>Game Zone</h2>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:270 }}>Test what you know about Nigeria's history and constitution. Earn points and badges.</p>
+          {/* Stats row */}
+          <div style={{ display:"flex", gap:8, marginTop:18 }}>
+            {[
+              { label:"Games",  val: stats.totalGames },
+              { label:"Points", val: stats.totalPoints },
+              { label:"Best Streak", val: stats.maxStreak },
+            ].map((s,i) => (
+              <div key={i} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", textAlign:"center" }}>
+                <div style={{ fontSize:16, fontWeight:800, color:"#fff" }}>{s.val}</div>
+                <div style={{ fontSize:9, color:"rgba(255,255,255,0.65)", fontWeight:600, letterSpacing:0.5 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:"24px 20px 0" }}>
+        {/* Categories */}
+        <Label>Choose a Category</Label>
+        <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:10 }}>
+          {CATEGORIES.map(cat => (
+            <div key={cat.id} onClick={() => onStart(cat.id)} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"18px 20px", cursor:"pointer", display:"flex", alignItems:"center", gap:14, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ width:54, height:54, borderRadius:16, flexShrink:0, background:cat.light, border:`1px solid ${cat.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26 }}>{cat.icon}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:700, color:C.textPrimary, marginBottom:4 }}>{cat.label}</div>
+                <div style={{ fontSize:12, color:C.textMuted, fontWeight:500, marginBottom:6 }}>{cat.desc}</div>
+                <div style={{ fontSize:10, color:C.textGhost, fontWeight:600 }}>{Math.min(10, cat.total)} questions per game · {cat.total} in pool</div>
+              </div>
+              <div style={{ fontSize:24, color:cat.color, fontWeight:700 }}>›</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Badges */}
+        <div style={{ marginTop:28 }}>
+          <Label>Your Badges</Label>
+          <div style={{ marginTop:14, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+            {BADGES.map(badge => {
+              const earned = badge.req(stats);
+              return (
+                <div key={badge.id} style={{ background:C.card, border:`1px solid ${earned ? C.borderLit : C.border}`, borderRadius:14, padding:"14px 10px", textAlign:"center", boxShadow: earned ? `0 2px 12px ${C.gMain}22` : "none" }}>
+                  <div style={{ fontSize:26, marginBottom:6, filter: earned ? "none" : "grayscale(100%) opacity(0.3)" }}>{badge.icon}</div>
+                  <div style={{ fontSize:11, fontWeight:700, color: earned ? C.textPrimary : C.textGhost, lineHeight:1.3, marginBottom:3 }}>{badge.label}</div>
+                  <div style={{ fontSize:9, color:C.textGhost, lineHeight:1.4, fontWeight:500 }}>{badge.desc}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div style={{ height:16 }} />
+    </div>
+  );
+}
+
+/* ── QUIZ SCREEN ───────────────────────── */
+function QuizScreen({ questions, qIdx, selected, revealed, streak, score, choose, next, category }) {
+  const q        = questions[qIdx];
+  const progress = ((qIdx) / questions.length) * 100;
+  const cat      = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
+
+  return (
+    <div>
+      {/* Top bar */}
+      <div style={{ background:`linear-gradient(160deg, #1a3020 0%, #2a5035 100%)`, padding:"52px 24px 28px", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"relative" }}>
+          {/* Progress + stats */}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.65)", fontWeight:700 }}>{qIdx + 1} / {questions.length}</div>
+            <div style={{ display:"flex", gap:10 }}>
+              {streak >= 2 && (
+                <div style={{ display:"flex", alignItems:"center", gap:4, background:"rgba(255,165,0,0.2)", border:"1px solid rgba(255,165,0,0.3)", borderRadius:20, padding:"3px 10px" }}>
+                  <span style={{ fontSize:12 }}>🔥</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#ffc966" }}>{streak}</span>
+                </div>
+              )}
+              <div style={{ display:"flex", alignItems:"center", gap:4, background:"rgba(255,255,255,0.15)", borderRadius:20, padding:"3px 10px" }}>
+                <span style={{ fontSize:11 }}>⭐</span>
+                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>{score}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ height:4, background:"rgba(255,255,255,0.15)", borderRadius:4, overflow:"hidden", marginBottom:20 }}>
+            <div style={{ height:"100%", width:`${progress}%`, background:`linear-gradient(90deg, ${C.gBright}, #a8e6a8)`, borderRadius:4, transition:"width 0.4s ease" }} />
+          </div>
+
+          {/* Category badge */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:cat.light, borderRadius:20, padding:"4px 12px", marginBottom:14 }}>
+            <span style={{ fontSize:12 }}>{cat.icon}</span>
+            <span style={{ fontSize:9, fontWeight:700, letterSpacing:1, color:cat.color, textTransform:"uppercase" }}>{cat.label}</span>
+          </div>
+
+          {/* Question */}
+          <h3 style={{ fontFamily:"'Playfair Display', serif", fontSize:19, fontWeight:800, color:"#fff", lineHeight:1.45 }}>{q.q}</h3>
+        </div>
+      </div>
+
+      {/* Options */}
+      <div style={{ padding:"20px", display:"flex", flexDirection:"column", gap:10 }}>
+        {q.options.map((opt, idx) => {
+          let bg      = C.card;
+          let border  = C.border;
+          let txtCol  = C.textPrimary;
+          let icon    = null;
+          if (revealed) {
+            if (idx === q.answer) {
+              bg = "#e8f5e9"; border = "#4CAF50"; txtCol = "#1b5e20"; icon = "✓";
+            } else if (idx === selected && idx !== q.answer) {
+              bg = "#fdecea"; border = "#ef5350"; txtCol = "#b71c1c"; icon = "✗";
+            } else {
+              bg = C.cardAlt; border = C.border; txtCol = C.textGhost;
+            }
+          }
+          return (
+            <div key={idx} onClick={() => choose(idx)} style={{ background:bg, border:`2px solid ${border}`, borderRadius:14, padding:"15px 18px", cursor: revealed ? "default" : "pointer", display:"flex", alignItems:"center", gap:12, transition:"all 0.2s", boxShadow: revealed && idx === q.answer ? "0 4px 16px rgba(76,175,80,0.25)" : "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div style={{ width:32, height:32, borderRadius:"50%", background: revealed && idx === q.answer ? "#4CAF50" : revealed && idx === selected ? "#ef5350" : C.deep, border:`1px solid ${border}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.2s" }}>
+                <span style={{ fontSize:13, fontWeight:800, color: revealed && (idx === q.answer || idx === selected) ? "#fff" : C.textMuted }}>
+                  {icon || ["A","B","C","D"][idx]}
+                </span>
+              </div>
+              <span style={{ fontSize:14, fontWeight:600, color:txtCol, lineHeight:1.4 }}>{opt}</span>
+            </div>
+          );
+        })}
+
+        {/* Fact box */}
+        {revealed && (
+          <div style={{ background: selected === q.answer ? C.gLight : "#fff8f0", border:`1px solid ${selected === q.answer ? C.borderLit : "#f0c090"}`, borderRadius:14, padding:"16px 18px", marginTop:4 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:8 }}>
+              <span style={{ fontSize:14 }}>💡</span>
+              <span style={{ fontSize:10, letterSpacing:2, color: selected === q.answer ? C.gMain : "#b87a00", textTransform:"uppercase", fontWeight:700 }}>
+                {selected === q.answer ? "Correct!" : "Did You Know?"}
+              </span>
+            </div>
+            <p style={{ fontSize:13, color:C.textBody, lineHeight:1.75, fontWeight:500 }}>{q.fact}</p>
+          </div>
+        )}
+
+        {/* Next button */}
+        {revealed && (
+          <button onClick={next} style={{ background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, color:"#fff", fontSize:15, fontWeight:700, padding:"14px", borderRadius:14, boxShadow:`0 6px 20px ${C.gMain}44`, marginTop:4, letterSpacing:0.2 }}>
+            {qIdx + 1 >= questions.length ? "See Results →" : "Next Question →"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── RESULT SCREEN ─────────────────────── */
+function ResultScreen({ score, total, maxStreak, answers, questions, stats, onPlay }) {
+  const pct      = Math.round((score / total) * 100);
+  const grade    = pct === 100 ? { label:"Perfect!", icon:"🏆", color:"#c7a800" }
+                 : pct >= 80   ? { label:"Excellent!", icon:"⭐", color:C.gMain }
+                 : pct >= 60   ? { label:"Good job!", icon:"👍", color:"#3a7ab8" }
+                 : pct >= 40   ? { label:"Keep going!", icon:"💪", color:"#e87d1e" }
+                 :               { label:"Try again!", icon:"📖", color:"#e84040" };
+
+  const newBadges = BADGES.filter(b => b.req(stats) && !b.req({ ...stats, totalGames: stats.totalGames - 1 }));
+
+  return (
+    <div>
+      {/* Hero result */}
+      <div style={{ background:`linear-gradient(160deg, #1a3020 0%, #2a5035 100%)`, padding:"52px 28px 44px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <div style={{ fontSize:52, marginBottom:12 }}>{grade.icon}</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:6 }}>{grade.label}</h2>
+          <div style={{ fontSize:52, fontWeight:900, color:C.gGlow || "#a8f0a8", letterSpacing:-2, lineHeight:1, marginBottom:8, fontFamily:"'Playfair Display', serif" }}>{pct}%</div>
+          <div style={{ fontSize:14, color:"rgba(255,255,255,0.65)", fontWeight:500, marginBottom:20 }}>{score} out of {total} correct</div>
+
+          {/* Stats row */}
+          <div style={{ display:"flex", gap:8 }}>
+            {[
+              { label:"Score",    val:`${score}/${total}` },
+              { label:"Streak",   val:`🔥 ${maxStreak}` },
+              { label:"Points",   val:`+${score}` },
+            ].map((s,i) => (
+              <div key={i} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:12, padding:"8px 12px", textAlign:"center" }}>
+                <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{s.val}</div>
+                <div style={{ fontSize:9, color:"rgba(255,255,255,0.6)", fontWeight:600, letterSpacing:0.5 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:"20px" }}>
+        {/* New badges */}
+        {newBadges.length > 0 && (
+          <div style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"16px 18px", marginBottom:14, boxShadow:`0 4px 16px ${C.gMain}22` }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:12 }}>
+              <span style={{ fontSize:14 }}>🏅</span>
+              <span style={{ fontSize:10, letterSpacing:2, color:C.gMain, textTransform:"uppercase", fontWeight:700 }}>New Badge{newBadges.length > 1 ? "s" : ""} Earned!</span>
+            </div>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              {newBadges.map(b => (
+                <div key={b.id} style={{ display:"flex", alignItems:"center", gap:8, background:C.gLight, border:`1px solid ${C.borderLit}`, borderRadius:12, padding:"8px 12px" }}>
+                  <span style={{ fontSize:20 }}>{b.icon}</span>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.textPrimary }}>{b.label}</div>
+                    <div style={{ fontSize:10, color:C.textMuted }}>{b.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Answer review */}
+        <Label>Review Your Answers</Label>
+        <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:8 }}>
+          {answers.map((a, i) => (
+            <div key={i} style={{ background:C.card, border:`1px solid ${a.correct ? C.borderLit : "#f0c0c0"}`, borderRadius:12, padding:"12px 16px", display:"flex", alignItems:"flex-start", gap:10 }}>
+              <div style={{ width:28, height:28, borderRadius:"50%", background: a.correct ? C.gLight : "#fdecea", border:`2px solid ${a.correct ? C.gBright : "#ef5350"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, flexShrink:0, color: a.correct ? C.gMain : "#ef5350" }}>
+                {a.correct ? "✓" : "✗"}
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:C.textPrimary, lineHeight:1.4, marginBottom:3 }}>{questions[i].q}</div>
+                <div style={{ fontSize:11, color: a.correct ? C.gMain : "#ef5350", fontWeight:600 }}>
+                  {a.correct ? `✓ ${questions[i].options[a.answer]}` : `✗ You said: ${questions[i].options[a.chosen]} · Correct: ${questions[i].options[a.answer]}`}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Play again */}
+        <button onClick={onPlay} style={{ background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, color:"#fff", fontSize:15, fontWeight:700, padding:"15px", borderRadius:14, boxShadow:`0 6px 20px ${C.gMain}44`, marginTop:16, width:"100%", letterSpacing:0.2 }}>
+          Play Again 🎮
+        </button>
+      </div>
+      <div style={{ height:8 }} />
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   ASK THE LAW — AI CHATBOT
+════════════════════════════════════════ */
+const SUGGESTED_QUESTIONS = [
+  "Can the police hold me without charging me?",
+  "What are my rights if my property is seized?",
+  "Is the government required to provide free education?",
+  "What does the constitution say about discrimination?",
+  "How do I enforce my fundamental rights in court?",
+  "What is the Federal Character principle?",
+  "Can I be fired because of my religion or tribe?",
+  "What does the constitution say about the environment?",
+];
+
+const SYSTEM_PROMPT = `You are "Lex" — a friendly, knowledgeable Nigerian civic and constitutional law assistant built into the "Know Your Nigeria" app. You help everyday Nigerians understand their rights, the 1999 Constitution, Nigerian history, and how the law affects their daily lives.
+
+Your personality:
+- Warm, encouraging, and conversational — like a smart friend who happens to know the law
+- You use clear, plain English. No unnecessary legalese.
+- You occasionally use Nigerian expressions naturally (e.g. "Ehen!", "No wahala", "As e dey be") but don't overdo it
+- You are passionate about civic education and empowering Nigerians to know and defend their rights
+
+Your expertise:
+- The 1999 Constitution of the Federal Republic of Nigeria (as amended)
+- Fundamental Rights (Chapter IV, Sections 33–46)
+- Nigerian history from pre-colonial times to the present
+- How Nigerian law applies to everyday situations
+
+Rules:
+- Keep responses concise and mobile-friendly — short paragraphs, no walls of text
+- When referencing specific constitutional sections, cite them (e.g. "Section 35 says...")
+- Always empower the user — if their rights are being violated, tell them what they can do
+- If asked something outside Nigerian law/history, gently redirect: "I'm specifically built for Nigerian civic questions — let me focus on that!"
+- Never give advice that could harm the user. For serious legal situations, advise them to consult a lawyer
+- Format responses with short paragraphs. Use line breaks generously for readability on mobile screens`;
+
+function AskTheLaw() {
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: "Hey! I'm **Lex** 👋 — your Nigerian civic law assistant.\n\nAsk me anything about your constitutional rights, Nigerian history, or how the law applies to your daily life. I'll break it down in plain language.\n\nWhat's on your mind?",
+    }
+  ]);
+  const [input, setInput]     = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef             = useRef(null);
+  const inputRef              = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  async function send(text) {
+    const q = (text || input).trim();
+    if (!q || loading) return;
+    setInput("");
+    const newMessages = [...messages, { role: "user", content: q }];
+    setMessages(newMessages);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response. Please try again.";
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Network error. Please check your connection and try again." }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderText(text) {
+    // bold **text**, line breaks
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((p, i) =>
+      p.startsWith("**") && p.endsWith("**")
+        ? <strong key={i} style={{ fontWeight:700, color:"inherit" }}>{p.slice(2,-2)}</strong>
+        : p.split("\n").map((line, j, arr) => (
+            <span key={`${i}-${j}`}>{line}{j < arr.length - 1 ? <br/> : null}</span>
+          ))
+    );
+  }
+
+  const showSuggestions = messages.length <= 1;
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", height:"100vh", maxHeight:"100vh", overflow:"hidden" }}>
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(160deg, #0e2a30 0%, #1a5c6b 60%, #277a8a 100%)", padding:"52px 28px 28px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:150, height:150, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:110, height:110, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <div style={{ width:64, height:64, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, marginBottom:14 }}>🤖</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:8, lineHeight:1.15 }}>Ask the Law</h2>
+          <p style={{ fontSize:13, color:"rgba(255,255,255,0.7)", fontWeight:500, maxWidth:260, lineHeight:1.6 }}>Your AI-powered Nigerian civic rights assistant — ask anything about the constitution or your rights.</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
+            <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0c0", flexShrink:0 }} />
+            <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700, letterSpacing:0.5 }}>Lex is online</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0", display:"flex", flexDirection:"column", gap:12, background:C.bg }}>
+
+        {messages.map((m, i) => {
+          const isBot = m.role === "assistant";
+          return (
+            <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-end", flexDirection: isBot ? "row" : "row-reverse" }}>
+              {isBot && (
+                <div style={{ width:30, height:30, borderRadius:"50%", background:"linear-gradient(135deg, #1a5c6b, #277a8a)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>🤖</div>
+              )}
+              <div style={{
+                maxWidth:"78%",
+                background: isBot ? C.card : "linear-gradient(135deg, #1a5c6b, #277a8a)",
+                color: isBot ? C.textBody : "#fff",
+                borderRadius: isBot ? "18px 18px 18px 4px" : "18px 18px 4px 18px",
+                padding:"12px 15px",
+                fontSize:14, lineHeight:1.75, fontWeight:500,
+                boxShadow: isBot ? "0 2px 8px rgba(0,0,0,0.07)" : "0 4px 16px rgba(26,92,107,0.35)",
+                border: isBot ? `1px solid ${C.border}` : "none",
+              }}>
+                {renderText(m.content)}
+              </div>
+            </div>
+          );
+        })}
+
+        {loading && (
+          <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
+            <div style={{ width:30, height:30, borderRadius:"50%", background:"linear-gradient(135deg, #1a5c6b, #277a8a)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>🤖</div>
+            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:"18px 18px 18px 4px", padding:"13px 18px", display:"flex", gap:5, alignItems:"center", boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
+              {[0,1,2].map(d => (
+                <div key={d} style={{ width:7, height:7, borderRadius:"50%", background:"#1a5c6b", opacity:0.5, animation:`bounce 1.2s ease-in-out ${d*0.2}s infinite` }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Suggested questions */}
+        {showSuggestions && (
+          <div style={{ paddingTop:4 }}>
+            <div style={{ fontSize:11, letterSpacing:1.5, color:C.textGhost, fontWeight:700, textTransform:"uppercase", marginBottom:10 }}>Try asking…</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+              {SUGGESTED_QUESTIONS.map((q, i) => (
+                <button key={i} onClick={() => send(q)} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"11px 14px", textAlign:"left", fontSize:13, color:C.textBody, fontWeight:500, lineHeight:1.4, display:"flex", alignItems:"center", gap:10, boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <span style={{ fontSize:14, flexShrink:0 }}>💬</span>
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} style={{ height:8 }} />
+      </div>
+
+      {/* Bounce animation */}
+      <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-6px);opacity:1} }`}</style>
+
+      {/* Input bar */}
+      <div style={{ background:C.card, borderTop:`1px solid ${C.border}`, padding:"12px 16px 28px", display:"flex", gap:10, alignItems:"flex-end", flexShrink:0, boxShadow:"0 -4px 20px rgba(0,0,0,0.06)" }}>
+        <textarea
+          ref={inputRef}
+          value={input}
+          onChange={e => { setInput(e.target.value); e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight, 100)+"px"; }}
+          onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Ask about your rights…"
+          rows={1}
+          style={{ flex:1, resize:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"11px 14px", fontSize:14, fontFamily:"'Inter', sans-serif", fontWeight:500, color:C.textPrimary, background:C.bg, outline:"none", lineHeight:1.5, overflow:"hidden", minHeight:44 }}
+        />
+        <button onClick={() => send()} disabled={!input.trim() || loading} style={{ width:44, height:44, borderRadius:14, background: input.trim() && !loading ? "linear-gradient(135deg, #1a5c6b, #277a8a)" : C.deep, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0, boxShadow: input.trim() && !loading ? "0 4px 16px rgba(26,92,107,0.4)" : "none", transition:"all 0.2s" }}>
+          {loading ? "⏳" : "➤"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   COMING SOON
+════════════════════════════════════════ */
+function Soon({ title, icon, phase }) {
+  return (
+    <div>
+      <div style={{
+        background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`,
+        padding:"52px 28px 48px", position:"relative", overflow:"hidden",
+        display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
+      }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+        <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
+          <div style={{ width:72, height:72, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:34, marginBottom:20 }}>{icon}</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>{title}</h2>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:270, marginBottom:24 }}>This section is being built and will be ready in the next phase.</p>
+          <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:20, padding:"8px 24px", fontSize:10, letterSpacing:2, fontWeight:700, color:"rgba(255,255,255,0.9)", textTransform:"uppercase" }}>Coming in Phase {phase}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ════════════════════════════════════════
+   SETUP SCREEN  (Phase 5)
+════════════════════════════════════════ */
+function SetupScreen() {
+  const { completeSetup } = useUser();
+  const [name, setName]   = useState("");
+  const [step, setStep]   = useState(1); // 1=welcome, 2=name
+  const valid = name.trim().length >= 2;
+
+  if (step === 1) return (
+    <div style={{ minHeight:"100vh", background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 55%, ${C.gMain} 100%)`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", textAlign:"center" }}>
+      <div style={{ position:"absolute", top:-60, right:-60, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+      <div style={{ position:"absolute", bottom:-40, left:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+      <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", maxWidth:320 }}>
+        <div style={{ width:90, height:90, borderRadius:26, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:44, marginBottom:28 }}>🇳🇬</div>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:38, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:16, letterSpacing:-0.5 }}>Know Your<br />Nigeria.</h1>
+        <p style={{ fontSize:15, color:"rgba(255,255,255,0.75)", lineHeight:1.75, marginBottom:36, fontWeight:500 }}>Your rights, constitution and history — explained in everyday language every Nigerian can understand.</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:12, width:"100%" }}>
+          <button onClick={() => setStep(2)} style={{ background:"#fff", color:C.gDark, fontSize:16, fontWeight:800, padding:"16px", borderRadius:16, boxShadow:"0 8px 24px rgba(0,0,0,0.2)", letterSpacing:0.1 }}>Get Started →</button>
+        </div>
+        <div style={{ display:"flex", gap:24, marginTop:32 }}>
+          {[{icon:"⚖️",label:"269 Sections"},{icon:"📚",label:"Full History"},{icon:"🎮",label:"Quiz Games"}].map((f,i)=>(
+            <div key={i} style={{ textAlign:"center" }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>{f.icon}</div>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", fontWeight:600 }}>{f.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px" }}>
+      <div style={{ width:"100%", maxWidth:380 }}>
+        <div style={{ textAlign:"center", marginBottom:36 }}>
+          <div style={{ fontSize:48, marginBottom:18 }}>👋</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:C.textPrimary, marginBottom:10, lineHeight:1.2 }}>What's your name?</h2>
+          <p style={{ fontSize:14, color:C.textMuted, lineHeight:1.7, fontWeight:500 }}>We'll personalise your experience and track your progress.</p>
+        </div>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && valid && completeSetup(name)}
+          placeholder="Enter your name…"
+          maxLength={30}
+          style={{ width:"100%", padding:"16px 20px", fontSize:18, fontWeight:600, color:C.textPrimary, background:C.card, border:`2px solid ${valid ? C.borderLit : C.border}`, borderRadius:16, outline:"none", fontFamily:"'Inter', sans-serif", boxSizing:"border-box", transition:"border 0.2s" }}
+        />
+        <button
+          onClick={() => valid && completeSetup(name)}
+          disabled={!valid}
+          style={{ width:"100%", marginTop:14, background: valid ? `linear-gradient(135deg, ${C.gMid}, ${C.gBright})` : C.deep, color: valid ? "#fff" : C.textGhost, fontSize:16, fontWeight:800, padding:"16px", borderRadius:16, cursor: valid ? "pointer" : "default", boxShadow: valid ? `0 8px 24px ${C.gMain}44` : "none", transition:"all 0.2s", letterSpacing:0.1 }}>
+          Start Learning →
+        </button>
+        <p style={{ textAlign:"center", marginTop:16, fontSize:12, color:C.textGhost }}>Your data stays on this device only.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   PROFILE SCREEN  (Phase 5)
+════════════════════════════════════════ */
+function ProfileScreen({ setTab }) {
+  const { user, setUser, readPct, readCount, totalSections, bookmarkCount } = useUser();
+  const [showReset, setShowReset] = useState(false);
+
+  const initials = user.name ? user.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2) : "?";
+
+  const chapterProgress = CHAPTERS.map((ch, chIdx) => {
+    const total = ch.sections.length;
+    const read  = ch.sections.filter((_, sIdx) => user.readSections[`${chIdx}_${sIdx}`]).length;
+    return { ...ch, total, read, pct: total > 0 ? Math.round((read/total)*100) : 0 };
+  });
+
+  const recentQuizzes = (user.quizHistory || []).slice(0, 5);
+
+  const bookmarkedSections = [];
+  Object.keys(user.bookmarks || {}).forEach(key => {
+    const [chIdx, sIdx] = key.split("_").map(Number);
+    const ch  = CHAPTERS[chIdx];
+    const sec = ch?.sections[sIdx];
+    if (ch && sec) bookmarkedSections.push({ chIdx, sIdx, ch, sec });
+  });
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`, padding:"52px 28px 40px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+        <div style={{ width:72, height:72, borderRadius:"50%", background:"rgba(255,255,255,0.2)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, fontWeight:900, color:"#fff", marginBottom:14, fontFamily:"'Playfair Display', serif" }}>{initials}</div>
+        <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:6 }}>{user.name}</h2>
+        <p style={{ fontSize:12, color:"rgba(255,255,255,0.55)", fontWeight:600 }}>Member since {user.joinedDate || "today"}</p>
+        {/* Stat pills */}
+        <div style={{ display:"flex", gap:8, marginTop:20, flexWrap:"wrap", justifyContent:"center" }}>
+          {[
+            { label:"🔥 Streak", val:`${user.streak} day${user.streak !== 1 ? "s" : ""}` },
+            { label:"📖 Read",   val:`${readCount}/${totalSections}` },
+            { label:"⭐ Points", val:user.totalPoints },
+          ].map((s,i) => (
+            <div key={i} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"7px 16px", textAlign:"center" }}>
+              <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{s.val}</div>
+              <div style={{ fontSize:9, color:"rgba(255,255,255,0.6)", fontWeight:600, marginTop:1 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding:"24px 20px", display:"flex", flexDirection:"column", gap:24 }}>
+
+        {/* Reading Progress */}
+        <div>
+          <Label>Reading Progress</Label>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"20px", marginTop:14, boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+            {/* Overall bar */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+              <span style={{ fontSize:14, fontWeight:700, color:C.textPrimary }}>Overall Constitution</span>
+              <span style={{ fontSize:14, fontWeight:800, color:C.gMain }}>{readPct}%</span>
+            </div>
+            <div style={{ height:8, background:C.deep, borderRadius:4, overflow:"hidden", marginBottom:20 }}>
+              <div style={{ height:"100%", width:`${readPct}%`, background:`linear-gradient(90deg, ${C.gMid}, ${C.gBright})`, borderRadius:4, transition:"width 0.5s" }} />
+            </div>
+            {/* Per-chapter */}
+            {chapterProgress.map((ch, i) => (
+              <div key={i} style={{ marginBottom:12 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                  <span style={{ fontSize:12, fontWeight:600, color:C.textBody }}>{ch.icon} {ch.title}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: ch.pct === 100 ? C.gMain : C.textMuted }}>{ch.read}/{ch.total}</span>
+                </div>
+                <div style={{ height:5, background:C.deep, borderRadius:3, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${ch.pct}%`, background: ch.pct === 100 ? C.gBright : C.gMain, borderRadius:3, transition:"width 0.5s", opacity: ch.pct === 0 ? 0.3 : 1 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quiz History */}
+        {recentQuizzes.length > 0 && (
+          <div>
+            <Label>Recent Quizzes</Label>
+            <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:8 }}>
+              {recentQuizzes.map((q, i) => {
+                const pct = Math.round((q.score / q.total) * 100);
+                return (
+                  <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+                    <div style={{ width:42, height:42, borderRadius:12, background: pct === 100 ? C.gLight : pct >= 70 ? "#fff8e1" : "#fdecea", border:`1px solid ${pct === 100 ? C.borderLit : pct >= 70 ? "#ffe082" : "#ef9a9a"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>
+                      {pct === 100 ? "🏆" : pct >= 70 ? "⭐" : "📝"}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.textPrimary, textTransform:"capitalize" }}>{q.cat} Quiz</div>
+                      <div style={{ fontSize:11, color:C.textGhost, marginTop:2 }}>{q.date} · Streak {q.maxStreak}</div>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:16, fontWeight:800, color: pct === 100 ? C.gMain : pct >= 70 ? "#e6a800" : "#c62828" }}>{q.score}/{q.total}</div>
+                      <div style={{ fontSize:9, color:C.textGhost, fontWeight:600 }}>{pct}%</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bookmarks */}
+        {bookmarkedSections.length > 0 && (
+          <div>
+            <Label>Bookmarked Sections</Label>
+            <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:8 }}>
+              {bookmarkedSections.map(({ chIdx, sIdx, ch, sec }) => (
+                <div key={`${chIdx}_${sIdx}`} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:14, padding:"14px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <div style={{ width:40, height:40, borderRadius:12, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>{ch.icon}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:C.textPrimary }}>{sec.heading}</div>
+                    <div style={{ fontSize:11, color:C.textGhost, marginTop:2 }}>{sec.ref} · {ch.title}</div>
+                  </div>
+                  <span style={{ fontSize:16 }}>🔖</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Stats Summary */}
+        <div>
+          <Label>All-Time Stats</Label>
+          <div style={{ marginTop:14, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            {[
+              { icon:"🎮", label:"Games Played",     val: user.totalGames },
+              { icon:"🏆", label:"Perfect Scores",   val: user.perfectGames },
+              { icon:"🔥", label:"Best Streak",       val: user.maxStreak },
+              { icon:"🔖", label:"Bookmarks",         val: bookmarkCount },
+            ].map((s,i) => (
+              <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ fontSize:22, fontWeight:800, color:C.textPrimary, letterSpacing:-0.5 }}>{s.val}</div>
+                <div style={{ fontSize:11, fontWeight:600, color:C.textGhost, marginTop:3 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Reset */}
+        <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:20 }}>
+          {!showReset ? (
+            <button onClick={() => setShowReset(true)} style={{ width:"100%", padding:"12px", borderRadius:12, border:`1px solid ${C.border}`, background:C.card, color:C.textGhost, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              Reset All Data
+            </button>
+          ) : (
+            <div style={{ background:"#fdecea", border:"1px solid #ef9a9a", borderRadius:14, padding:"18px" }}>
+              <p style={{ fontSize:13, color:"#b71c1c", fontWeight:600, marginBottom:14, textAlign:"center" }}>This will erase all your progress, scores and bookmarks. Are you sure?</p>
+              <div style={{ display:"flex", gap:10 }}>
+                <button onClick={() => setShowReset(false)} style={{ flex:1, padding:"11px", borderRadius:12, border:`1px solid ${C.border}`, background:C.card, color:C.textBody, fontSize:13, fontWeight:700, cursor:"pointer" }}>Cancel</button>
+                <button onClick={() => { setUser({ ...defaultUser }); setShowReset(false); }} style={{ flex:1, padding:"11px", borderRadius:12, background:"#c62828", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>Yes, Reset</button>
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ height:8 }} />
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   NAV + LABEL
+════════════════════════════════════════ */
+function Nav({ tab, setTab, setChapterIdx }) {
+  const tabs = [
+    { id:"home",         icon:"🏠", label:"Home"    },
+    { id:"constitution", icon:"📜", label:"Rights"  },
+    { id:"history",      icon:"📚", label:"History" },
+    { id:"games",        icon:"🎮", label:"Games"   },
+    { id:"ask",          icon:"🤖", label:"Ask"     },
+    { id:"profile",      icon:"👤", label:"Me"      },
+  ];
+  return (
+    <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:"rgba(255,255,255,0.96)", backdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", justifyContent:"space-around", padding:"10px 0 24px", zIndex:200, boxShadow:"0 -4px 20px rgba(0,0,0,0.06)" }}>
+      {tabs.map(t => {
+        const active = tab === t.id;
+        return (
+          <button key={t.id} onClick={() => { setTab(t.id); if (t.id !== "constitution") setChapterIdx?.(null); }} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, padding:"4px 12px" }}>
+            <span style={{ fontSize:21, filter: active ? "none" : "grayscale(100%) opacity(0.35)", transition:"filter 0.2s" }}>{t.icon}</span>
+            <span style={{ fontSize:10, fontWeight:700, letterSpacing:0.3, color: active ? C.gMain : C.textGhost, transition:"color 0.2s" }}>{t.label}</span>
+            {active && <div style={{ width:4, height:4, borderRadius:"50%", background:C.gBright }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Label({ children }) {
+  return <div style={{ fontSize:11, letterSpacing:2, color:C.textGhost, textTransform:"uppercase", fontWeight:700 }}>{children}</div>;
+}
