@@ -1514,9 +1514,8 @@ function AppInner() {
   return (
     <>
       <FontLoader />
-      <TopBar />
       <div style={{ background: C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", fontFamily:"'Inter', sans-serif", overflowX:"hidden" }}>
-        <div style={{ paddingBottom:90, paddingTop:46 }}>
+        <div style={{ paddingBottom:90, paddingTop:0 }}>
           {tab === "home"         && <HomeScreen setTab={setTab} />}
           {tab === "constitution" && <ConstitutionScreen chapterIdx={chapterIdx} setChapterIdx={setChapterIdx} expandedSec={expandedSec} setExpanded={setExpanded} />}
           {tab === "history"      && <HistoryScreen />}
@@ -1547,7 +1546,7 @@ function HomeScreen({ setTab }) {
         <div style={{ position:"absolute", bottom:-30, left:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
         <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:20, padding:"4px 14px", marginBottom:22 }}>
           <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0a8" }} />
-          <span style={{ fontSize:10, letterSpacing:2, color:"#d4f7d4", fontWeight:700, textTransform:"uppercase" }}>Phase 5 — Live</span>
+          <span style={{ fontSize:10, letterSpacing:2, color:"#d4f7d4", fontWeight:700, textTransform:"uppercase" }}>Created by ElZenitho</span>
         </div>
         <div style={{ width:72, height:72, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, marginBottom:22 }}>🇳🇬</div>
         <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:40, fontWeight:900, color:"#ffffff", lineHeight:1.1, marginBottom:14, letterSpacing:-0.5 }}>
