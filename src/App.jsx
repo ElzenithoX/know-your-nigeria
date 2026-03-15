@@ -59,7 +59,7 @@ function UserProvider({ children }) {
   const saveQuizResult = useCallback((result) => {
     setUser(prev => ({
       ...prev,
-      quizHistory:   [result, ...prev.quizHistory].slice(0, 30),
+      quizHistory:   [result, ...(prev.quizHistory || [])].slice(0, 30),
       totalGames:    prev.totalGames + 1,
       perfectGames:  prev.perfectGames + (result.score === result.total ? 1 : 0),
       maxStreak:     Math.max(prev.maxStreak, result.maxStreak),
@@ -2128,18 +2128,19 @@ function GameZone() {
 
   function next() {
     if (qIdx + 1 >= questions.length) {
-      // finish
-      const finalScore = score + (selected === questions[qIdx].answer ? 1 : 0);
-      const perfect = finalScore === QUIZ_SIZE;
+      // score state is stale (setScore is async), so recalculate from selected
+      const lastCorrect = selected === questions[qIdx].answer;
+      const finalScore  = score + (lastCorrect ? 1 : 0);
       setStats(prev => ({
-        totalGames:       prev.totalGames + 1,
-        perfectGames:     prev.perfectGames + (perfect ? 1 : 0),
-        maxStreak:        Math.max(prev.maxStreak, maxStreak),
-        historyGames:     prev.historyGames + (category === "history" ? 1 : 0),
-        constitutionGames:prev.constitutionGames + (category === "constitution" ? 1 : 0),
-        totalPoints:      prev.totalPoints + finalScore,
+        totalGames:        prev.totalGames + 1,
+        perfectGames:      prev.perfectGames + (finalScore === QUIZ_SIZE ? 1 : 0),
+        maxStreak:         Math.max(prev.maxStreak, maxStreak),
+        historyGames:      prev.historyGames + (category === "history" ? 1 : 0),
+        constitutionGames: prev.constitutionGames + (category === "constitution" ? 1 : 0),
+        totalPoints:       prev.totalPoints + finalScore,
       }));
       saveQuizResult({ date: new Date().toLocaleDateString(), cat: category, score: finalScore, total: QUIZ_SIZE, maxStreak, pts: finalScore });
+      setScore(finalScore);
       setScreen("result");
     } else {
       setQIdx(i => i + 1);
