@@ -2061,6 +2061,126 @@ const ALL_QUESTIONS = [
     q:"According to Section 20, the State is constitutionally obligated to protect which of the following?",
     options:["Foreign investments","The environment, water, air, land and wildlife","State borders","Cultural monuments"], answer:1,
     fact:"Section 20: 'The State shall protect and improve the environment and safeguard the water, air and land, forest and wild life of Nigeria.'" },
+  { id:31, cat:"history", difficulty:"easy",
+    q:"Which Nigerian city was the country's capital before Abuja?",
+    options:["Ibadan","Kano","Lagos","Enugu"], answer:2,
+    fact:"Lagos was Nigeria's capital from independence in 1960 until December 12, 1991, when the capital was officially moved to Abuja." },
+  { id:32, cat:"history", difficulty:"easy",
+    q:"Who was Nigeria's first military Head of State?",
+    options:["Yakubu Gowon","Johnson Aguiyi-Ironsi","Murtala Mohammed","Olusegun Obasanjo"], answer:1,
+    fact:"Major-General Johnson Aguiyi-Ironsi became Nigeria's first military ruler after the January 1966 coup, but was assassinated six months later." },
+  { id:33, cat:"history", difficulty:"medium",
+    q:"What was the 1914 Amalgamation a merger of?",
+    options:["Northern and Eastern Protectorates","Northern and Southern Protectorates","Lagos Colony and Northern Protectorate","Eastern and Western Nigeria"], answer:1,
+    fact:"Lord Lugard merged the Northern and Southern Protectorates of Nigeria on January 1, 1914, creating the entity we know as Nigeria today." },
+  { id:34, cat:"history", difficulty:"medium",
+    q:"Nigeria returned to civilian rule for the second time in which year?",
+    options:["1979","1983","1993","1999"], answer:0,
+    fact:"Nigeria's Second Republic began in 1979 when Shehu Shagari was elected president, but it was overthrown in a military coup in December 1983." },
+  { id:35, cat:"history", difficulty:"easy",
+    q:"Wole Soyinka became the first African to win which prize in 1986?",
+    options:["Pulitzer Prize","Nobel Prize in Literature","Booker Prize","Commonwealth Writers Prize"], answer:1,
+    fact:"Wole Soyinka of Nigeria won the Nobel Prize in Literature in 1986, becoming the first African to receive this honour." },
+  { id:36, cat:"history", difficulty:"easy",
+    q:"Which Nigerian writer authored 'Things Fall Apart'?",
+    options:["Wole Soyinka","Ben Okri","Chinua Achebe","Chimamanda Ngozi Adichie"], answer:2,
+    fact:"Chinua Achebe published 'Things Fall Apart' in 1958. It has been translated into over 50 languages and sold over 20 million copies worldwide." },
+  { id:37, cat:"history", difficulty:"medium",
+    q:"The EndSARS protests of October 2020 were against which Nigerian institution?",
+    options:["The judiciary","SARS — a unit of the Nigerian Police Force","The military","The National Assembly"], answer:1,
+    fact:"#EndSARS was a movement against the Special Anti-Robbery Squad (SARS), a police unit widely accused of extortion, torture, and extrajudicial killings." },
+  { id:38, cat:"history", difficulty:"easy",
+    q:"June 12 is celebrated as Democracy Day to honour what event?",
+    options:["Nigeria's independence in 1960","The end of the Civil War in 1970","MKO Abiola's election victory in 1993","Return to civilian rule in 1999"], answer:2,
+    fact:"June 12 marks the 1993 election widely won by MKO Abiola, later annulled by Gen. Babangida. It was declared Democracy Day in 2018 by President Buhari." },
+  { id:39, cat:"history", difficulty:"easy",
+    q:"What is the name of Nigeria's currency?",
+    options:["Cedis","Naira","Shilling","Franc"], answer:1,
+    fact:"The Nigerian Naira was introduced on January 1, 1973, replacing the Nigerian Pound. Its name is derived from 'Nigeria'." },
+  { id:40, cat:"history", difficulty:"medium",
+    q:"Which Yoruba kingdom was one of the largest pre-colonial empires in West Africa?",
+    options:["Benin Kingdom","Oyo Empire","Ife Kingdom","Ijebu Kingdom"], answer:1,
+    fact:"The Oyo Empire at its height controlled much of West Africa, with a sophisticated political system that included checks on the Alafin's power." },
+  { id:41, cat:"history", difficulty:"medium",
+    q:"The Benin Kingdom was famous for its intricate art made from which material?",
+    options:["Gold","Ivory and bronze","Terracotta","Iron"], answer:1,
+    fact:"The Benin Kingdom produced magnificent bronze and ivory sculptures. The Benin Bronzes, seized by British forces in 1897, are now a subject of repatriation debates." },
+  { id:42, cat:"history", difficulty:"medium",
+    q:"Which pan-Africanist independence leader was known as 'Zik of Africa'?",
+    options:["Herbert Macaulay","Obafemi Awolowo","Nnamdi Azikiwe","Ahmadu Bello"], answer:2,
+    fact:"Nnamdi Azikiwe, known as 'Zik of Africa', was a pan-Africanist leader who became Nigeria's first indigenous Governor-General and later ceremonial President." },
+  { id:43, cat:"history", difficulty:"hard",
+    q:"The Kano Riot of 1953 was triggered by a disagreement over what issue?",
+    options:["Land allocation","Self-government motion","Religious conversions","Trade union rights"], answer:1,
+    fact:"The 1953 Kano Riot erupted when northern politicians objected to a motion calling for self-government in 1956, reflecting deep regional tensions." },
+  { id:44, cat:"history", difficulty:"easy",
+    q:"What does 'EFCC' stand for?",
+    options:["Economic and Financial Crimes Commission","Electoral and Federal Compliance Council","Executive Finance Control Committee","Economic Federation Coordination Commission"], answer:0,
+    fact:"The EFCC was established in 2003 to combat financial crimes including fraud, money laundering, and corruption in Nigeria." },
+  { id:45, cat:"history", difficulty:"medium",
+    q:"What was the name of the agreement signed at Aburi, Ghana in 1967 that briefly eased Civil War tensions?",
+    options:["Lagos Accord","Aburi Accord","Kampala Agreement","Dodan Declaration"], answer:1,
+    fact:"The Aburi Accord was signed in January 1967 between Nigerian leaders including Gowon and Ojukwu. Its failure to be implemented contributed to the Civil War." },
+  { id:46, cat:"constitution", difficulty:"easy",
+    q:"How many sections does the 1999 Nigerian Constitution have?",
+    options:["269","315","320","199"], answer:2,
+    fact:"The 1999 Constitution of the Federal Republic of Nigeria has 320 sections, covering everything from fundamental rights to judicial powers." },
+  { id:47, cat:"constitution", difficulty:"easy",
+    q:"What is the minimum age to vote in Nigeria?",
+    options:["16","18","21","25"], answer:1,
+    fact:"Section 77(2) states that every citizen who has attained the age of 18 years and is residing in Nigeria is entitled to be registered as a voter." },
+  { id:48, cat:"constitution", difficulty:"medium",
+    q:"Under Section 308, who is immune from civil and criminal proceedings while in office?",
+    options:["All elected officials","Senators and House members","President, VP, Governors and Deputy Governors","Judges and ministers"], answer:2,
+    fact:"Section 308 grants immunity from prosecution to the President, Vice-President, Governors and Deputy Governors while they hold office — a controversial provision." },
+  { id:49, cat:"constitution", difficulty:"medium",
+    q:"How many Senators does each state send to the Nigerian Senate?",
+    options:["Two","Three","Four","Five"], answer:1,
+    fact:"Section 48 states the Senate consists of three Senators from each State and one from the FCT — totalling 109 Senators." },
+  { id:50, cat:"constitution", difficulty:"hard",
+    q:"Section 14(2)(b) declares that the primary purpose of government is?",
+    options:["Economic development","National security","The security and welfare of the people","Territorial integrity"], answer:2,
+    fact:"Section 14(2)(b): 'the security and welfare of the people shall be the primary purpose of government' — one of the most powerful accountability tools in the Constitution." },
+  { id:51, cat:"constitution", difficulty:"medium",
+    q:"To become President, a candidate must win at least what fraction of votes in two-thirds of all states?",
+    options:["One-third","One-quarter","One-half","Two-thirds"], answer:1,
+    fact:"Section 134: a candidate must have the majority of total votes AND at least one-quarter of votes in two-thirds of all 36 states and the FCT." },
+  { id:52, cat:"constitution", difficulty:"medium",
+    q:"Section 36(5) enshrines which fundamental legal principle?",
+    options:["Right to silence","Presumption of innocence","Double jeopardy protection","Right to appeal"], answer:1,
+    fact:"Section 36(5): 'Every person who is charged with a criminal offence shall be presumed to be innocent until he is proved guilty.' This is a constitutional guarantee." },
+  { id:53, cat:"constitution", difficulty:"hard",
+    q:"Section 162 requires that derivation from natural resources in the Federation Account be at least what percentage?",
+    options:["5%","10%","13%","20%"], answer:2,
+    fact:"Section 162(2): the derivation principle shall be 'not less than thirteen per cent' of revenue from natural resources — critical for Niger Delta states." },
+  { id:54, cat:"constitution", difficulty:"medium",
+    q:"How long is one term of office for the President of Nigeria?",
+    options:["3 years","4 years","5 years","6 years"], answer:1,
+    fact:"Section 135(2): the President shall vacate office at the expiration of four years. A maximum of two terms means the most a President can serve is eight years." },
+  { id:55, cat:"constitution", difficulty:"medium",
+    q:"Section 23 lists Nigeria's national ethics. Which of these is NOT among them?",
+    options:["Integrity","Self-reliance","Patriotism","Prosperity"], answer:3,
+    fact:"Section 23 national ethics: Discipline, Integrity, Dignity of Labour, Social Justice, Religious Tolerance, Self-reliance and Patriotism. Prosperity is not listed." },
+  { id:56, cat:"constitution", difficulty:"easy",
+    q:"Section 40 guarantees which freedom essential for trade unions and civil society?",
+    options:["Freedom of worship","Freedom of assembly and association","Freedom of movement","Freedom of expression"], answer:1,
+    fact:"Section 40 guarantees every person the right to assemble freely and associate with others — including forming or joining political parties and trade unions." },
+  { id:57, cat:"constitution", difficulty:"hard",
+    q:"Section 45 allows certain rights to be restricted only when?",
+    options:["The President issues a decree","Only during declared wars","When reasonably justifiable in a democratic society for public safety","Never — rights are absolute"], answer:2,
+    fact:"Section 45 allows restrictions on rights in sections 37-41 only when 'reasonably justifiable in a democratic society' for defence, public safety, order, morality, or health." },
+  { id:58, cat:"constitution", difficulty:"medium",
+    q:"Section 7 of the Constitution guarantees which tier of government?",
+    options:["The Federal Government","State Governments","Democratically elected local government councils","The National Assembly"], answer:2,
+    fact:"Section 7(1) guarantees 'the system of local government by democratically elected local government councils' — appointed councils violate the Constitution." },
+  { id:59, cat:"constitution", difficulty:"hard",
+    q:"Which section makes it illegal to deploy Nigerian military on combat duty outside Nigeria without Senate approval?",
+    options:["Section 5(4)(b)","Section 11","Section 217","Section 305"], answer:0,
+    fact:"Section 5(4)(b) states no member of the armed forces shall be deployed on combat duty outside Nigeria without the prior approval of the Senate." },
+  { id:60, cat:"constitution", difficulty:"medium",
+    q:"What percentage of National Assembly members must support a constitutional amendment?",
+    options:["Simple majority","60%","Two-thirds majority","Three-quarters majority"], answer:2,
+    fact:"Section 9 requires a two-thirds majority of the National Assembly AND approval by at least two-thirds of all 36 State Houses of Assembly." },
 ];
 
 const CATEGORIES = [
@@ -2086,20 +2206,26 @@ function shuffle(arr) {
    GAME ZONE — MAIN
 ════════════════════════════════════════ */
 function GameZone() {
-  const [screen, setScreen]   = useState("lobby");   // lobby | quiz | result
-  const [category, setCategory] = useState(null);
+  const { saveQuizResult } = useUser();
+
+  const [screen, setScreen]       = useState("lobby");
+  const [category, setCategory]   = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [qIdx, setQIdx]       = useState(0);
-  const [selected, setSelected] = useState(null);    // index of chosen option
-  const [revealed, setRevealed] = useState(false);
-  const [score, setScore]     = useState(0);
-  const [streak, setStreak]   = useState(0);
-  const [maxStreak, setMaxStreak] = useState(0);
-  const [answers, setAnswers] = useState([]);        // {correct, chosen}
-  const [stats, setStats]     = useState({
+  const [qIdx, setQIdx]           = useState(0);
+  const [selected, setSelected]   = useState(null);
+  const [revealed, setRevealed]   = useState(false);
+  const [answers, setAnswers]     = useState([]);
+  const [stats, setStats]         = useState({
     totalGames:0, perfectGames:0, maxStreak:0,
     historyGames:0, constitutionGames:0, totalPoints:0,
   });
+
+  // Refs avoid stale-closure bugs — values are always current when next() fires
+  const scoreRef     = useRef(0);
+  const streakRef    = useRef(0);
+  const maxStreakRef = useRef(0);
+  const [scoreDisplay,  setScoreDisplay]  = useState(0);
+  const [streakDisplay, setStreakDisplay] = useState(0);
 
   const QUIZ_SIZE = 10;
 
@@ -2107,40 +2233,39 @@ function GameZone() {
     const pool = cat === "mixed" ? ALL_QUESTIONS : ALL_QUESTIONS.filter(q => q.cat === cat);
     setQuestions(shuffle(pool).slice(0, QUIZ_SIZE));
     setCategory(cat);
-    setQIdx(0); setSelected(null); setRevealed(false);
-    setScore(0); setStreak(0); setMaxStreak(0); setAnswers([]);
+    setQIdx(0); setSelected(null); setRevealed(false); setAnswers([]);
+    scoreRef.current = 0; streakRef.current = 0; maxStreakRef.current = 0;
+    setScoreDisplay(0); setStreakDisplay(0);
     setScreen("quiz");
   }
 
   function choose(optIdx) {
     if (revealed) return;
+    const q       = questions[qIdx];
+    const correct = optIdx === q.answer;
+    if (correct) scoreRef.current += 1;
+    streakRef.current   = correct ? streakRef.current + 1 : 0;
+    maxStreakRef.current = Math.max(maxStreakRef.current, streakRef.current);
     setSelected(optIdx);
     setRevealed(true);
-    const q   = questions[qIdx];
-    const correct = optIdx === q.answer;
-    const newStreak = correct ? streak + 1 : 0;
-    const newMax    = Math.max(maxStreak, newStreak);
-    setStreak(newStreak);
-    setMaxStreak(newMax);
-    if (correct) setScore(s => s + 1);
+    setScoreDisplay(scoreRef.current);
+    setStreakDisplay(streakRef.current);
     setAnswers(prev => [...prev, { correct, chosen: optIdx, answer: q.answer }]);
   }
 
   function next() {
     if (qIdx + 1 >= questions.length) {
-      // score state is stale (setScore is async), so recalculate from selected
-      const lastCorrect = selected === questions[qIdx].answer;
-      const finalScore  = score + (lastCorrect ? 1 : 0);
+      const finalScore  = scoreRef.current;
+      const finalStreak = maxStreakRef.current;
       setStats(prev => ({
         totalGames:        prev.totalGames + 1,
         perfectGames:      prev.perfectGames + (finalScore === QUIZ_SIZE ? 1 : 0),
-        maxStreak:         Math.max(prev.maxStreak, maxStreak),
+        maxStreak:         Math.max(prev.maxStreak, finalStreak),
         historyGames:      prev.historyGames + (category === "history" ? 1 : 0),
         constitutionGames: prev.constitutionGames + (category === "constitution" ? 1 : 0),
         totalPoints:       prev.totalPoints + finalScore,
       }));
-      saveQuizResult({ date: new Date().toLocaleDateString(), cat: category, score: finalScore, total: QUIZ_SIZE, maxStreak, pts: finalScore });
-      setScore(finalScore);
+      saveQuizResult({ date: new Date().toLocaleDateString(), cat: category, score: finalScore, total: QUIZ_SIZE, maxStreak: finalStreak, pts: finalScore });
       setScreen("result");
     } else {
       setQIdx(i => i + 1);
@@ -2150,8 +2275,8 @@ function GameZone() {
   }
 
   if (screen === "lobby")  return <GameLobby stats={stats} onStart={startQuiz} />;
-  if (screen === "quiz")   return <QuizScreen questions={questions} qIdx={qIdx} selected={selected} revealed={revealed} streak={streak} score={score} choose={choose} next={next} category={category} />;
-  if (screen === "result") return <ResultScreen score={score} total={QUIZ_SIZE} maxStreak={maxStreak} answers={answers} questions={questions} stats={stats} onPlay={() => setScreen("lobby")} />;
+  if (screen === "quiz")   return <QuizScreen questions={questions} qIdx={qIdx} selected={selected} revealed={revealed} streak={streakDisplay} score={scoreDisplay} choose={choose} next={next} category={category} />;
+  if (screen === "result") return <ResultScreen score={scoreRef.current} total={QUIZ_SIZE} maxStreak={maxStreakRef.current} answers={answers} questions={questions} stats={stats} onPlay={() => setScreen("lobby")} />;
   return null;
 }
 
@@ -2422,7 +2547,7 @@ const SUGGESTED_QUESTIONS = [
   "What does the constitution say about the environment?",
 ];
 
-const SYSTEM_PROMPT = `You are "Lex" — a friendly, knowledgeable Nigerian civic and constitutional law assistant built into the "Know Your Nigeria" app. You help everyday Nigerians understand their rights, the 1999 Constitution, Nigerian history, and how the law affects their daily lives.
+const SYSTEM_PROMPT = `You are "Wazobia" — a friendly, knowledgeable Nigerian civic and constitutional law assistant built into the "Know Your Nigeria" app. You help everyday Nigerians understand their rights, the 1999 Constitution, Nigerian history, and how the law affects their daily lives.
 
 Your personality:
 - Warm, encouraging, and conversational — like a smart friend who happens to know the law
@@ -2448,7 +2573,7 @@ function AskTheLaw() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "Hey! I'm **Lex** 👋 — your Nigerian civic law assistant.\n\nAsk me anything about your constitutional rights, Nigerian history, or how the law applies to your daily life. I'll break it down in plain language.\n\nWhat's on your mind?",
+      content: "Hey! I'm **Wazobia** 👋 — your Nigerian civic law assistant.\n\nAsk me anything about your constitutional rights, Nigerian history, or how the law applies to your daily life. I'll break it down in plain language.\n\nWhat's on your mind?",
     }
   ]);
   const [input, setInput]     = useState("");
@@ -2516,7 +2641,7 @@ function AskTheLaw() {
           <p style={{ fontSize:13, color:"rgba(255,255,255,0.7)", fontWeight:500, maxWidth:260, lineHeight:1.6 }}>Your AI-powered Nigerian civic rights assistant — ask anything about the constitution or your rights.</p>
           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
             <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0c0", flexShrink:0 }} />
-            <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700, letterSpacing:0.5 }}>Lex is online</span>
+            <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700, letterSpacing:0.5 }}>Wazobia is online</span>
           </div>
         </div>
       </div>
