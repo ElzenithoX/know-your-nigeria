@@ -111,51 +111,51 @@ const CHAPTERS = [
       { ref:"Section 1", heading:"The Constitution is Supreme",
         plain:"This Constitution is the highest law in Nigeria. Every authority — federal, state, local — is bound by it. Any law that contradicts it is automatically void.",
         realTalk:"No president, senator, or governor can act outside this document. If they do, their actions carry no legal weight. You can challenge them in court.",
-        official:"(1) A National Assembly Election Tribunal shall consist of a Chairman and four other members. (2) The Chairman shall be a Judge of a High Court and the four other members shall be appointed from among Judges of a High Court, Kadis of a Sharia Court of Appeal, Judges of a Customary Court of Appeal or" },
+        official:"(1) This Constitution is supreme and its provisions shall have binding force on the authorities and persons throughout the Federal Republic of Nigeria. (2) The Federal Republic of Nigeria shall not be governed, nor shall any persons or group of persons take control of the Government of Nigeria or any part thereof, except in accordance with the provisions of this Constitution. (3) If any other law is inconsistent with the provisions of this Constitution, this Constitution shall prevail, and that other law shall, to the extent of the inconsistency, be void." },
       { ref:"Section 2", heading:"One Indivisible Nation",
         plain:"Nigeria is one sovereign, indivisible state consisting of a Federation of States and the Federal Capital Territory. No part can break away.",
         realTalk:"Sovereignty belongs entirely to the Nigerian people — not politicians, not the military. The state exists to serve its citizens.",
-        official:"(1) A Governorship and Legislative Houses Election Tribunal shall consist of a Chairman and four other members. (2) The Chairman shall be a Judge of a High Court and the four other members shall be appointed from among Judges of a High Court, Kadis of a Sharia Court of Appeal, Judges of a Customary" },
+        official:"(1) Nigeria is one indivisible and indissoluble sovereign state to be known by the name of the Federal Republic of Nigeria. (2) Nigeria shall be a Federation consisting of States and a Federal Capital Territory." },
       { ref:"Section 3", heading:"36 States + FCT",
         plain:"Nigeria consists of 36 states and the Federal Capital Territory, Abuja. The boundaries and names of states are defined here.",
         realTalk:"Your state is constitutionally recognized. Any attempt to redraw or absorb state boundaries requires a constitutional amendment — it's not something a president can do alone.",
-        official:"The President and Deputy President of the Senate Speakers and Deputy Speaker of the House of Representatives and Speakers and Deputy Speakers of Houses of Assembly of States, and all members and staff of legislative houses." },
+        official:"(1) There shall be 36 states in Nigeria, that is to say, Abia, Adamawa, Akwa Ibom, Anambra, Bauchi, Bayelsa, Benue, Borno, Cross River, Delta, Ebonyi, Edo, Ekiti, Enugu, Gombe, Imo, Jigawa, Kaduna, Kano, Katsina, Kebbi, Kogi, Kwara, Lagos, Nasarawa, Niger, Ogun, Ondo, Osun, Oyo, Plateau, Rivers, Sokoto, Taraba, Yobe and Zamfara. (6) There shall be 768 Local Government Areas in Nigeria as shown in the Second Column of Part I of the First Schedule to this Constitution and six area councils as shown in Part II of that Schedule." },
       { ref:"Section 4", heading:"Who Makes Nigeria's Laws",
         plain:"Legislative power is shared between the National Assembly (for the Federation) and State Houses of Assembly (for states). Each level can only make laws within its permitted scope.",
         realTalk:"There's a list of what only federal government can legislate on. States can legislate on everything else. If the federal government tries to control something outside its list, that law is void.",
-        official:"Governors and Deputy Governors of States." },
+        official:"(1) The legislative powers of the Federal Republic of Nigeria shall be vested in a National Assembly for the Federation, which shall consist of a Senate and a House of Representatives. (2) The National Assembly shall have power to make laws for the peace, order and good government of the Federation or any part thereof with respect to any matter included in the Exclusive Legislative List. (5) If any Law enacted by the House of Assembly of a State is inconsistent with any law validly made by the National Assembly, the law made by the National Assembly shall prevail, and that other Law shall, to the extent of the inconsistency, be void." },
       { ref:"Section 5", heading:"Who Runs the Government",
         plain:"Executive power of the Federation is vested in the President. Executive power of a State is vested in the Governor. They must act in line with the Constitution.",
         realTalk:"The President and Governors don't have unlimited power. Their authority comes from and is limited by this document. Acting outside it is unconstitutional.",
-        official:"Chief Justice of Nigeria, Justices of the Supreme Court, President and Justices of the Court of Appeal, all other judicial officers and all staff of courts of law." },
+        official:"(1) Subject to the provisions of this Constitution, the executive powers of the Federation shall be vested in the President and may be exercised by him either directly or through the Vice-President and Ministers of the Government of the Federation or officers in the public service of the Federation. (2) Subject to the provisions of this Constitution, the executive powers of a State shall be vested in the Governor of that State." },
       { ref:"Section 6", heading:"Who Interprets the Law",
         plain:"Judicial powers of the Federation are vested in courts established by this Constitution. No court can be set up to override the Constitution.",
         realTalk:"Courts exist to protect your rights. If you believe the government has wronged you, you have a constitutional right to go to court — that right cannot be taken away.",
-        official:"Attorney-General of the Federation and Attorney-General of each State." },
+        official:"(1) The judicial powers of the Federation shall be vested in the courts to which this section relates, being courts established for the Federation. (2) The judicial powers of a State shall be vested in the courts to which this section relates, being courts established for a State. (6) The judicial powers vested in accordance with the foregoing provisions of this section shall extend, notwithstanding anything to the contrary in this Constitution, to all inherent powers and sanctions of a court of law." },
       { ref:"Section 7", heading:"Local Government Is Guaranteed",
         plain:"A system of local government with democratically elected councils is guaranteed by this Constitution. Federal and state governments must ensure their functioning.",
         realTalk:"Your local government must be democratically elected — appointed councils are unconstitutional. LGA funds must reach the grassroots; using LGAs as political tools violates this provision.",
-        official:"Ministers of the Government of the Federation and Commissioners of the Governments of the States." },
+        official:"(1) The system of local government by democratically elected local government councils is under this Constitution guaranteed; and accordingly, the Government of every State shall, subject to section 8 of this Constitution, ensure their existence under a Law which provides for the establishment, structure, composition, finance and functions of such councils. (5) The functions to be conferred by Law upon local government councils shall include those set out in the Fourth Schedule to this Constitution." },
       { ref:"Section 8", heading:"How New States Are Created",
         plain:"New states can only be created through a complex constitutional process requiring National Assembly approval, state legislature approval, and referendums in affected areas.",
         realTalk:"Creating or splitting states isn't the President's personal decision. It needs massive democratic consensus at multiple levels. This protects communities from arbitrary political gerrymandering.",
-        official:"Chief of Defence Staff, Chief of Army Staff, Chief of Naval Staff, Chief of Air Staff and all members of the armed forces of the Federation." },
+        official:"(1) An Act of the National Assembly for the purpose of creating a new State shall only be passed if a request, supported by at least two-thirds majority of members representing the area demanding the creation of the new State in the Senate and the House of Representatives, the House of Assembly in respect of the area, and the local government councils in respect of the area, is received by the National Assembly; and a proposal for the creation of the State is thereafter approved in a referendum by at least two-thirds majority of the people of the area where the demand for creation of the State originated." },
       { ref:"Section 9", heading:"How to Change the Constitution",
         plain:"The Constitution can only be amended by a two-thirds majority of the National Assembly and approval by at least two-thirds of State Houses of Assembly.",
         realTalk:"One person or party cannot rewrite Nigeria's fundamental law. Major changes require broad consensus across the entire country — by design, to protect everyone's rights.",
-        official:"Inspector-General of Police, Deputy Inspector-General of Police and all members of the Nigeria Police Force and other government security agencies established by law." },
+        official:"(1) The National Assembly may, subject to the provision of this section, alter any of the provisions of this Constitution. (2) An Act of the National Assembly for the alteration of this Constitution shall not be passed in either House of the National Assembly unless the proposal is supported by the votes of not less than two-thirds majority of all the members of that House and approved by resolution of the Houses of Assembly of not less than two-thirds of all the States." },
       { ref:"Section 10", heading:"No State Religion Allowed",
         plain:"Neither the Federal Government nor any State Government shall adopt any religion as a State Religion. Nigeria is constitutionally secular.",
         realTalk:"Any government official who tries to impose one religion as Nigeria's official faith is acting unconstitutionally. Nigeria belongs equally to Christians, Muslims, traditionalists, and all others.",
-        official:"Secretary to the Government of the Federation, Head of the Civil service, Permanent Secretaries, Directors-Generals and all other persons in the civil service of the Federation or of the State." },
+        official:"The Government of the Federation or of a State shall not adopt any religion as State Religion." },
       { ref:"Section 11", heading:"Government Can Maintain Order",
         plain:"The National Assembly may make laws for the Federation or any part of it with respect to public order and public security.",
         realTalk:"Security laws must be made by the legislature — not invented by the executive. Emergency powers have constitutional limits and cannot be used to permanently suppress citizens.",
-        official:"Ambassadors, High Commissioners and other officers of Nigeria Missions abroad." },
+        official:"(1) The National Assembly may make laws for the Federation or any part thereof with respect to the maintenance and securing of public safety and public order and providing, maintaining and securing of such supplies and services as may be designated by the National Assembly as essential supplies and services. (2) Nothing in this section shall preclude a House of Assembly from making laws with respect to the matter referred to in this section." },
       { ref:"Section 12", heading:"International Treaties Need Laws",
         plain:"No treaty between Nigeria and any other country has the force of law except to the extent that it has been enacted into law by the National Assembly.",
         realTalk:"If Nigeria signs an international deal that affects your life, it only becomes binding on you when parliament passes a law to that effect. The executive can't impose treaty obligations unilaterally.",
-        official:"Chairman, members and staff of the Code of Conduct Bureau and Code of Conduct Tribunal." },
+        official:"(1) No treaty between the Federation and any other country shall have the force of law to the extent to which any such treaty has been enacted into law by the National Assembly. (2) The National Assembly may make laws for the Federation or any part thereof with respect to matters not included in the Exclusive Legislative List for the purpose of implementing a treaty." },
     ],
   },
   {
@@ -164,51 +164,51 @@ const CHAPTERS = [
       { ref:"Section 13", heading:"Government Must Obey This Too",
         plain:"It is the duty of all government organs and agencies — at all levels — to conform to and apply the provisions of this chapter on fundamental objectives.",
         realTalk:"Government accountability isn't optional. Every ministry, agency, and official has a constitutional duty to work toward the welfare objectives set in this chapter.",
-        official:"Chairman, members and staff of local government councils." },
+        official:"It shall be the duty and responsibility of all organs of government, and of all authorities and persons, exercising legislative, executive or judicial powers, to conform to, observe and apply the provisions of this Chapter of this Constitution." },
       { ref:"Section 14", heading:"Government Exists to Serve You",
         plain:"The security and welfare of the people is the PRIMARY purpose of government. Sovereignty belongs to the people, from whom government derives all its powers.",
         realTalk:"When a government fails to secure your welfare, it is failing its constitutional mandate. Citizens have the right to demand accountability — it's literally law.",
-        official:"Chairman and members of the Boards or other governing bodies and staff of statutory corporations and of companies in which the Federal or State Governments or local governments councils." },
+        official:"(1) The Federal Republic of Nigeria shall be a State based on the principles of democracy and social justice. (2) It is hereby, accordingly, declared that: (a) sovereignty belongs to the people of Nigeria from whom government through this Constitution derives all its powers and authority; (b) the security and welfare of the people shall be the primary purpose of government; and (c) the participation by the people in their government shall be ensured in accordance with the provisions of this Constitution." },
       { ref:"Section 15", heading:"No Discrimination. Full Stop.",
         plain:"National integration is a constitutional duty. Discrimination based on place of origin, sex, religion, status, ethnicity, or linguistic ties is prohibited.",
         realTalk:"\"Indigene\" discrimination in jobs, schools, or government — refusing someone opportunities because they're not 'from' a state — goes against this section.",
-        official:"All staff of universities, colleges and institutions owned and financed by the Federal or State Governments or local government councils." },
+        official:"(1) The motto of the Federal Republic of Nigeria shall be Unity and Faith, Peace and Progress. (2) Accordingly, national integration shall be actively encouraged, whilst discrimination on the grounds of place of origin, sex, religion, status, ethnic or linguistic association or ties shall be prohibited. (5) The State shall abolish all corrupt practices and abuse of power." },
       { ref:"Section 16", heading:"Your Right to Economic Welfare",
         plain:"The government must manage Nigeria's economy to ensure maximum welfare for every citizen. Wealth must not be concentrated in a few hands. The constitution mandates shelter, food, a minimum living wage, pensions, and welfare for the disabled.",
         realTalk:"Minimum wage, pension rights, unemployment benefits — these aren't optional policies, they're constitutional obligations. A government that ignores them is failing the law.",
-        official:"Chairman, members and staff of permanent commissions or councils appointed on full time basis. Sixth Schedule Election Tribunals A- National Assembly Election Tribunal" },
+        official:"(1) The State shall, within the context of the ideals and objectives for which provisions are made in this Constitution, harness the resources of the nation and promote national prosperity and an efficient, a dynamic and self-reliant economy. (2) The State shall direct its policy towards ensuring that the material resources of the nation are harnessed and distributed as best as possible to serve the common good, and that the economic system is not operated in such a manner as to permit the concentration of wealth or the means of production in the hands of few individuals." },
       { ref:"Section 17", heading:"Social Justice & Equality",
         plain:"Every citizen shall have equality of rights, obligations and opportunities before the law. There must be equal pay for equal work, regardless of sex.",
         realTalk:"Paying a woman less than a man for the same job violates this section. Exploitation of Nigerian workers goes against constitutional principles.",
-        official:"(1) Subject to the provisions of this paragraph, a person holding the office of Chairman or member of the Code of Conduct Tribunal shall vacate his office when he attains the age of seventy years. (2) A person who has held office as Chairman or member of the Code of Conduct Tribunal for a period of" },
+        official:"(1) The State social order is founded on ideals of Freedom, Equality and Justice. (2) In furtherance of the social order – (a) every citizen shall have equality of rights, obligations and opportunities before the law; (b) the sanctity of the human person shall be recognized and human dignity shall be maintained and enhanced; (c) governmental actions shall be humane; (d) exploitation of human or natural resources in any form whatsoever for reasons, other than the good of the community, shall be prevented." },
       { ref:"Section 18", heading:"Right to Education",
         plain:"Government is obligated to provide equal educational opportunities at all levels — including free, compulsory primary education, free secondary and university education, and adult literacy programmes.",
         realTalk:"Universal Basic Education exists because of this section. Any government that underfunds education is failing a direct constitutional obligation.",
-        official:"(1) Where the Code of Conduct Tribunal finds a public officer guilty of contravention of any of the provisions of this Code it shall impose upon that officer any of the punishments specified under sub-paragraph (2) of this paragraph and such other punishment as may be prescribed by the National Asse" },
+        official:"(1) Government shall direct its policy towards ensuring that there are equal and adequate educational opportunities at all levels. (3) Government shall strive to eradicate illiteracy; and to this end Government shall as and when practicable provide (a) free, compulsory and universal primary education; (b) free secondary education; (c) free university education; and (d) free adult literacy programme." },
       { ref:"Section 19", heading:"Nigeria's Foreign Policy Principles",
         plain:"Nigeria's foreign policy must be based on African unity, non-alignment, non-interference in other countries' affairs, respect for international law, and promotion of world peace.",
         realTalk:"Nigeria can't just take sides in global conflicts arbitrarily. Our foreign policy has constitutional principles — promoting African solidarity and peace isn't optional.",
-        official:"In this Code, unless the context otherwise requires – \"assets\" includes any property, movable and immovable and incomes owned by a person; \"business\" means any profession, vocation, trade, or any adventure or concern in the nature of trade and excludes farming; \"child\" includes a step-child, a lawfu" },
+        official:"The foreign policy objectives shall be – (a) promotion and protection of the national interest; (b) promotion of African integration and support for African unity; (c) promotion of international co-operation for the consolidation of universal peace and mutual respect among all nations and elimination of discrimination in all its manifestations; (d) respect for international law and treaty obligations as well as the seeking of settlement of international disputes by negotiation, mediation, conciliation, arbitration and adjudication; and (e) promotion of a just world economic order." },
       { ref:"Section 20", heading:"Right to a Clean Environment",
         plain:"The State is constitutionally obligated to protect and improve the environment, and safeguard Nigeria's water, air, land, forests, and wildlife.",
         realTalk:"Oil spills that destroy communities in the Niger Delta violate this constitutional provision. Environmental negligence by government or corporations isn't just harmful — it's unconstitutional.",
-        official:"The National Judicial Council shall comprise the following members - (a) the Chief Justice of Nigeria who shall be the Chairman (b) the next most senior Justice of the Supreme Court who shall be the Deputy Chairman; (c) the President of the Court of Appeal; (d) five retired Justices selected by the" },
+        official:"The State shall protect and improve the environment and safeguard the water, air and land, forest and wild life of Nigeria." },
       { ref:"Section 21", heading:"Protecting Nigerian Culture",
         plain:"Government must protect, preserve, and promote Nigeria's cultural heritage — festivals, arts, languages, and traditions — and foster national pride.",
         realTalk:"When government neglects to fund cultural institutions, Nollywood, or local arts, it's failing a constitutional duty. Our diversity is an asset the government must actively protect.",
-        official:"The National Judicial Council shall have power to - (a) recommend to the President from among the list of persons submitted to it by - (i) the Federal Judicial Service Commission, persons for appointment to the offices of the Chief Justice of Nigeria, the Justices of the Supreme Court, the President" },
+        official:"The State shall – (a) protect, preserve and promote the Nigerian cultures which enhance human dignity and are consistent with the fundamental objectives as provided in this Chapter; and (b) encourage development of technological and scientific studies which enhance cultural values." },
       { ref:"Section 22", heading:"The Press Must Hold Power Accountable",
         plain:"The press, radio, television, and other media shall at all times be free to uphold the fundamental objectives and expose corruption and abuse of government power.",
         realTalk:"Journalists have a constitutional mandate. Governments that suppress media criticism, arrest journalists, or shut down broadcast stations are violating this section.",
-        official:"The Secretary of the Council shall be appointed by the National Judicial Council on the recommendation of the Federal Judicial Service Commission and shall be a legal practitioner. J - National Population Commission" },
+        official:"The press, radio, television and other agencies of the mass media shall at all times be free to uphold the fundamental objectives contained in this Chapter and uphold the responsibility and accountability of the Government to the people." },
       { ref:"Section 23", heading:"Our National Ethics",
         plain:"The national ethics are discipline, integrity, dignity of labour, social justice, religious tolerance, self-reliance, and patriotism.",
         realTalk:"These aren't just words — they're constitutional values. Corruption, tribalism, and religious intolerance aren't just social problems; they contradict Nigeria's fundamental law.",
-        official:"The National Population Commission shall comprise the following members - (a) a Chairman; and (b) one person from each State of the Federation and the Federal Capital Territory, Abuja." },
+        official:"The national ethics shall be Discipline, Integrity, Dignity of Labour, Social Justice, Religious Tolerance, Self-reliance and Patriotism." },
       { ref:"Section 24", heading:"Your Duties as a Citizen",
         plain:"The constitution isn't just about rights — it also outlines citizen duties: respecting the constitution and its institutions, contributing to your community, and paying taxes honestly.",
         realTalk:"Rights come with responsibilities. Paying your taxes, respecting others' rights, participating in your community — these are constitutional obligations, not optional choices.",
-        official:"The Commission shall have power to - (a) undertake periodical enumeration of population through sample surveys, censuses or otherwise; (b) establish and maintain a machinery for continuous and universal registration of births and deaths throughout the Federation; (c) advise the President on populati" },
+        official:"It shall be the duty of every citizen to – (a) abide by this Constitution, respect its ideals and its institutions, the National Flag, the National Anthem, the National Pledge, and legitimate authorities; (b) help to enhance the power, prestige and good name of Nigeria, defend Nigeria and render such national service as may be required; (c) respect the dignity of other citizens and the rights and legitimate interests of others and live in unity and harmony and in the spirit of common brotherhood; (f) declare his income honestly to appropriate and lawful agencies and pay his tax promptly." },
     ],
   },
   {
@@ -217,35 +217,35 @@ const CHAPTERS = [
       { ref:"Section 25", heading:"Who is a Nigerian Citizen?",
         plain:"You are a Nigerian citizen by birth if you were born in Nigeria and at least one parent or grandparent is indigenous to Nigeria — or if you were born outside Nigeria but one of your parents is Nigerian.",
         realTalk:"Being born in Nigeria doesn't automatically make you a citizen if you have no Nigerian ancestry. But if either parent is Nigerian, you are Nigerian — regardless of where you were born.",
-        official:"The National Security Council shall comprise the following members - (a) the President who shall be the Chairman; (b) the Vice-President who shall be the Deputy Chairman; (c) the Chief of Defence Staff; (d) the Minister of the Government of the Federation charged with the responsibility for internal" },
+        official:"(1) The following persons are citizens of Nigeria by birth – (a) every person born in Nigeria before the date of independence, either of whose parents or any of whose grandparents belongs or belonged to a community indigenous to Nigeria; (b) every person born in Nigeria after the date of independence either of whose parents or any of whose grandparents is a citizen of Nigeria; and (c) every person born outside Nigeria either of whose parents is a citizen of Nigeria. (2) In this section, 'the date of independence' means the 1st day of October 1960." },
       { ref:"Section 26", heading:"Becoming Nigerian by Marriage/Registration",
         plain:"A foreign woman married to a Nigerian citizen may apply for Nigerian citizenship. Other persons can also apply for citizenship by registration after meeting residency requirements.",
         realTalk:"Marriage to a Nigerian gives a foreign woman the right to become a citizen — but it isn't automatic, she must apply. Citizenship by registration has conditions including loyalty and residence.",
-        official:"The Council shall have power to advise the President on matters relating to public security including matters relating to any organisation or agency established by law for ensuring the security of the Federation. L - Nigeria Police Council" },
+        official:"(1) A person to whom the provisions of this section apply may be registered as a citizen of Nigeria, if the President is satisfied that – (a) he is a person of good character; (b) he has shown a clear intention of his desire to be domiciled in Nigeria; and (c) he has taken the Oath of Allegiance. (2) The provisions of this section shall apply to – (a) any woman who is or has been married to a citizen of Nigeria; or (b) every person of full age and capacity born outside Nigeria any of whose grandparents is a citizen of Nigeria." },
       { ref:"Section 27", heading:"Citizenship by Naturalisation",
         plain:"A foreign person who has lived in Nigeria for 15+ years, is of good character, knows a Nigerian language, and renounces their previous citizenship can apply for naturalisation.",
         realTalk:"Naturalisation requires genuine commitment — 15 years of residency, language knowledge, and renouncing another citizenship. It's a serious legal process, not a loophole.",
-        official:"The Nigeria Police Council shall comprise the following members - (a) the President who shall be the Chairman; (b) the Governor of each State of the Federation; (c) the Chairman of the Police Service Commission; and (d) the Inspector-General of Police" },
+        official:"(1) Any person who is qualified in accordance with the provisions of this section may apply to the President for the grant of a certificate of naturalisation. (2) No person shall be qualified to apply unless he satisfies the President that he is a person of full age and capacity, of good character, has shown a clear intention to be domiciled in Nigeria, is acceptable to the local community, and has resided in Nigeria for a continuous period of fifteen years or resided in Nigeria continuously for twelve months following fifteen years of aggregate residence over twenty years." },
       { ref:"Section 28", heading:"Dual Citizenship Rules",
         plain:"A person who is a Nigerian citizen and acquires citizenship of another country may, under certain conditions, retain Nigerian citizenship. Specific rules apply.",
         realTalk:"Nigerians in the diaspora who've acquired foreign citizenship can still retain Nigerian citizenship in some circumstances — but check the conditions carefully, as not all situations are covered.",
-        official:"The functions of the Nigeria Police Council shall include - (a) the organisation and administration of the Nigeria Police Force and all other matters relating thereto (not being matters relating to the use and operational control of the Force or the appointment, disciplinary control and dismissal of" },
+        official:"(1) A person shall forfeit forthwith his Nigerian citizenship if, not being a citizen of Nigeria by birth, he acquires or retains the citizenship or nationality of a country, other than Nigeria, of which he is not a citizen by birth." },
       { ref:"Section 29", heading:"You Can Renounce Citizenship",
         plain:"A Nigerian citizen who has attained the age of 21 and is also a citizen of another country may renounce their Nigerian citizenship by declaration.",
         realTalk:"You have the right to walk away from Nigerian citizenship if you want — but once done, it must be accepted by the President. It's a formal legal process, not reversible on a whim.",
-        official:"The Police Service Commission shall comprise the following members - (a) a Chairman; and (b) such number of other persons, not less than seven but not more than nine, as may be prescribed by an Act of the National Assembly." },
+        official:"(1) Any citizen of Nigeria of full age who wishes to renounce his Nigerian citizenship shall make a declaration in the prescribed manner for the renunciation. (2) The President shall cause the declaration made under subsection (1) of this section to be registered and upon such registration, the person who made the declaration shall cease to be a citizen of Nigeria." },
       { ref:"Section 30", heading:"Citizenship Can Be Revoked",
         plain:"The President may revoke the citizenship of a naturalised citizen who obtained it by fraud, has been disloyal, or has been imprisoned in another country for a year or more.",
         realTalk:"Naturalised citizenship is not unconditional. Getting it through fraud or showing disloyalty to Nigeria can result in losing it. Birth citizens, however, cannot have their citizenship revoked.",
-        official:"The Commission shall have power to - (a) appoint persons to offices (other than office of the Inspector-General of Police) in the Nigeria Police Force; and (b) dismiss and exercise disciplinary control over persons holding any office referred to in sub-paragraph (a) of this paragraph. N - Revenue Mo" },
+        official:"(1) The President may deprive a person, other than a person who is a citizen of Nigeria by birth or by registration, of his citizenship, if he is satisfied that such a person has, within a period of seven years after becoming naturalized, been sentenced to imprisonment for a term of not less than three years." },
       { ref:"Section 31", heading:"Who Is Also Considered Nigerian",
         plain:"Persons who were Nigerian citizens before this Constitution took effect, or those born in Nigeria before independence, may also be considered citizens under certain conditions.",
         realTalk:"This protects people who may have missed out on formal citizenship registration — especially those who were adults when independence came. No long-term resident should be stateless.",
-        official:"The Revenue Mobilisation Allocation and Fiscal Commission shall comprise the following members - (a) a Chairman; and (b) one member from each State of the Federation and the Federal Capital Territory, Abuja who in the opinion of the President are persons of unquestionable integrity with requisite qu" },
+        official:"For the purposes of this Chapter, a parent or grandparent of a person shall be deemed to be a citizen of Nigeria if at the time of the birth of that person such parent or grandparent would have possessed that status by birth if he had been alive on the date of independence." },
       { ref:"Section 32", heading:"Government Can Make Citizenship Regulations",
         plain:"The National Assembly is empowered to make laws providing for the acquisition, holding, and renunciation of Nigerian citizenship beyond what is stated in this chapter.",
         realTalk:"Parliament can expand citizenship rules — but cannot reduce what the Constitution already guarantees. Your constitutional citizenship rights have a floor that no law can go below.",
-        official:"The Commission shall have power to - (a) monitor the accruals to and disbursement of revenue from the Federation Account; (b) review, from time to time, the revenue allocation formulae and principles in operation to ensure conformity with changing realities. Provided that any revenue formula which h" },
+        official:"(1) The President may make regulations, not inconsistent with this Chapter, prescribing all matters which are required or permitted to be prescribed or which are necessary or convenient to be prescribed for carrying out or giving effect to the provisions of this Chapter, and for granting special immigrant status with full residential rights to non-Nigerian spouses of citizens of Nigeria who do not wish to acquire Nigerian citizenship." },
     ],
   },
   {
@@ -254,19 +254,19 @@ const CHAPTERS = [
       { ref:"Section 33", heading:"Right to Life",
         plain:"Every person has the right to life. Nobody — including the government or law enforcement — can intentionally take your life, except in execution of a lawful court sentence.",
         realTalk:"Extrajudicial killings are unconstitutional. SARS, the police, or any security agency killing you without a lawful basis violates this section. Your family can seek redress in court.",
-        official:"(1) Every person has a right to life, and no one shall be deprived intentionally of his life, save in execution of the sentence of a court in respect of a criminal offence of which he has been found guilty in Nigeria. (2) A person shall not be regarded as having been deprived of his life in contrave" },
+        official:"(1) Every person has a right to life, and no one shall be deprived intentionally of his life, save in execution of the sentence of a court in respect of a criminal offence of which he has been found guilty in Nigeria. (2) A person shall not be regarded as having been deprived of his life in contravention of this section, if he dies as a result of the use of such force as is reasonably necessary for the defence of any person from unlawful violence or for the defence of property, in order to effect a lawful arrest, or for the purpose of suppressing a riot, insurrection or mutiny." },
       { ref:"Section 34", heading:"Right to Dignity",
         plain:"Every person is entitled to respect for their dignity. No one can subject you to torture, inhuman or degrading treatment, slavery, servitude, or forced labour.",
         realTalk:"If police beat or torture you during an arrest or detention, it is a constitutional violation. You have legal grounds to pursue compensation. Dignity is not a privilege — it's your constitutional right.",
-        official:"Labour, including trade unions, industrial relations; conditions, safety and welfare of labour; industrial disputes; prescribing a national minimum wage for the Federation or any part thereof; and industrial arbitration." },
+        official:"(1) Every individual is entitled to respect for the dignity of his person, and accordingly – (a) no person shall be subject to torture or to inhuman or degrading treatment; (b) no person shall be held in slavery or servitude; and (c) no person shall be required to perform forced or compulsory labour." },
       { ref:"Section 35", heading:"Right to Personal Liberty",
         plain:"You cannot be arrested and held indefinitely. If arrested, you must be told in writing within 24 hours why you were arrested, brought before a court within reasonable time, and released if not charged.",
         realTalk:"If police hold you for days without charge, they are violating Section 35. Any unlawful arrest entitles you to COMPENSATION and a PUBLIC APOLOGY from the arresting authority.",
-        official:"Legal proceedings between Governments of States or between the Government of the Federation and Government of any State or any other authority or person." },
+        official:"(1) Every person shall be entitled to his personal liberty and no person shall be deprived of such liberty save in the following cases and in accordance with a procedure permitted by law. (2) Any person who is arrested or detained shall have the right to remain silent or avoid answering any question until after consultation with a legal practitioner or any other person of his own choice. (3) Any person who is arrested or detained shall be informed in writing within twenty-four hours (and in a language that he understands) of the facts and grounds for his arrest or detention. (6) Any person who is unlawfully arrested or detained shall be entitled to compensation and public apology from the appropriate authority or person." },
       { ref:"Section 36", heading:"Right to Fair Hearing",
         plain:"You are innocent until proven guilty. You have the right to a fair and public hearing before an independent court. You must be told the charges against you in a language you understand.",
         realTalk:"You cannot be punished for something that wasn't a crime when you did it. Courts cannot conduct secret trials. If you can't understand the court language, you are entitled to a free interpreter.",
-        official:"Maritime shipping and navigation, including - (a) shipping and navigation on tidal waters; (b) shipping and navigation on the River Niger and its affluents and on any such other inland waterway as may be designated by the National Assembly to be an international waterway or to be an inter-State wate" },
+        official:"(1) In the determination of his civil rights and obligations, a person shall be entitled to a fair hearing within a reasonable time by a court or other tribunal established by law and constituted in such manner as to secure its independence and impartiality. (4) Whenever any person is charged with a criminal offence, he shall be entitled to a fair hearing in public within a reasonable time by a court or tribunal. (5) Every person who is charged with a criminal offence shall be presumed to be innocent until he is proved guilty." },
       { ref:"Section 37", heading:"Right to Privacy",
         plain:"Your home, correspondence, telephone conversations and communications are constitutionally protected. No one can enter your home or tap your communications without lawful authority.",
         realTalk:"A landlord cannot enter your apartment without your consent. Security forces cannot search your home without a valid warrant. Any unauthorized entry is unconstitutional.",
@@ -274,39 +274,39 @@ const CHAPTERS = [
       { ref:"Section 38", heading:"Freedom of Religion & Conscience",
         plain:"Every person is entitled to freedom of thought, conscience and religion. You may change your religion, manifest it in worship, practice, or teaching — alone or with others.",
         realTalk:"No one — including your family, government, or employer — can force you to practice a particular religion. Coercing someone to change faith or punishing them for apostasy violates this right.",
-        official:"Military (Army, Navy and Air Force) including any other branch of the armed forces of the Federation." },
+        official:"(1) Every person shall be entitled to freedom of thought, conscience and religion, including freedom to change his religion or belief, and freedom (either alone or in community with others, and in public or in private) to manifest and propagate his religion or belief in worship, teaching, practice and observance." },
       { ref:"Section 39", heading:"Freedom of Expression & the Press",
         plain:"Every person shall be entitled to freedom of expression, including freedom to hold opinions, receive and impart ideas and information without interference.",
         realTalk:"You have the right to criticize the government, share information, and express your views. Arresting citizens for social media posts or opinions violates this constitutional right.",
-        official:"Mines and minerals, including oil fields, oil mining, geological surveys and natural gas." },
+        official:"(1) Every person shall be entitled to freedom of expression, including freedom to hold opinions and to receive and impart ideas and information without interference. (2) Without prejudice to the generality of subsection (1) of this section, every person shall be entitled to own, establish and operate any medium for the dissemination of information, ideas and opinions." },
       { ref:"Section 40", heading:"Freedom of Assembly",
         plain:"You have the right to assemble freely with other people, form or join organisations, political parties, trade unions, or any association for the protection of your interests.",
         realTalk:"Peaceful protests are constitutionally protected. Any government that breaks up a peaceful gathering without lawful justification is acting unconstitutionally.",
-        official:"National parks being such areas in a State as may, with the consent of the Government of that State, be designated by the National Assembly as national parks." },
+        official:"Every person shall be entitled to assemble freely and associate with other persons, and in particular he may form or belong to any political party, trade union or any other association for the protection of his interests." },
       { ref:"Section 41", heading:"Freedom of Movement",
         plain:"Every citizen of Nigeria is entitled to move freely throughout Nigeria, reside in any part of it, and cannot be expelled from Nigeria or refused entry without lawful cause.",
         realTalk:"No state government can stop you from living or working in another state. Internal travel bans and 'indigene' restrictions on movement are unconstitutional.",
-        official:"(1) Every citizen of Nigeria is entitled to move freely throughout Nigeria and to reside in any part thereof, and no citizen of Nigeria shall be expelled from Nigeria or refused entry thereby or exit therefrom. (2) Nothing in subsection (1) of this section shall invalidate any law that is reasonably" },
+        official:"(1) Every citizen of Nigeria is entitled to move freely throughout Nigeria and to reside in any part thereof, and no citizen of Nigeria shall be expelled from Nigeria or refused entry thereby or exit therefrom." },
       { ref:"Section 42", heading:"Right Against Discrimination",
         plain:"No Nigerian citizen shall be discriminated against — by law or government action — because of their community, ethnic group, place of origin, sex, religion, or political opinion.",
         realTalk:"If a state government denies you a scholarship or job because you're not an 'indigene,' that's a constitutional violation. Your rights apply everywhere in Nigeria.",
-        official:"(1) A citizen of Nigeria of a particular community, ethnic group, place of origin, sex, religion or political opinion shall not, by reason only that he is such a person:- (a) be subjected either expressly by, or in the practical application of, any law in force in Nigeria or any executive or adminis" },
+        official:"(1) A citizen of Nigeria of a particular community, ethnic group, place of origin, sex, religion or political opinion shall not, by reason only that he is such a person, be subjected to disabilities or restrictions to which citizens of Nigeria of other communities, ethnic groups, places of origin, sex, religions or political opinions are not made subject. (2) No citizen of Nigeria shall be subjected to any disability or deprivation merely by reason of the circumstances of his birth." },
       { ref:"Section 43", heading:"Right to Own Property Anywhere",
         plain:"Every citizen of Nigeria shall have the right to acquire and own immovable property anywhere in Nigeria.",
         realTalk:"You can legally buy land or a house in any state, even if you're not 'from' there. State laws that restrict property ownership by non-indigenes are unconstitutional.",
-        official:"Patents, trade marks, trade or business names, industrial designs and merchandise marks." },
+        official:"Subject to the provisions of this Constitution, every citizen of Nigeria shall have the right to acquire and own immovable property anywhere in Nigeria." },
       { ref:"Section 44", heading:"Property Can't Be Seized Without Compensation",
         plain:"The government cannot seize your property without paying prompt and adequate compensation. Any property acquisition must be by law, with full compensation paid.",
         realTalk:"If the government demolishes your home for a project without paying you first, they're violating the constitution. Compensation must be PROMPT. You can take them to court.",
-        official:"Pensions, gratuities and other-like benefit payable out of the Consolidated Revenue Fund or any other public funds of the Federation." },
+        official:"(1) No moveable property or any interest in an immovable property shall be taken possession of compulsorily and no right over or interest in any such property shall be acquired compulsorily in any part of Nigeria except in the manner and for the purposes prescribed by a law that, among other things – (a) requires the prompt payment of compensation therefore and (b) gives to any person claiming such compensation a right of access for the determination of his interest in the property and the amount of compensation to a court of law or tribunal." },
       { ref:"Section 45", heading:"When Rights Can Be Restricted",
         plain:"Rights in Chapter IV can be restricted under specific circumstances: national defence, public safety, order, morality, health, or to protect others' rights. These restrictions must be reasonable and justified.",
         realTalk:"The government can't simply claim 'national security' to crush all your rights. Any restriction must be proportionate and lawful. Courts can overturn restrictions that aren't justified.",
-        official:"Police and other government security services established by law." },
+        official:"(1) Nothing in sections 37, 38, 39, 40 and 41 of this Constitution shall invalidate any law that is reasonably justifiable in a democratic society (a) in the interest of defence, public safety, public order, public morality or public health; or (b) for the purpose of protecting the rights and freedom of other persons." },
       { ref:"Section 46", heading:"How to Enforce Your Rights",
         plain:"If you believe any of your fundamental rights have been or are being violated, you can apply to a High Court in your state for redress. The court can make orders to enforce your rights.",
         realTalk:"Your rights aren't just words on paper — they're enforceable today. Walk into a High Court, file a fundamental rights enforcement application. Legal aid is supposed to be available for those who cannot afford it.",
-        official:"Posts, telegraphs and telephones" },
+        official:"(1) Any person who alleges that any of the provisions of this Chapter has been, is being or likely to be contravened in any State in relation to him may apply to a High Court in that State for redress. (2) Subject to the provisions of this Constitution, a High Court shall have original jurisdiction to hear and determine any application made to it in pursuance of this section and may make such orders, issue such writs and give such directions as it may consider appropriate." },
     ],
   },
   {
@@ -2688,7 +2688,37 @@ function SetupScreen() {
 ════════════════════════════════════════ */
 function ProfileScreen({ setTab }) {
   const { user, setUser, readPct, readCount, totalSections, bookmarkCount } = useUser();
-  const [showReset, setShowReset] = useState(false);
+  const [showReset, setShowReset]         = useState(false);
+  const [showFeedback, setShowFeedback]   = useState(false);
+  const [fbText, setFbText]               = useState("");
+  const [fbStatus, setFbStatus]           = useState(null);
+
+  async function submitFeedback() {
+    if (!fbText.trim() || fbStatus === "sending") return;
+    setFbStatus("sending");
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_key: "efbf49f0-e0ca-4a56-a3b6-afc318ab2510",
+          subject: "KYN App Feedback",
+          from_name: user.name || "KYN User",
+          message: fbText,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFbStatus("sent");
+        setFbText("");
+        setTimeout(() => { setShowFeedback(false); setFbStatus(null); }, 2500);
+      } else {
+        setFbStatus("error");
+      }
+    } catch {
+      setFbStatus("error");
+    }
+  }
 
   const initials = user.name ? user.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2) : "?";
 
@@ -2825,7 +2855,47 @@ function ProfileScreen({ setTab }) {
           </div>
         </div>
 
-        {/* Reset */}
+
+        {/* Feedback */}
+        <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:20, marginBottom:16 }}>
+          {!showFeedback ? (
+            <button onClick={() => setShowFeedback(true)} style={{ width:"100%", padding:"12px", borderRadius:12, border:`1px solid ${C.borderLit}`, background:C.card, color:C.gMain, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+              💬 Send Feedback
+            </button>
+          ) : (
+            <div style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"18px" }}>
+              <div style={{ fontSize:14, fontWeight:700, color:C.textPrimary, marginBottom:4 }}>Share your feedback 💬</div>
+              <div style={{ fontSize:12, color:C.textGhost, marginBottom:12 }}>Your message goes directly to the creator of KYN.</div>
+              {fbStatus === "sent" ? (
+                <div style={{ textAlign:"center", padding:"16px 0" }}>
+                  <div style={{ fontSize:28, marginBottom:8 }}>🙏</div>
+                  <div style={{ fontSize:14, fontWeight:700, color:C.gMain }}>Thank you! Feedback received.</div>
+                </div>
+              ) : (
+                <>
+                  <textarea
+                    value={fbText}
+                    onChange={e => setFbText(e.target.value)}
+                    placeholder="What do you think of Know Your Nigeria? Any suggestions, bugs or praise..."
+                    rows={4}
+                    style={{ width:"100%", padding:"12px", borderRadius:10, border:`1px solid ${C.border}`, background:C.bg, color:C.textPrimary, fontSize:13, fontFamily:"'Inter',sans-serif", resize:"none", outline:"none", boxSizing:"border-box" }}
+                  />
+                  {fbStatus === "error" && (
+                    <div style={{ fontSize:12, color:"#c62828", marginBottom:8 }}>Something went wrong. Please try again.</div>
+                  )}
+                  <div style={{ display:"flex", gap:10, marginTop:10 }}>
+                    <button onClick={() => { setShowFeedback(false); setFbText(""); setFbStatus(null); }} style={{ flex:1, padding:"10px", borderRadius:10, border:`1px solid ${C.border}`, background:C.card, color:C.textGhost, fontSize:13, fontWeight:600, cursor:"pointer" }}>Cancel</button>
+                    <button onClick={submitFeedback} disabled={!fbText.trim() || fbStatus === "sending"} style={{ flex:2, padding:"10px", borderRadius:10, background:fbText.trim() ? C.gMain : C.border, color:"#fff", fontSize:13, fontWeight:700, cursor:fbText.trim() ? "pointer" : "default", opacity: fbStatus === "sending" ? 0.7 : 1 }}>
+                      {fbStatus === "sending" ? "Sending..." : "Send Feedback"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+                {/* Reset */}
         <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:20 }}>
           {!showReset ? (
             <button onClick={() => setShowReset(true)} style={{ width:"100%", padding:"12px", borderRadius:12, border:`1px solid ${C.border}`, background:C.card, color:C.textGhost, fontSize:13, fontWeight:600, cursor:"pointer" }}>
