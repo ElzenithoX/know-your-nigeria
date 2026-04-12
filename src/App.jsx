@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useContext, createContext, useCallback } from "react";
 
-
 /* ════════════════════════════════════════
    USER CONTEXT & PERSISTENCE  (Phase 5)
 ════════════════════════════════════════ */
@@ -83,23 +82,44 @@ function UserProvider({ children }) {
   );
 }
 
-
-const FontLoader = () => (
+const FontLoader = ({ dark }) => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600;700;800&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { background: #f0f2f0; }
+    html, body { background: ${dark ? "#0A0F0A" : "#F7F8F5"}; font-family: 'DM Sans', system-ui, sans-serif; transition: background 0.3s ease; }
     ::-webkit-scrollbar { display: none; }
     button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    input, textarea { font-family: inherit; }
   `}</style>
 );
 
-const C = {
-  bg: "#f0f2f0", card: "#ffffff", cardAlt: "#f7f9f7", deep: "#e8ede8",
-  border: "#dce8dc", borderLit: "#b8d4b8",
-  gDark: "#1a5c1a", gMid: "#2d7d2d", gMain: "#3d9940", gBright: "#4CAF50", gLight: "#e8f5e8",
-  textPrimary: "#1a2a1a", textBody: "#3a4e3a", textMuted: "#6b806b", textGhost: "#9aaa9a",
+const LIGHT = {
+  bg: "#F7F8F5", card: "#FFFFFF", cardAlt: "#F3F5F0", deep: "#E8EDE4",
+  border: "#E4E9E0", borderLit: "#C8D9C0",
+  gDark: "#166534", gMid: "#15803D", gMain: "#16A34A", gBright: "#22C55E", gLight: "#DCFCE7",
+  gDim: "#BBF7D0",
+  textPrimary: "#0D1B0D", textBody: "#374151", textMuted: "#6B7280", textGhost: "#9CA3AF",
+  ink: "#111827",
+  isDark: false,
 };
+
+const DARK = {
+  bg: "#0A0F0A", card: "#141A14", cardAlt: "#1A221A", deep: "#1F2B1F",
+  border: "#263326", borderLit: "#2F4230",
+  gDark: "#166534", gMid: "#15803D", gMain: "#22C55E", gBright: "#4ADE80", gLight: "#14532D",
+  gDim: "#166534",
+  textPrimary: "#F0FDF4", textBody: "#D1FAE5", textMuted: "#6EE7B7", textGhost: "#34D399",
+  ink: "#FFFFFF",
+  isDark: true,
+};
+
+// Global theme — updated by ThemeContext
+const ThemeCtx = createContext({ C: LIGHT, dark: false, toggleDark: () => {} });
+function useTheme() { return useContext(ThemeCtx); }
+
+// C is always the current theme colours — components read it via useTheme()
+// For backward compat we keep a module-level C that gets reassigned
+let C = LIGHT;
 
 /* ════════════════════════════════════════
    CONSTITUTION DATA
@@ -1501,129 +1521,243 @@ function AppInner() {
   const [tab, setTab]               = useState("home");
   const [chapterIdx, setChapterIdx] = useState(null);
   const [expandedSec, setExpanded]  = useState(null);
+  const [dark, setDark]             = useState(() => {
+    try { return localStorage.getItem("kyn_dark") === "1"; } catch { return false; }
+  });
+
+  const toggleDark = () => setDark(prev => {
+    const next = !prev;
+    try { localStorage.setItem("kyn_dark", next ? "1" : "0"); } catch {}
+    return next;
+  });
+
+  // Keep module-level C in sync so all components get the right theme
+  C = dark ? DARK : LIGHT;
 
   if (!user.setupComplete) {
     return (
-      <>
-        <FontLoader />
+      <ThemeCtx.Provider value={{ C, dark, toggleDark }}>
+        <FontLoader dark={dark} />
         <SetupScreen />
-      </>
+      </ThemeCtx.Provider>
     );
   }
 
   return (
-    <>
-      <FontLoader />
-      <div style={{ background: C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", fontFamily:"'Inter', sans-serif", overflowX:"hidden" }}>
-        <div style={{ paddingBottom:90, paddingTop:0 }}>
+    <ThemeCtx.Provider value={{ C, dark, toggleDark }}>
+      <FontLoader dark={dark} />
+      <div style={{ background: C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", fontFamily:"'DM Sans', system-ui, sans-serif", overflowX:"hidden", transition:"background 0.3s ease" }}>
+        <div style={{ paddingBottom:88, paddingTop:0 }}>
           {tab === "home"         && <HomeScreen setTab={setTab} />}
           {tab === "constitution" && <ConstitutionScreen chapterIdx={chapterIdx} setChapterIdx={setChapterIdx} expandedSec={expandedSec} setExpanded={setExpanded} />}
           {tab === "history"      && <HistoryScreen />}
           {tab === "games"        && <GameZone />}
           {tab === "ask"          && <AskTheLaw />}
           {tab === "profile"      && <ProfileScreen setTab={setTab} />}
+          {tab === "directory"    && <DirectoryScreen />}
         </div>
         <Nav tab={tab} setTab={setTab} setChapterIdx={setChapterIdx} />
       </div>
-    </>
+    </ThemeCtx.Provider>
   );
 }
 
 /* ════════════════════════════════════════
    HOME
 ════════════════════════════════════════ */
+/* ════════════════════════════════════════
+   ELECTION COUNTDOWN
+════════════════════════════════════════ */
+function useCountdown(targetDate) {
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const diff = new Date(targetDate) - new Date();
+    return Math.max(0, diff);
+  });
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const id = setInterval(() => {
+      const diff = new Date(targetDate) - new Date();
+      setTimeLeft(Math.max(0, diff));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  const days    = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours   = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+  return { days, hours, minutes, seconds, done: timeLeft === 0 };
+}
+
+function CountdownUnit({ value, label }) {
+  return (
+    <div style={{ textAlign:"center", minWidth:48 }}>
+      <div style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-1 }}>
+        {String(value).padStart(2,"0")}
+      </div>
+      <div style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", marginTop:4 }}>{label}</div>
+    </div>
+  );
+}
+
+function ElectionCountdown() {
+  const pres = useCountdown("2027-01-16T08:00:00");
+  const gov  = useCountdown("2027-02-06T08:00:00");
+
+  const Row = ({ label, date, countdown }) => (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+        <div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#fff", marginBottom:1 }}>{label}</div>
+          <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.4)" }}>{date}</div>
+        </div>
+        {countdown.done ? (
+          <div style={{ fontSize:12, fontWeight:800, color:C.gBright }}>Election Day!</div>
+        ) : (
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            {[{v:countdown.days,l:"D"},{v:countdown.hours,l:"H"},{v:countdown.minutes,l:"M"},{v:countdown.seconds,l:"S"}].map(({v,l},i)=>(
+              <div key={i} style={{ textAlign:"center", minWidth:34, background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"6px 4px" }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:18, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-0.5 }}>
+                  {String(v).padStart(2,"0")}
+                </div>
+                <div style={{ fontSize:8, fontWeight:700, letterSpacing:1, color:"rgba(255,255,255,0.4)", marginTop:3, textTransform:"uppercase" }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ marginBottom:10 }}>
+      <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>
+        🗳️ Election Countdown
+      </p>
+      <div style={{ background:C.gDark, borderRadius:20, padding:"20px" }}>
+        <Row label="Presidential Election" date="January 16, 2027" countdown={pres} />
+        <div style={{ height:1, background:"rgba(255,255,255,0.08)", margin:"14px 0" }} />
+        <Row label="Governorship Election" date="February 6, 2027"  countdown={gov}  />
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen({ setTab }) {
   const { user, readPct, readCount, totalSections } = useUser();
+  const { dark, toggleDark } = useTheme();
+  const firstName = user.name ? user.name.split(" ")[0] : null;
   return (
-    <div>
-      <div style={{
-        background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 55%, ${C.gMain} 100%)`,
-        padding:"60px 28px 52px",
-        display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
-        position:"relative", overflow:"hidden",
-      }}>
-        <div style={{ position:"absolute", top:-50, right:-50, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
-        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:20, padding:"4px 14px", marginBottom:22 }}>
-          <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0a8" }} />
-          <span style={{ fontSize:10, letterSpacing:2, color:"#d4f7d4", fontWeight:700, textTransform:"uppercase" }}>Created by ElZenitho</span>
+    <div style={{ background:C.bg, minHeight:"100vh", transition:"background 0.3s" }}>
+
+      {/* ── Hero header ── */}
+      <div style={{ padding:"60px 24px 32px", background:C.bg, transition:"background 0.3s" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6 }}>
+          <div>
+            <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, marginBottom:4 }}>
+              {firstName ? `Welcome back,` : "Good to see you"}
+            </p>
+            <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize: firstName ? 38 : 42, fontWeight:900, color:C.ink, lineHeight:1.05, letterSpacing:-1 }}>
+              {firstName ? `${firstName}.` : "Know Your\nNigeria."}
+            </h1>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0, marginTop:4 }}>
+            <div style={{ width:46, height:46, borderRadius:14, background:C.gDark, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🇳🇬</div>
+            <button
+              onClick={toggleDark}
+              title={dark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{ width:46, height:28, borderRadius:20, background: dark ? C.gMain : C.deep, border:`1.5px solid ${dark ? C.gBright : C.border}`, display:"flex", alignItems:"center", padding:"0 4px", transition:"all 0.25s", cursor:"pointer", position:"relative" }}
+            >
+              <div style={{ width:20, height:20, borderRadius:"50%", background: dark ? "#fff" : C.gDark, transform: dark ? "translateX(18px)" : "translateX(0px)", transition:"transform 0.25s, background 0.25s", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11 }}>
+                {dark ? "🌙" : "☀️"}
+              </div>
+            </button>
+          </div>
         </div>
-        <div style={{ width:72, height:72, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, marginBottom:22 }}>🇳🇬</div>
-        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:40, fontWeight:900, color:"#ffffff", lineHeight:1.1, marginBottom:14, letterSpacing:-0.5 }}>
-  {user.name ? `Welcome,\n${user.name.split(' ')[0]}.` : "Know Your\nNigeria."}
-</h1>
-        <p style={{ fontSize:15, fontWeight:500, color:"rgba(255,255,255,0.75)", lineHeight:1.7, maxWidth:270, marginBottom:30 }}>Your rights, your constitution,<br />your history — in everyday language.</p>
-        <button onClick={() => setTab("constitution")} style={{ background:C.card, color:C.gDark, fontSize:15, fontWeight:700, padding:"13px 32px", borderRadius:14, boxShadow:"0 8px 24px rgba(0,0,0,0.2)", letterSpacing:0.1 }}>Explore Your Rights →</button>
+        <p style={{ fontSize:14, fontWeight:500, color:C.textMuted, marginTop:8, lineHeight:1.6 }}>Your rights, constitution & history<br/>in plain everyday language.</p>
       </div>
 
-      <div style={{ padding:"28px 20px 0" }}>
-        <Label>Quick Facts</Label>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:14 }}>
-          {QUICK_FACTS.map((f,i) => (
-            <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
-              <div style={{ fontSize:17, fontWeight:700, color:C.textPrimary, letterSpacing:-0.3 }}>{f.value}</div>
-              <div style={{ fontSize:12, fontWeight:500, color:C.textGhost, marginTop:3 }}>{f.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ── Progress card ── */}
+      <div style={{ padding:"0 20px", marginBottom:24 }}>
+        <div style={{ background:C.gDark, borderRadius:24, padding:"24px", position:"relative", overflow:"hidden" }}>
 
-      <div style={{ padding:"28px 20px 0" }}>
-        <Label>Explore</Label>
-        <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:10 }}>
-          {/* Constitution */}
-          <div onClick={() => setTab("constitution")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:18, padding:"20px", cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", position:"relative", overflow:"hidden" }}>
-            <div style={{ position:"absolute", right:-10, top:"50%", transform:"translateY(-50%)", width:80, height:80, borderRadius:"50%", background:C.gLight, pointerEvents:"none" }} />
-            <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:`0 6px 20px ${C.gMain}44` }}>📜</div>
-            <div style={{ flex:1, position:"relative" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
-                <span style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:700, color:C.textPrimary }}>Constitution</span>
-                <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.2, background:C.gLight, color:C.gMain, border:`1px solid ${C.borderLit}`, padding:"2px 9px", borderRadius:20 }}>LIVE</span>
-              </div>
-              <div style={{ fontSize:13, color:C.textMuted, fontWeight:500 }}>Know your rights in plain English</div>
-            </div>
-            <div style={{ fontSize:22, color:C.gMain, position:"relative" }}>›</div>
+          <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:6 }}>Your Progress</p>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:8, marginBottom:16 }}>
+            <span style={{ fontFamily:"'Playfair Display', serif", fontSize:52, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-2 }}>{readPct}%</span>
+            <span style={{ fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.55)", marginBottom:8 }}>of the Constitution read</span>
           </div>
-
-          {/* History — NOW LIVE */}
-          <div onClick={() => setTab("history")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:18, padding:"20px", cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", position:"relative", overflow:"hidden" }}>
-            <div style={{ position:"absolute", right:-10, top:"50%", transform:"translateY(-50%)", width:80, height:80, borderRadius:"50%", background:"#fdf0e0", pointerEvents:"none" }} />
-            <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:"linear-gradient(135deg, #8B4513, #c47c35)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:"0 6px 20px rgba(139,69,19,0.35)" }}>📚</div>
-            <div style={{ flex:1, position:"relative" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
-                <span style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:700, color:C.textPrimary }}>History</span>
-                <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.2, background:"#fdf0e0", color:"#8B4513", border:"1px solid #d4a870", padding:"2px 9px", borderRadius:20 }}>LIVE</span>
-              </div>
-              <div style={{ fontSize:13, color:C.textMuted, fontWeight:500 }}>Nigeria's full story, simplified</div>
-            </div>
-            <div style={{ fontSize:22, color:"#c47c35", position:"relative" }}>›</div>
+          <div style={{ height:5, background:"rgba(255,255,255,0.15)", borderRadius:99, overflow:"hidden", marginBottom:12 }}>
+            <div style={{ width:`${readPct}%`, height:"100%", background:C.gBright, borderRadius:99, transition:"width 0.6s ease" }} />
           </div>
-
-          {/* Games + Ask */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-            <div onClick={() => setTab("games")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"18px 16px", cursor:"pointer", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", position:"relative", overflow:"hidden" }}>
-              <div style={{ position:"absolute", right:-8, top:-8, width:60, height:60, borderRadius:"50%", background:"rgba(232,93,4,0.08)", pointerEvents:"none" }} />
-              <div style={{ fontSize:28, marginBottom:10 }}>🎮</div>
-              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:700, color:C.textPrimary }}>Game Zone</div>
-                <span style={{ fontSize:8, fontWeight:700, letterSpacing:1, background:"#fff3ee", color:"#c44d00", border:"1px solid #f0c0a0", padding:"2px 6px", borderRadius:20 }}>LIVE</span>
-              </div>
-              <div style={{ fontSize:11, color:C.textGhost, fontWeight:500 }}>Quiz & earn points</div>
-            </div>
-            <div onClick={() => setTab("ask")} style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"18px 16px", cursor:"pointer", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", position:"relative", overflow:"hidden" }}>
-              <div style={{ position:"absolute", right:-8, top:-8, width:60, height:60, borderRadius:"50%", background:"rgba(26,92,107,0.08)", pointerEvents:"none" }} />
-              <div style={{ fontSize:28, marginBottom:10 }}>🤖</div>
-              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:700, color:C.textPrimary }}>Ask the Law</div>
-                <span style={{ fontSize:8, fontWeight:700, letterSpacing:1, background:"#e0f5f9", color:"#1a5c6b", border:"1px solid #a0d4e0", padding:"2px 6px", borderRadius:20 }}>LIVE</span>
-              </div>
-              <div style={{ fontSize:11, color:C.textGhost, fontWeight:500 }}>AI-powered legal Q&A</div>
-            </div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.5)" }}>{readCount} of {totalSections} sections</span>
+            <button onClick={() => setTab("constitution")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"6px 16px", fontSize:12, fontWeight:700, color:"#fff", letterSpacing:0.2 }}>Continue →</button>
           </div>
         </div>
       </div>
-      <div style={{ height:8 }} />
+
+      {/* ── Feature cards ── */}
+      <div style={{ padding:"0 20px" }}>
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Explore</p>
+
+        {/* Constitution */}
+        <div onClick={() => setTab("constitution")} style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:10, cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+          <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:2 }}>Constitution</div>
+            <div style={{ fontSize:13, fontWeight:500, color:C.textMuted }}>269 sections · Plain English</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        {/* History */}
+        <div onClick={() => setTab("history")} style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:10, cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+          <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:"#FEF3C7", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:2 }}>History</div>
+            <div style={{ fontSize:13, fontWeight:500, color:C.textMuted }}>500 BC to today · Full timeline</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        {/* Two small cards */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+          <div onClick={() => setTab("games")} style={{ background:C.card, borderRadius:20, padding:"20px 16px", cursor:"pointer", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+            <div style={{ width:44, height:44, borderRadius:14, background:"#FFF7ED", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M7 12h.01"/><path d="M17 10v4M15 12h4"/></svg>
+            </div>
+            <div style={{ fontSize:15, fontWeight:800, color:C.ink, marginBottom:3 }}>Games</div>
+            <div style={{ fontSize:11, fontWeight:500, color:C.textMuted }}>Quiz & earn points</div>
+          </div>
+          <div onClick={() => setTab("ask")} style={{ background:C.gDark, borderRadius:20, padding:"20px 16px", cursor:"pointer", boxShadow:"0 2px 12px rgba(22,101,52,0.25)" }}>
+            <div style={{ width:44, height:44, borderRadius:14, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <div style={{ fontSize:15, fontWeight:800, color:"#fff", marginBottom:3 }}>Ask Wazobia</div>
+            <div style={{ fontSize:11, fontWeight:500, color:"rgba(255,255,255,0.55)" }}>AI legal assistant</div>
+          </div>
+        </div>
+
+        <ElectionCountdown />
+
+        {/* Quick facts strip */}
+        <div style={{ background:C.card, borderRadius:20, padding:"20px", boxShadow:"0 2px 12px rgba(0,0,0,0.05)", marginBottom:4 }}>
+          <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Nigeria at a glance</p>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+            {QUICK_FACTS.map((f,i) => (
+              <div key={i} style={{ textAlign:"center" }}>
+                <div style={{ fontSize:18, marginBottom:4 }}>{f.icon}</div>
+                <div style={{ fontSize:13, fontWeight:800, color:C.ink, letterSpacing:-0.5 }}>{f.value}</div>
+                <div style={{ fontSize:10, fontWeight:500, color:C.textMuted, marginTop:2, lineHeight:1.3 }}>{f.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{ height:16 }} />
     </div>
   );
 }
@@ -1649,11 +1783,10 @@ function HistoryScreen() {
         padding:"52px 28px 40px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
       }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:42, marginBottom:14 }}>📚</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>Nigerian History</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>Nigerian History</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:280 }}>From ancient kingdoms to the Fourth Republic — Nigeria's full story in plain language.</p>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18 }}>
             <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
@@ -1817,13 +1950,12 @@ function ConstitutionScreen({ chapterIdx, setChapterIdx, expandedSec, setExpande
   }
   return (
     <div>
-      <div style={{ background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`, padding:"52px 28px 40px", position:"relative", overflow:"hidden",
+      <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:42, marginBottom:14 }}>📜</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>The Constitution</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>The Constitution</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:280 }}>Nigeria's supreme law — explained in plain, everyday language.</p>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18 }}>
             <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
@@ -1861,10 +1993,9 @@ function ChapterDetail({ chapter, chapterIdx, onBack, expandedSec, setExpanded }
   const { markRead, toggleBookmark, user } = useUser();
   return (
     <div>
-      <div style={{ background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`, padding:"52px 28px 40px", position:"relative", overflow:"hidden",
+      <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <button onClick={onBack} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:12, padding:"7px 16px", color:"#fff", fontSize:14, fontWeight:600, marginBottom:22 }}>← Back</button>
           <div style={{ width:62, height:62, borderRadius:20, marginBottom:16, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>{chapter.icon}</div>
@@ -2287,11 +2418,10 @@ function GameLobby({ stats, onStart }) {
     <div>
       {/* Header */}
       <div style={{ background:"linear-gradient(160deg, #1a3020 0%, #2a5035 55%, #3d7a4a 100%)", padding:"52px 28px 40px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:44, marginBottom:14 }}>🎮</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>Game Zone</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>Game Zone</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:270 }}>Test what you know about Nigeria's history and constitution. Earn points and badges.</p>
           {/* Stats row */}
           <div style={{ display:"flex", gap:8, marginTop:18 }}>
@@ -2357,8 +2487,7 @@ function QuizScreen({ questions, qIdx, selected, revealed, streak, score, choose
   return (
     <div>
       {/* Top bar */}
-      <div style={{ background:`linear-gradient(160deg, #1a3020 0%, #2a5035 100%)`, padding:"52px 24px 28px", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+      <div style={{ background:C.gDark, padding:"56px 24px 28px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"relative" }}>
           {/* Progress + stats */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
@@ -2459,11 +2588,10 @@ function ResultScreen({ score, total, maxStreak, answers, questions, stats, onPl
   return (
     <div>
       {/* Hero result */}
-      <div style={{ background:`linear-gradient(160deg, #1a3020 0%, #2a5035 100%)`, padding:"52px 28px 44px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+      <div style={{ background:C.gDark, padding:"52px 28px 44px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:52, marginBottom:12 }}>{grade.icon}</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:6 }}>{grade.label}</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:6 }}>{grade.label}</h2>
           <div style={{ fontSize:52, fontWeight:900, color:C.gGlow || "#a8f0a8", letterSpacing:-2, lineHeight:1, marginBottom:8, fontFamily:"'Playfair Display', serif" }}>{pct}%</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.65)", fontWeight:500, marginBottom:20 }}>{score} out of {total} correct</div>
 
@@ -2486,7 +2614,7 @@ function ResultScreen({ score, total, maxStreak, answers, questions, stats, onPl
       <div style={{ padding:"20px" }}>
         {/* New badges */}
         {newBadges.length > 0 && (
-          <div style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:16, padding:"16px 18px", marginBottom:14, boxShadow:`0 4px 16px ${C.gMain}22` }}>
+          <div style={{ background:C.card, border:`1px solid ${C.borderLit}`, borderRadius:18, padding:"18px 20px", marginBottom:14, boxShadow:`0 4px 16px ${C.gMain}22` }}>
             <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:12 }}>
               <span style={{ fontSize:14 }}>🏅</span>
               <span style={{ fontSize:10, letterSpacing:2, color:C.gMain, textTransform:"uppercase", fontWeight:700 }}>New Badge{newBadges.length > 1 ? "s" : ""} Earned!</span>
@@ -2632,12 +2760,11 @@ function AskTheLaw() {
     <div style={{ display:"flex", flexDirection:"column", height:"100vh", maxHeight:"100vh", overflow:"hidden" }}>
 
       {/* Header */}
-      <div style={{ background:"linear-gradient(160deg, #0e2a30 0%, #1a5c6b 60%, #277a8a 100%)", padding:"52px 28px 28px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:150, height:150, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:110, height:110, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+      <div style={{ background:C.gDark, padding:"52px 28px 28px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
+
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ width:64, height:64, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, marginBottom:14 }}>🤖</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:8, lineHeight:1.15 }}>Ask the Law</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:8, lineHeight:1.15 }}>Ask Wazobia</h2>
           <p style={{ fontSize:13, color:"rgba(255,255,255,0.7)", fontWeight:500, maxWidth:260, lineHeight:1.6 }}>Your AI-powered Nigerian civic rights assistant — ask anything about the constitution or your rights.</p>
           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
             <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0c0", flexShrink:0 }} />
@@ -2734,11 +2861,10 @@ function Soon({ title, icon, phase }) {
         padding:"52px 28px 48px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
       }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, left:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ width:72, height:72, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:34, marginBottom:20 }}>{icon}</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>{title}</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>{title}</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:270, marginBottom:24 }}>This section is being built and will be ready in the next phase.</p>
           <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:20, padding:"8px 24px", fontSize:10, letterSpacing:2, fontWeight:700, color:"rgba(255,255,255,0.9)", textTransform:"uppercase" }}>Coming in Phase {phase}</div>
         </div>
@@ -2746,7 +2872,6 @@ function Soon({ title, icon, phase }) {
     </div>
   );
 }
-
 
 /* ════════════════════════════════════════
    SETUP SCREEN  (Phase 5)
@@ -2758,52 +2883,58 @@ function SetupScreen() {
   const valid = name.trim().length >= 2;
 
   if (step === 1) return (
-    <div style={{ minHeight:"100vh", background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 55%, ${C.gMain} 100%)`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", textAlign:"center" }}>
-      <div style={{ position:"absolute", top:-60, right:-60, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
-      <div style={{ position:"absolute", bottom:-40, left:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
-      <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", maxWidth:320 }}>
-        <div style={{ width:90, height:90, borderRadius:26, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:44, marginBottom:28 }}>🇳🇬</div>
-        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:38, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:16, letterSpacing:-0.5 }}>Know Your<br />Nigeria.</h1>
-        <p style={{ fontSize:15, color:"rgba(255,255,255,0.75)", lineHeight:1.75, marginBottom:36, fontWeight:500 }}>Your rights, constitution and history — explained in everyday language every Nigerian can understand.</p>
-        <div style={{ display:"flex", flexDirection:"column", gap:12, width:"100%" }}>
-          <button onClick={() => setStep(2)} style={{ background:"#fff", color:C.gDark, fontSize:16, fontWeight:800, padding:"16px", borderRadius:16, boxShadow:"0 8px 24px rgba(0,0,0,0.2)", letterSpacing:0.1 }}>Get Started →</button>
-        </div>
-        <div style={{ display:"flex", gap:24, marginTop:32 }}>
-          {[{icon:"⚖️",label:"269 Sections"},{icon:"📚",label:"Full History"},{icon:"🎮",label:"Quiz Games"}].map((f,i)=>(
-            <div key={i} style={{ textAlign:"center" }}>
-              <div style={{ fontSize:22, marginBottom:4 }}>{f.icon}</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", fontWeight:600 }}>{f.label}</div>
+    <div style={{ minHeight:"100vh", background:C.gDark, display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"64px 28px 52px", position:"relative", overflow:"hidden" }}>
+
+      {/* Top brand */}
+      <div>
+        <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, marginBottom:40 }}>🇳🇬</div>
+        <p style={{ fontSize:12, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", marginBottom:16 }}>Know Your Nigeria</p>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:48, fontWeight:900, color:"#fff", lineHeight:1.05, letterSpacing:-1.5, maxWidth:280 }}>Your rights.<br/>Your history.<br/>Your Nigeria.</h1>
+      </div>
+
+      {/* Bottom action */}
+      <div>
+        <div style={{ display:"flex", gap:20, marginBottom:36 }}>
+          {[{n:"269",l:"Sections"},{n:"500+",l:"Years history"},{n:"60+",l:"Quiz questions"}].map((s,i)=>(
+            <div key={i}>
+              <div style={{ fontFamily:"'Playfair Display', serif", fontSize:22, fontWeight:900, color:"#fff", letterSpacing:-0.5 }}>{s.n}</div>
+              <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{s.l}</div>
             </div>
           ))}
         </div>
+        <button onClick={() => setStep(2)} style={{ width:"100%", background:"#fff", color:C.gDark, fontSize:16, fontWeight:800, padding:"18px", borderRadius:20, letterSpacing:0.1, boxShadow:"0 12px 32px rgba(0,0,0,0.25)" }}>Get Started →</button>
+        <p style={{ textAlign:"center", marginTop:16, fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.3)" }}>Free. Works offline. No sign-up required.</p>
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px" }}>
-      <div style={{ width:"100%", maxWidth:380 }}>
-        <div style={{ textAlign:"center", marginBottom:36 }}>
-          <div style={{ fontSize:48, marginBottom:18 }}>👋</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:32, fontWeight:900, color:C.textPrimary, marginBottom:10, lineHeight:1.2 }}>What's your name?</h2>
-          <p style={{ fontSize:14, color:C.textMuted, lineHeight:1.7, fontWeight:500 }}>We'll personalise your experience and track your progress.</p>
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", justifyContent:"center", padding:"40px 28px" }}>
+      <div style={{ width:"100%", maxWidth:380, margin:"0 auto" }}>
+        <div style={{ marginBottom:40 }}>
+          <div style={{ width:48, height:48, borderRadius:14, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:28 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:36, fontWeight:900, color:C.ink, lineHeight:1.1, letterSpacing:-0.8, marginBottom:10 }}>What's your name?</h2>
+          <p style={{ fontSize:14, fontWeight:500, color:C.textMuted, lineHeight:1.65 }}>We'll personalise your experience and track your progress across sessions.</p>
         </div>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === "Enter" && valid && completeSetup(name)}
-          placeholder="Enter your name…"
+          placeholder="Your first name…"
           maxLength={30}
-          style={{ width:"100%", padding:"16px 20px", fontSize:18, fontWeight:600, color:C.textPrimary, background:C.card, border:`2px solid ${valid ? C.borderLit : C.border}`, borderRadius:16, outline:"none", fontFamily:"'Inter', sans-serif", boxSizing:"border-box", transition:"border 0.2s" }}
+          autoFocus
+          style={{ width:"100%", padding:"18px 20px", fontSize:18, fontWeight:700, color:C.ink, background:C.card, border:`2px solid ${valid ? C.gBright : C.border}`, borderRadius:18, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}
         />
         <button
           onClick={() => valid && completeSetup(name)}
           disabled={!valid}
-          style={{ width:"100%", marginTop:14, background: valid ? `linear-gradient(135deg, ${C.gMid}, ${C.gBright})` : C.deep, color: valid ? "#fff" : C.textGhost, fontSize:16, fontWeight:800, padding:"16px", borderRadius:16, cursor: valid ? "pointer" : "default", boxShadow: valid ? `0 8px 24px ${C.gMain}44` : "none", transition:"all 0.2s", letterSpacing:0.1 }}>
+          style={{ width:"100%", marginTop:12, background: valid ? C.gDark : C.deep, color: valid ? "#fff" : C.textGhost, fontSize:16, fontWeight:800, padding:"18px", borderRadius:18, cursor: valid ? "pointer" : "default", transition:"all 0.2s", letterSpacing:0.1 }}>
           Start Learning →
         </button>
-        <p style={{ textAlign:"center", marginTop:16, fontSize:12, color:C.textGhost }}>Your data stays on this device only.</p>
+        <p style={{ textAlign:"center", marginTop:16, fontSize:12, fontWeight:500, color:C.textGhost }}>Your data stays on your device only.</p>
       </div>
     </div>
   );
@@ -2867,8 +2998,7 @@ function ProfileScreen({ setTab }) {
   return (
     <div>
       {/* Header */}
-      <div style={{ background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`, padding:"52px 28px 40px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
+      <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
         <div style={{ width:72, height:72, borderRadius:"50%", background:"rgba(255,255,255,0.2)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, fontWeight:900, color:"#fff", marginBottom:14, fontFamily:"'Playfair Display', serif" }}>{initials}</div>
         <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:6 }}>{user.name}</h2>
         <p style={{ fontSize:12, color:"rgba(255,255,255,0.55)", fontWeight:600 }}>Member since {user.joinedDate || "today"}</p>
@@ -2981,7 +3111,6 @@ function ProfileScreen({ setTab }) {
           </div>
         </div>
 
-
         {/* Feedback */}
         <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:20, marginBottom:16 }}>
           {!showFeedback ? (
@@ -3046,24 +3175,275 @@ function ProfileScreen({ setTab }) {
 /* ════════════════════════════════════════
    NAV + LABEL
 ════════════════════════════════════════ */
+
+/* ════════════════════════════════════════
+   DIRECTORY SCREEN
+════════════════════════════════════════ */
+const POLICE_PROS = [
+  { state:"Abia",          name:"Chinaka Chioma Maureen",       rank:"ASP", phone:"07059951536" },
+  { state:"Adamawa",       name:"Yahaya Suleiman",              rank:"SP",  phone:"08065604764" },
+  { state:"Akwa-Ibom",     name:"Odiko S. Ogbeche-Macdon",      rank:"SP",  phone:"08033380470" },
+  { state:"Anambra",       name:"Ikenganyia T. Anthony",        rank:"DSP", phone:"08039394002" },
+  { state:"Bauchi",        name:"Ahmed Mohammed Wakil",         rank:"SP",  phone:"08034844393" },
+  { state:"Bayelsa",       name:"Musa Mohammed",                rank:"SP",  phone:"07032702984" },
+  { state:"Benue",         name:"Anene Sewuse Catherine",       rank:"SP",  phone:"08032845555" },
+  { state:"Borno",         name:"Nahum Daso Kenneth",           rank:"ASP", phone:"09025437854" },
+  { state:"Cross River",   name:"Irene Ugbo",                   rank:"SP",  phone:"08068559326" },
+  { state:"Delta",         name:"Edafe Bright",                 rank:"DSP", phone:"08131070122" },
+  { state:"Ebonyi",        name:"Ukandu Joshua",                rank:"DSP", phone:"08032716251" },
+  { state:"Edo",           name:"Chidi Nwabuzor",               rank:"SP",  phone:"08033726625" },
+  { state:"Ekiti",         name:"Abutu Sunday",                 rank:"DSP", phone:"09064050086" },
+  { state:"Enugu",         name:"Daniel Ndukwe Ekea",           rank:"DSP", phone:"08063722988" },
+  { state:"Gombe",         name:"Nahid Mua'zu Abubakar",       rank:"ASP", phone:"08068508998" },
+  { state:"Imo",           name:"Okoye Henry",                  rank:"ASP", phone:"08148024755" },
+  { state:"Jigawa",        name:"Lawan Shisu Adam",             rank:"DSP", phone:"08109881890" },
+  { state:"Kaduna",        name:"Mansir Hassan",                rank:"ASP", phone:"08166405566" },
+  { state:"Kano",          name:"Haruna Abdullahi",             rank:"SP",  phone:"08037742748" },
+  { state:"Katsina",       name:"Abubakar Sadiq Aliyu",         rank:"ASP", phone:"08133233534" },
+  { state:"Kebbi",         name:"Nafiu Abubakar",               rank:"SP",  phone:"08065159812" },
+  { state:"Kogi",          name:"William Ovye Aya",             rank:"SP",  phone:"08107899269" },
+  { state:"Kwara",         name:"Ejire Adeotun Adeyemi",        rank:"DSP", phone:"07032108353" },
+  { state:"Lagos",         name:"Abimbola Adebisi",             rank:"SP",  phone:"09055390070" },
+  { state:"Nasarawa",      name:"Rahman Mansel",                rank:"DSP", phone:"08037461715" },
+  { state:"Niger",         name:"Wasiu A. Abiodun",             rank:"DSP", phone:"08032233454" },
+  { state:"Ogun",          name:"Odutola Omolola",              rank:"SP",  phone:"09159578888" },
+  { state:"Ondo",          name:"Odunlami Ibukun",              rank:"SP",  phone:"08067669945" },
+  { state:"Osun",          name:"Opalola Yemisi O.",            rank:"SP",  phone:"08067788119" },
+  { state:"Oyo",           name:"Adewale Osifeso",              rank:"SP",  phone:"08068122698" },
+  { state:"Plateau",       name:"Alfred Alabo",                 rank:"DSP", phone:"08060545670" },
+  { state:"Rivers",        name:"Grace Woyengikuro Iringe-koko",rank:"SP",  phone:"08036219523" },
+  { state:"Sokoto",        name:"Rufa'I Ahmed",                rank:"ASP", phone:"08032861946" },
+  { state:"Taraba",        name:"Abdullahi Usman",              rank:"SP",  phone:"08036562695" },
+  { state:"Yobe",          name:"Dungus Abdukarim",             rank:"DSP", phone:"08065682446" },
+  { state:"Zamfara",       name:"Yazid Abubakar",               rank:"ASP", phone:"07046444093" },
+  { state:"FCT Abuja",     name:"Josephine Adeh",               rank:"SP",  phone:"07038979348" },
+];
+
+const STATES_LIST = [
+  "Abia","Adamawa","Akwa-Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno",
+  "Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","Gombe","Imo","Jigawa",
+  "Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger",
+  "Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe",
+  "Zamfara","FCT Abuja"
+];
+
+function DirectoryScreen() {
+  const [section, setSection]       = useState("police"); // police | lawyers | join
+  const [policeState, setPoliceState] = useState("");
+  const [lawyerState, setLawyerState] = useState("");
+
+  const selectStyle = {
+    width:"100%", padding:"14px 16px", fontSize:14, fontWeight:600,
+    color:C.ink, background:C.card, border:`1.5px solid ${C.border}`,
+    borderRadius:14, outline:"none", appearance:"none",
+    backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+    backgroundRepeat:"no-repeat", backgroundPosition:"right 14px center",
+    cursor:"pointer",
+  };
+
+  const matchedPRO = POLICE_PROS.find(p => p.state === policeState);
+
+  const tabs = [
+    { id:"police",  label:"Police PRO" },
+    { id:"lawyers", label:"Find a Lawyer" },
+    { id:"join",    label:"For Lawyers" },
+  ];
+
+  return (
+    <div style={{ background:C.bg, minHeight:"100vh" }}>
+
+      {/* Header */}
+      <div style={{ background:C.gDark, padding:"60px 24px 28px", textAlign:"center" }}>
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:8 }}>Know Your Nigeria</p>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", lineHeight:1.1, letterSpacing:-0.5, marginBottom:8 }}>Help Directory</h1>
+        <p style={{ fontSize:13, fontWeight:500, color:"rgba(255,255,255,0.55)", lineHeight:1.6 }}>Police contacts, legal support & more — all in one place.</p>
+      </div>
+
+      {/* Section tabs */}
+      <div style={{ background:C.gDark, padding:"0 20px 20px" }}>
+        <div style={{ display:"flex", gap:8 }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setSection(t.id)} style={{
+              flex:1, padding:"9px 4px", borderRadius:12,
+              background: section === t.id ? "rgba(255,255,255,0.15)" : "transparent",
+              border: section === t.id ? "1px solid rgba(255,255,255,0.25)" : "1px solid transparent",
+              fontSize:11, fontWeight:700, color: section === t.id ? "#fff" : "rgba(255,255,255,0.4)",
+              letterSpacing:0.2, transition:"all 0.2s",
+            }}>{t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding:"24px 20px" }}>
+
+        {/* ── POLICE PRO SECTION ── */}
+        {section === "police" && (
+          <div>
+            <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+                <div style={{ width:40, height:40, borderRadius:12, background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>Police PRO Directory</div>
+                  <div style={{ fontSize:11, fontWeight:500, color:C.textMuted }}>All 36 states + FCT</div>
+                </div>
+              </div>
+              <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:16 }}>
+                The Nigeria Police Force released these contacts to make reporting crime, police misconduct, and emergencies easier for all Nigerians.
+              </p>
+              <div style={{ position:"relative" }}>
+                <select value={policeState} onChange={e => setPoliceState(e.target.value)} style={selectStyle}>
+                  <option value="">Select your state…</option>
+                  {STATES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {matchedPRO && (
+              <div style={{ background:C.gDark, borderRadius:20, padding:"24px", boxShadow:"0 4px 20px rgba(22,101,52,0.2)" }}>
+                <p style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:14 }}>{matchedPRO.state} State Command</p>
+                <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
+                  <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:"'Playfair Display', serif", fontSize:20, fontWeight:900, color:"#fff", lineHeight:1.2 }}>{matchedPRO.name}</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.5)", marginTop:3, letterSpacing:0.5 }}>{matchedPRO.rank} · Public Relations Officer</div>
+                  </div>
+                </div>
+                <a href={`tel:${matchedPRO.phone}`} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:14, padding:"14px", textDecoration:"none" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.66A2 2 0 012 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                  <span style={{ fontSize:16, fontWeight:800, color:"#fff", letterSpacing:0.5 }}>{matchedPRO.phone}</span>
+                </a>
+                <p style={{ textAlign:"center", marginTop:12, fontSize:11, fontWeight:500, color:"rgba(255,255,255,0.35)" }}>Tap to call directly</p>
+              </div>
+            )}
+
+            {!policeState && (
+              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize:36, marginBottom:12 }}>🗺️</div>
+                <div style={{ fontSize:14, fontWeight:700, color:C.textMuted }}>Select your state above to see the Police PRO contact for that state.</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── LAWYERS SECTION ── */}
+        {section === "lawyers" && (
+          <div>
+            <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+                <div style={{ width:40, height:40, borderRadius:12, background:"#EFF6FF", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>Find a Lawyer</div>
+                  <div style={{ fontSize:11, fontWeight:500, color:C.textMuted }}>Legal support near you</div>
+                </div>
+              </div>
+              <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:16 }}>
+                Browse lawyers registered on this platform by state. Our directory is growing — more lawyers are joining every week.
+              </p>
+              <div style={{ position:"relative", marginBottom:10 }}>
+                <select value={lawyerState} onChange={e => setLawyerState(e.target.value)} style={selectStyle}>
+                  <option value="">Select your state…</option>
+                  {STATES_LIST.filter(s => s !== "FCT Abuja").map(s => <option key={s} value={s}>{s}</option>)}
+                  <option value="FCT Abuja">FCT Abuja</option>
+                </select>
+              </div>
+            </div>
+
+            {lawyerState ? (
+              <div style={{ background:C.card, borderRadius:20, padding:"28px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize:36, marginBottom:12 }}>⚖️</div>
+                <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:8 }}>No lawyers listed yet in {lawyerState}</div>
+                <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:20 }}>
+                  We are actively onboarding lawyers across Nigeria. Are you a lawyer in {lawyerState}? Join our growing directory.
+                </p>
+                <a href="mailto:elzenitho@knowyournigeria.ng" style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gDark, color:"#fff", fontSize:13, fontWeight:700, padding:"12px 24px", borderRadius:14, textDecoration:"none" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  Register as a Lawyer
+                </a>
+              </div>
+            ) : (
+              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize:36, marginBottom:12 }}>⚖️</div>
+                <div style={{ fontSize:14, fontWeight:700, color:C.textMuted }}>Select your state above to find available lawyers in your area.</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── JOIN AS LAWYER SECTION ── */}
+        {section === "join" && (
+          <div>
+            <div style={{ background:C.gDark, borderRadius:20, padding:"28px 24px", marginBottom:16 }}>
+              <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:26, fontWeight:900, color:"#fff", lineHeight:1.2, marginBottom:12, letterSpacing:-0.3 }}>Are you a Lawyer or Barrister?</h2>
+              <p style={{ fontSize:14, fontWeight:500, color:"rgba(255,255,255,0.65)", lineHeight:1.75 }}>
+                Join the Know Your Nigeria legal directory and connect with Nigerians who need your expertise. Our platform reaches thousands of citizens across the country who are actively seeking legal guidance.
+              </p>
+            </div>
+
+            <div style={{ background:C.card, borderRadius:20, padding:"24px", marginBottom:12, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:16 }}>Why Join?</p>
+              {[
+                { icon:"🌍", title:"Nationwide Reach", desc:"Your profile is visible to Nigerians across all 36 states and the FCT" },
+                { icon:"⚖️", title:"Civic-Minded Community", desc:"Connect with citizens who already understand their rights and need legal support" },
+                { icon:"📱", title:"Mobile-First Platform", desc:"Reach clients directly through their phones — no website needed" },
+                { icon:"🆓", title:"Free to Join", desc:"Listing your profile on Know Your Nigeria is completely free" },
+              ].map((b,i) => (
+                <div key={i} style={{ display:"flex", gap:14, marginBottom: i < 3 ? 18 : 0 }}>
+                  <div style={{ fontSize:22, flexShrink:0, marginTop:2 }}>{b.icon}</div>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:800, color:C.ink, marginBottom:3 }}>{b.title}</div>
+                    <div style={{ fontSize:12, fontWeight:500, color:C.textMuted, lineHeight:1.6 }}>{b.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background:C.card, borderRadius:20, padding:"24px", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:12 }}>Get Listed</p>
+              <p style={{ fontSize:13, fontWeight:500, color:C.textBody, lineHeight:1.75, marginBottom:20 }}>
+                Send an email with your full name, call to bar number, area of practice, state, and contact details. We'll review and add you to the directory within 48 hours.
+              </p>
+              <a href="mailto:elzenitho@knowyournigeria.ng?subject=Lawyer Directory Registration - Know Your Nigeria" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, background:C.gDark, color:"#fff", fontSize:14, fontWeight:800, padding:"16px", borderRadius:16, textDecoration:"none", marginBottom:12 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                elzenitho@knowyournigeria.ng
+              </a>
+              <p style={{ textAlign:"center", fontSize:11, fontWeight:600, color:C.textGhost }}>Tap to open your email app</p>
+            </div>
+          </div>
+        )}
+
+      </div>
+      <div style={{ height:16 }} />
+    </div>
+  );
+}
+
 function Nav({ tab, setTab, setChapterIdx }) {
   const tabs = [
-    { id:"home",         icon:"🏠", label:"Home"    },
-    { id:"constitution", icon:"📜", label:"Rights"  },
-    { id:"history",      icon:"📚", label:"History" },
-    { id:"games",        icon:"🎮", label:"Games"   },
-    { id:"ask",          icon:"🤖", label:"Ask"     },
-    { id:"profile",      icon:"👤", label:"Me"      },
+    { id:"home",         svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, label:"Home"   },
+    { id:"constitution", svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>, label:"Rights" },
+    { id:"history",      svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"History"},
+    { id:"directory",    svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:"Help"    },
+    { id:"ask",          svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:"Ask"    },
+    { id:"profile",      svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Me"     },
   ];
   return (
-    <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:"rgba(255,255,255,0.96)", backdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", justifyContent:"space-around", padding:"10px 0 24px", zIndex:200, boxShadow:"0 -4px 20px rgba(0,0,0,0.06)" }}>
+    <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background: C.isDark ? "rgba(10,15,10,0.97)" : "rgba(255,255,255,0.97)", backdropFilter:"blur(24px)", borderTop:`1px solid ${C.border}`, display:"flex", justifyContent:"space-around", padding:"8px 0 20px", zIndex:200, boxShadow:`0 -1px 0 ${C.border}` }}>
       {tabs.map(t => {
         const active = tab === t.id;
         return (
-          <button key={t.id} onClick={() => { setTab(t.id); if (t.id !== "constitution") setChapterIdx?.(null); }} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, padding:"4px 12px" }}>
-            <span style={{ fontSize:21, filter: active ? "none" : "grayscale(100%) opacity(0.35)", transition:"filter 0.2s" }}>{t.icon}</span>
-            <span style={{ fontSize:10, fontWeight:700, letterSpacing:0.3, color: active ? C.gMain : C.textGhost, transition:"color 0.2s" }}>{t.label}</span>
-            {active && <div style={{ width:4, height:4, borderRadius:"50%", background:C.gBright }} />}
+          <button key={t.id} onClick={() => { setTab(t.id); if (t.id !== "constitution") setChapterIdx?.(null); }} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"4px 10px", minWidth:44 }}>
+            <span style={{ color: active ? C.gMain : C.isDark ? "#4B5563" : "#BFC0BA", transition:"color 0.2s", display:"flex" }}>{t.svg}</span>
+            <span style={{ fontSize:9.5, fontWeight:700, letterSpacing:0.2, color: active ? C.gMain : C.isDark ? "#4B5563" : "#BFC0BA", transition:"color 0.2s" }}>{t.label}</span>
+            {active && <div style={{ width:16, height:2.5, borderRadius:2, background:C.gMain, marginTop:1 }} />}
           </button>
         );
       })}
@@ -3072,5 +3452,5 @@ function Nav({ tab, setTab, setChapterIdx }) {
 }
 
 function Label({ children }) {
-  return <div style={{ fontSize:11, letterSpacing:2, color:C.textGhost, textTransform:"uppercase", fontWeight:700 }}>{children}</div>;
+  return <div style={{ fontSize:11, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", fontWeight:700 }}>{children}</div>;
 }
