@@ -2960,6 +2960,7 @@ function ProfileScreen({ setTab }) {
         body: JSON.stringify({
           access_key: "efbf49f0-e0ca-4a56-a3b6-afc318ab2510",
           subject: "KYN App Feedback",
+          to: "elzenitho@knowyournigeria.ng",
           from_name: user.name || "KYN User",
           message: fbText,
         }),
