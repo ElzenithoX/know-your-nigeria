@@ -2883,41 +2883,41 @@ function SetupScreen() {
   const valid = name.trim().length >= 2;
 
   if (step === 1) return (
-    <div style={{ minHeight:"100vh", background:C.gDark, display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"64px 28px 52px", position:"relative", overflow:"hidden" }}>
+    <div style={{ minHeight:"100vh", background:C.gDark, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"space-between", padding:"72px 28px 56px", textAlign:"center" }}>
 
-      {/* Top brand */}
-      <div>
-        <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, marginBottom:40 }}>🇳🇬</div>
-        <p style={{ fontSize:12, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", marginBottom:16 }}>Know Your Nigeria</p>
-        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:48, fontWeight:900, color:"#fff", lineHeight:1.05, letterSpacing:-1.5, maxWidth:280 }}>Your rights.<br/>Your history.<br/>Your Nigeria.</h1>
+      {/* Top — centered brand */}
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
+        <div style={{ width:64, height:64, borderRadius:20, background:"rgba(255,255,255,0.10)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, marginBottom:32 }}>🇳🇬</div>
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", marginBottom:14 }}>Know Your Nigeria</p>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:44, fontWeight:900, color:"#fff", lineHeight:1.08, letterSpacing:-1.5 }}>Your rights.<br/>Your history.<br/>Your Nigeria.</h1>
       </div>
 
-      {/* Bottom action */}
-      <div>
-        <div style={{ display:"flex", gap:20, marginBottom:36 }}>
-          {[{n:"269",l:"Sections"},{n:"500+",l:"Years history"},{n:"60+",l:"Quiz questions"}].map((s,i)=>(
-            <div key={i}>
-              <div style={{ fontFamily:"'Playfair Display', serif", fontSize:22, fontWeight:900, color:"#fff", letterSpacing:-0.5 }}>{s.n}</div>
-              <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{s.l}</div>
+      {/* Bottom — stats + CTA */}
+      <div style={{ width:"100%" }}>
+        <div style={{ display:"flex", justifyContent:"center", gap:32, marginBottom:40 }}>
+          {[{n:"269",l:"Sections"},{n:"500+",l:"Yrs history"},{n:"60+",l:"Quiz Q's"}].map((s,i)=>(
+            <div key={i} style={{ textAlign:"center" }}>
+              <div style={{ fontFamily:"'Playfair Display', serif", fontSize:24, fontWeight:900, color:"#fff", letterSpacing:-0.5 }}>{s.n}</div>
+              <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.38)", marginTop:3, letterSpacing:0.5 }}>{s.l}</div>
             </div>
           ))}
         </div>
-        <button onClick={() => setStep(2)} style={{ width:"100%", background:"#fff", color:C.gDark, fontSize:16, fontWeight:800, padding:"18px", borderRadius:20, letterSpacing:0.1, boxShadow:"0 12px 32px rgba(0,0,0,0.25)" }}>Get Started →</button>
-        <p style={{ textAlign:"center", marginTop:16, fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.3)" }}>Free. Works offline. No sign-up required.</p>
+        <button onClick={() => setStep(2)} style={{ width:"100%", background:"#fff", color:C.gDark, fontSize:16, fontWeight:800, padding:"18px", borderRadius:20, letterSpacing:0.1, boxShadow:"0 12px 32px rgba(0,0,0,0.3)" }}>Get Started →</button>
+        <p style={{ textAlign:"center", marginTop:16, fontSize:11, fontWeight:500, color:"rgba(255,255,255,0.25)" }}>Free · Works offline · No sign-up required</p>
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", justifyContent:"center", padding:"40px 28px" }}>
-      <div style={{ width:"100%", maxWidth:380, margin:"0 auto" }}>
-        <div style={{ marginBottom:40 }}>
-          <div style={{ width:48, height:48, borderRadius:14, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:28 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", textAlign:"center" }}>
+      <div style={{ width:"100%", maxWidth:360 }}>
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:28 }}>
+          <div style={{ width:56, height:56, borderRadius:18, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:36, fontWeight:900, color:C.ink, lineHeight:1.1, letterSpacing:-0.8, marginBottom:10 }}>What's your name?</h2>
-          <p style={{ fontSize:14, fontWeight:500, color:C.textMuted, lineHeight:1.65 }}>We'll personalise your experience and track your progress across sessions.</p>
         </div>
+        <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:C.ink, lineHeight:1.1, letterSpacing:-0.8, marginBottom:10 }}>What's your name?</h2>
+        <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:32 }}>We'll personalise your experience and track your progress.</p>
         <input
           type="text"
           value={name}
@@ -2926,7 +2926,7 @@ function SetupScreen() {
           placeholder="Your first name…"
           maxLength={30}
           autoFocus
-          style={{ width:"100%", padding:"18px 20px", fontSize:18, fontWeight:700, color:C.ink, background:C.card, border:`2px solid ${valid ? C.gBright : C.border}`, borderRadius:18, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}
+          style={{ width:"100%", padding:"18px 20px", fontSize:18, fontWeight:700, color:C.ink, background:C.card, border:`2px solid ${valid ? C.gBright : C.border}`, borderRadius:18, outline:"none", boxSizing:"border-box", textAlign:"center", transition:"border-color 0.2s", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}
         />
         <button
           onClick={() => valid && completeSetup(name)}
@@ -2934,7 +2934,7 @@ function SetupScreen() {
           style={{ width:"100%", marginTop:12, background: valid ? C.gDark : C.deep, color: valid ? "#fff" : C.textGhost, fontSize:16, fontWeight:800, padding:"18px", borderRadius:18, cursor: valid ? "pointer" : "default", transition:"all 0.2s", letterSpacing:0.1 }}>
           Start Learning →
         </button>
-        <p style={{ textAlign:"center", marginTop:16, fontSize:12, fontWeight:500, color:C.textGhost }}>Your data stays on your device only.</p>
+        <p style={{ textAlign:"center", marginTop:16, fontSize:11, fontWeight:500, color:C.textGhost }}>Your data stays on your device only.</p>
       </div>
     </div>
   );
