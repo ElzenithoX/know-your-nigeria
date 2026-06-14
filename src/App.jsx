@@ -1663,6 +1663,7 @@ function HomeScreen({ setTab }) {
   const { dark, toggleDark } = useTheme();
   const firstName = user.name ? user.name.split(" ")[0] : null;
   const pres = useCountdown("2027-01-16T08:00:00");
+  const gov  = useCountdown("2027-02-06T08:00:00");
 
   const tile = (onClick, bg, iconBg, icon, title, sub, dark2) => (
     <div onClick={onClick} style={{ background:bg, border: dark2 ? "none" : ("1px solid " + C.border), borderRadius:16, padding:"12px", cursor:"pointer", display:"flex", flexDirection:"column", justifyContent:"space-between", minHeight:0 }}>
@@ -1675,7 +1676,7 @@ function HomeScreen({ setTab }) {
   );
 
   return (
-    <div style={{ background:C.bg, transition:"background 0.3s", height:"100%", display:"flex", flexDirection:"column", padding:"16px 16px 10px", overflow:"hidden" }}>
+    <div style={{ background:C.bg, transition:"background 0.3s", height:"100%", display:"flex", flexDirection:"column", padding:"calc(env(safe-area-inset-top, 0px) + 28px) 16px 10px", overflow:"hidden" }}>
 
       {/* Hero header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12, flexShrink:0 }}>
@@ -1713,7 +1714,7 @@ function HomeScreen({ setTab }) {
       </div>
 
       {/* Feature tiles — square grid, fills available space */}
-      <div style={{ flex:1, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr", gap:8, minHeight:0, marginBottom:10 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridAutoRows:"126px", gap:8, marginBottom:10, flexShrink:0 }}>
         {tile(() => setTab("constitution"), C.card, C.gLight,
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
           "Rights", "269 sections", false)}
@@ -1734,19 +1735,45 @@ function HomeScreen({ setTab }) {
           "My Progress", "Stats & saved", false)}
       </div>
 
-      {/* Election countdown — compact */}
-      <div onClick={() => setTab("directory")} style={{ background:C.gDark, borderRadius:16, padding:"12px 16px", marginBottom:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <p style={{ fontSize:9.5, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", marginBottom:2 }}>🗳️ Presidential Election</p>
-          <p style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.6)" }}>January 16, 2027</p>
+      {/* Flexible spacer */}
+      <div style={{ flex:1, minHeight:6 }} />
+
+      {/* Election countdowns — both in one card */}
+      <div onClick={() => setTab("directory")} style={{ background:C.gDark, borderRadius:16, padding:"13px 16px", marginBottom:10, flexShrink:0, cursor:"pointer" }}>
+        <p style={{ fontSize:9.5, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:10 }}>🗳️ Election Countdown</p>
+
+        {/* Presidential */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+          <div>
+            <p style={{ fontSize:11.5, fontWeight:700, color:"#fff", lineHeight:1.2 }}>Presidential</p>
+            <p style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.5)" }}>Jan 16, 2027</p>
+          </div>
+          <div style={{ display:"flex", gap:5 }}>
+            {[{v:pres.days,l:"D"},{v:pres.hours,l:"H"},{v:pres.minutes,l:"M"},{v:pres.seconds,l:"S"}].map((u,i)=>(
+              <div key={i} style={{ textAlign:"center", minWidth:28, background:"rgba(255,255,255,0.08)", borderRadius:7, padding:"4px 3px" }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:15, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
+                <div style={{ fontSize:7, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:1 }}>{u.l}</div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {[{v:pres.days,l:"D"},{v:pres.hours,l:"H"},{v:pres.minutes,l:"M"},{v:pres.seconds,l:"S"}].map((u,i)=>(
-            <div key={i} style={{ textAlign:"center", minWidth:30, background:"rgba(255,255,255,0.08)", borderRadius:8, padding:"5px 3px" }}>
-              <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:16, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
-              <div style={{ fontSize:7.5, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{u.l}</div>
-            </div>
-          ))}
+
+        <div style={{ height:1, background:"rgba(255,255,255,0.08)", marginBottom:10 }} />
+
+        {/* Governorship */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <p style={{ fontSize:11.5, fontWeight:700, color:"#fff", lineHeight:1.2 }}>Governorship</p>
+            <p style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.5)" }}>Feb 6, 2027</p>
+          </div>
+          <div style={{ display:"flex", gap:5 }}>
+            {[{v:gov.days,l:"D"},{v:gov.hours,l:"H"},{v:gov.minutes,l:"M"},{v:gov.seconds,l:"S"}].map((u,i)=>(
+              <div key={i} style={{ textAlign:"center", minWidth:28, background:"rgba(255,255,255,0.08)", borderRadius:7, padding:"4px 3px" }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:15, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
+                <div style={{ fontSize:7, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:1 }}>{u.l}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
