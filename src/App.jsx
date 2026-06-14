@@ -84,31 +84,33 @@ function UserProvider({ children }) {
 
 const FontLoader = ({ dark }) => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { background: ${dark ? "#0A0F0A" : "#F7F8F5"}; font-family: 'DM Sans', system-ui, sans-serif; transition: background 0.3s ease; }
+    html, body { background: ${dark ? "#0B0F0B" : "#FFFFFF"}; font-family: 'Inter', system-ui, sans-serif; font-weight: 500; overscroll-behavior: none; }
+    #root { height: 100%; }
     ::-webkit-scrollbar { display: none; }
     button { cursor: pointer; border: none; background: none; font-family: inherit; }
     input, textarea { font-family: inherit; }
+    .anton { font-family: 'Playfair Display', serif; letter-spacing: -0.01em; font-weight: 900; }
   `}</style>
 );
 
 const LIGHT = {
-  bg: "#F7F8F5", card: "#FFFFFF", cardAlt: "#F3F5F0", deep: "#E8EDE4",
-  border: "#E4E9E0", borderLit: "#C8D9C0",
-  gDark: "#166534", gMid: "#15803D", gMain: "#16A34A", gBright: "#22C55E", gLight: "#DCFCE7",
-  gDim: "#BBF7D0",
-  textPrimary: "#0D1B0D", textBody: "#374151", textMuted: "#6B7280", textGhost: "#9CA3AF",
-  ink: "#111827",
+  bg: "#FFFFFF", card: "#FFFFFF", cardAlt: "#F4F6F3", deep: "#ECEFEA",
+  border: "#E8EBE6", borderLit: "#D4DDD0",
+  gDark: "#14401F", gMid: "#1B5E2A", gMain: "#1F7A35", gBright: "#2E9E48", gLight: "#E6F2E9",
+  gDim: "#CDE6D4",
+  textPrimary: "#0A0F0A", textBody: "#2A332A", textMuted: "#6B756B", textGhost: "#A0A8A0",
+  ink: "#0A0F0A",
   isDark: false,
 };
 
 const DARK = {
-  bg: "#0A0F0A", card: "#141A14", cardAlt: "#1A221A", deep: "#1F2B1F",
-  border: "#263326", borderLit: "#2F4230",
-  gDark: "#166534", gMid: "#15803D", gMain: "#22C55E", gBright: "#4ADE80", gLight: "#14532D",
-  gDim: "#166534",
-  textPrimary: "#F0FDF4", textBody: "#D1FAE5", textMuted: "#6EE7B7", textGhost: "#34D399",
+  bg: "#0B0F0B", card: "#131913", cardAlt: "#1A211A", deep: "#212A21",
+  border: "#28332A", borderLit: "#36473A",
+  gDark: "#14401F", gMid: "#1B5E2A", gMain: "#2E9E48", gBright: "#46C264", gLight: "#15301C",
+  gDim: "#14401F",
+  textPrimary: "#FFFFFF", textBody: "#D4DDD4", textMuted: "#8B958B", textGhost: "#5A655A",
   ink: "#FFFFFF",
   isDark: true,
 };
@@ -1546,16 +1548,30 @@ function AppInner() {
   return (
     <ThemeCtx.Provider value={{ C, dark, toggleDark }}>
       <FontLoader dark={dark} />
-      <div style={{ background: C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", fontFamily:"'DM Sans', system-ui, sans-serif", overflowX:"hidden", transition:"background 0.3s ease" }}>
-        <div style={{ paddingBottom:88, paddingTop:0 }}>
-          {tab === "home"         && <HomeScreen setTab={setTab} />}
-          {tab === "constitution" && <ConstitutionScreen chapterIdx={chapterIdx} setChapterIdx={setChapterIdx} expandedSec={expandedSec} setExpanded={setExpanded} />}
-          {tab === "history"      && <HistoryScreen />}
-          {tab === "games"        && <GameZone />}
-          {tab === "ask"          && <AskTheLaw />}
-          {tab === "profile"      && <ProfileScreen setTab={setTab} />}
-          {tab === "directory"    && <DirectoryScreen />}
-        </div>
+      <div style={{
+        background: C.bg, position:"fixed", inset:0, maxWidth:430, margin:"0 auto",
+        fontFamily:"'Inter', system-ui, sans-serif", overflow:"hidden",
+        display:"flex", flexDirection:"column", height:"100%",
+      }}>
+        {/* Content region — home & chat are fixed/self-contained; long screens scroll internally */}
+        {tab === "home" ? (
+          <div style={{ flex:1, overflow:"hidden", position:"relative" }}>
+            <HomeScreen setTab={setTab} />
+          </div>
+        ) : tab === "ask" ? (
+          <div style={{ flex:1, overflow:"hidden", position:"relative" }}>
+            <AskTheLaw />
+          </div>
+        ) : (
+          <div style={{ flex:1, overflowY:"auto", overflowX:"hidden", WebkitOverflowScrolling:"touch", position:"relative" }}>
+            {tab === "constitution" && <ConstitutionScreen chapterIdx={chapterIdx} setChapterIdx={setChapterIdx} expandedSec={expandedSec} setExpanded={setExpanded} />}
+            {tab === "history"      && <HistoryScreen />}
+            {tab === "games"        && <GameZone />}
+            {tab === "profile"      && <ProfileScreen setTab={setTab} />}
+            {tab === "directory"    && <DirectoryScreen />}
+            <div style={{ height:96 }} />
+          </div>
+        )}
         <Nav tab={tab} setTab={setTab} setChapterIdx={setChapterIdx} />
       </div>
     </ThemeCtx.Provider>
@@ -1591,7 +1607,7 @@ function useCountdown(targetDate) {
 function CountdownUnit({ value, label }) {
   return (
     <div style={{ textAlign:"center", minWidth:48 }}>
-      <div style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-1 }}>
+      <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1 }}>
         {String(value).padStart(2,"0")}
       </div>
       <div style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", marginTop:4 }}>{label}</div>
@@ -1616,7 +1632,7 @@ function ElectionCountdown() {
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             {[{v:countdown.days,l:"D"},{v:countdown.hours,l:"H"},{v:countdown.minutes,l:"M"},{v:countdown.seconds,l:"S"}].map(({v,l},i)=>(
               <div key={i} style={{ textAlign:"center", minWidth:34, background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"6px 4px" }}>
-                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:18, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-0.5 }}>
+                <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:18, fontWeight:900, color:"#fff", lineHeight:1 }}>
                   {String(v).padStart(2,"0")}
                 </div>
                 <div style={{ fontSize:8, fontWeight:700, letterSpacing:1, color:"rgba(255,255,255,0.4)", marginTop:3, textTransform:"uppercase" }}>{l}</div>
@@ -1646,122 +1662,109 @@ function HomeScreen({ setTab }) {
   const { user, readPct, readCount, totalSections } = useUser();
   const { dark, toggleDark } = useTheme();
   const firstName = user.name ? user.name.split(" ")[0] : null;
+  const pres = useCountdown("2027-01-16T08:00:00");
+
+  const tile = (onClick, bg, iconBg, icon, title, sub, dark2) => (
+    <div onClick={onClick} style={{ background:bg, border: dark2 ? "none" : ("1px solid " + C.border), borderRadius:16, padding:"12px", cursor:"pointer", display:"flex", flexDirection:"column", justifyContent:"space-between", minHeight:0 }}>
+      <div style={{ width:38, height:38, borderRadius:11, background:iconBg, display:"flex", alignItems:"center", justifyContent:"center" }}>{icon}</div>
+      <div>
+        <div style={{ fontSize:14, fontWeight:800, color: dark2 ? "#fff" : C.ink, lineHeight:1.1 }}>{title}</div>
+        <div style={{ fontSize:10.5, fontWeight:500, color: dark2 ? "rgba(255,255,255,0.55)" : C.textMuted, marginTop:2 }}>{sub}</div>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ background:C.bg, minHeight:"100vh", transition:"background 0.3s" }}>
+    <div style={{ background:C.bg, transition:"background 0.3s", height:"100%", display:"flex", flexDirection:"column", padding:"16px 16px 10px", overflow:"hidden" }}>
 
-      {/* ── Hero header ── */}
-      <div style={{ padding:"60px 24px 32px", background:C.bg, transition:"background 0.3s" }}>
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6 }}>
-          <div>
-            <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, marginBottom:4 }}>
-              {firstName ? `Welcome back,` : "Good to see you"}
-            </p>
-            <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize: firstName ? 38 : 42, fontWeight:900, color:C.ink, lineHeight:1.05, letterSpacing:-1 }}>
-              {firstName ? `${firstName}.` : "Know Your\nNigeria."}
-            </h1>
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0, marginTop:4 }}>
-            <div style={{ width:46, height:46, borderRadius:14, background:C.gDark, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🇳🇬</div>
-            <button
-              onClick={toggleDark}
-              title={dark ? "Switch to light mode" : "Switch to dark mode"}
-              style={{ width:46, height:28, borderRadius:20, background: dark ? C.gMain : C.deep, border:`1.5px solid ${dark ? C.gBright : C.border}`, display:"flex", alignItems:"center", padding:"0 4px", transition:"all 0.25s", cursor:"pointer", position:"relative" }}
-            >
-              <div style={{ width:20, height:20, borderRadius:"50%", background: dark ? "#fff" : C.gDark, transform: dark ? "translateX(18px)" : "translateX(0px)", transition:"transform 0.25s, background 0.25s", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11 }}>
-                {dark ? "🌙" : "☀️"}
-              </div>
-            </button>
-          </div>
+      {/* Hero header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12, flexShrink:0 }}>
+        <div>
+          <p style={{ fontSize:12, fontWeight:600, color:C.textMuted, marginBottom:1 }}>
+            {firstName ? "Welcome back," : "Good to see you"}
+          </p>
+          <h1 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:27, fontWeight:900, color:C.ink, lineHeight:1.0 }}>
+            {firstName ? (firstName + ".") : "Know Your Nigeria."}
+          </h1>
         </div>
-        <p style={{ fontSize:14, fontWeight:500, color:C.textMuted, marginTop:8, lineHeight:1.6 }}>Your rights, constitution & history<br/>in plain everyday language.</p>
+        <button
+          onClick={toggleDark}
+          title={dark ? "Light mode" : "Dark mode"}
+          style={{ width:44, height:26, borderRadius:20, background: dark ? C.gMain : C.deep, border:("1.5px solid " + (dark ? C.gBright : C.border)), display:"flex", alignItems:"center", padding:"0 3px", transition:"all 0.25s", cursor:"pointer", flexShrink:0, marginTop:4 }}
+        >
+          <div style={{ width:18, height:18, borderRadius:"50%", background: dark ? "#fff" : C.gDark, transform: dark ? "translateX(18px)" : "translateX(0px)", transition:"transform 0.25s, background 0.25s", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10 }}>
+            {dark ? "🌙" : "☀️"}
+          </div>
+        </button>
       </div>
 
-      {/* ── Progress card ── */}
-      <div style={{ padding:"0 20px", marginBottom:24 }}>
-        <div style={{ background:C.gDark, borderRadius:24, padding:"24px", position:"relative", overflow:"hidden" }}>
-
-          <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:6 }}>Your Progress</p>
-          <div style={{ display:"flex", alignItems:"flex-end", gap:8, marginBottom:16 }}>
-            <span style={{ fontFamily:"'Playfair Display', serif", fontSize:52, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-2 }}>{readPct}%</span>
-            <span style={{ fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.55)", marginBottom:8 }}>of the Constitution read</span>
+      {/* Progress card */}
+      <div style={{ background:C.gDark, borderRadius:18, padding:"13px 16px", marginBottom:10, flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:7 }}>
+            <span style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:32, fontWeight:900, color:"#fff", lineHeight:0.9 }}>{readPct}%</span>
+            <span style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.55)", marginBottom:3 }}>{readCount}/{totalSections} read</span>
           </div>
-          <div style={{ height:5, background:"rgba(255,255,255,0.15)", borderRadius:99, overflow:"hidden", marginBottom:12 }}>
-            <div style={{ width:`${readPct}%`, height:"100%", background:C.gBright, borderRadius:99, transition:"width 0.6s ease" }} />
-          </div>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.5)" }}>{readCount} of {totalSections} sections</span>
-            <button onClick={() => setTab("constitution")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"6px 16px", fontSize:12, fontWeight:700, color:"#fff", letterSpacing:0.2 }}>Continue →</button>
-          </div>
+          <button onClick={() => setTab("constitution")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"6px 14px", fontSize:11.5, fontWeight:700, color:"#fff" }}>Continue →</button>
+        </div>
+        <div style={{ height:4, background:"rgba(255,255,255,0.15)", borderRadius:99, overflow:"hidden" }}>
+          <div style={{ width:(readPct + "%"), height:"100%", background:C.gBright, borderRadius:99, transition:"width 0.6s ease" }} />
         </div>
       </div>
 
-      {/* ── Feature cards ── */}
-      <div style={{ padding:"0 20px" }}>
-        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Explore</p>
+      {/* Feature tiles — square grid, fills available space */}
+      <div style={{ flex:1, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr", gap:8, minHeight:0, marginBottom:10 }}>
+        {tile(() => setTab("constitution"), C.card, C.gLight,
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+          "Rights", "269 sections", false)}
+        {tile(() => setTab("history"), C.card, "#FEF3C7",
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+          "History", "Full timeline", false)}
+        {tile(() => setTab("directory"), C.card, "#FEF2F2",
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+          "Help", "Directories", false)}
+        {tile(() => setTab("games"), C.card, "#FFF7ED",
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M7 12h.01"/><path d="M17 10v4M15 12h4"/></svg>,
+          "Games", "Quiz & points", false)}
+        {tile(() => setTab("ask"), C.gDark, "rgba(255,255,255,0.15)",
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+          "Wazobia", "Ask AI", true)}
+        {tile(() => setTab("profile"), C.card, C.gLight,
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gMain} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+          "My Progress", "Stats & saved", false)}
+      </div>
 
-        {/* Constitution */}
-        <div onClick={() => setTab("constitution")} style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:10, cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-          <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:2 }}>Constitution</div>
-            <div style={{ fontSize:13, fontWeight:500, color:C.textMuted }}>269 sections · Plain English</div>
-          </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      {/* Election countdown — compact */}
+      <div onClick={() => setTab("directory")} style={{ background:C.gDark, borderRadius:16, padding:"12px 16px", marginBottom:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div>
+          <p style={{ fontSize:9.5, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", marginBottom:2 }}>🗳️ Presidential Election</p>
+          <p style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.6)" }}>January 16, 2027</p>
         </div>
-
-        {/* History */}
-        <div onClick={() => setTab("history")} style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:10, cursor:"pointer", display:"flex", alignItems:"center", gap:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-          <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:"#FEF3C7", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:2 }}>History</div>
-            <div style={{ fontSize:13, fontWeight:500, color:C.textMuted }}>500 BC to today · Full timeline</div>
-          </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-
-        {/* Two small cards */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-          <div onClick={() => setTab("games")} style={{ background:C.card, borderRadius:20, padding:"20px 16px", cursor:"pointer", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-            <div style={{ width:44, height:44, borderRadius:14, background:"#FFF7ED", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M7 12h.01"/><path d="M17 10v4M15 12h4"/></svg>
+        <div style={{ display:"flex", gap:6 }}>
+          {[{v:pres.days,l:"D"},{v:pres.hours,l:"H"},{v:pres.minutes,l:"M"},{v:pres.seconds,l:"S"}].map((u,i)=>(
+            <div key={i} style={{ textAlign:"center", minWidth:30, background:"rgba(255,255,255,0.08)", borderRadius:8, padding:"5px 3px" }}>
+              <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:16, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
+              <div style={{ fontSize:7.5, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{u.l}</div>
             </div>
-            <div style={{ fontSize:15, fontWeight:800, color:C.ink, marginBottom:3 }}>Games</div>
-            <div style={{ fontSize:11, fontWeight:500, color:C.textMuted }}>Quiz & earn points</div>
-          </div>
-          <div onClick={() => setTab("ask")} style={{ background:C.gDark, borderRadius:20, padding:"20px 16px", cursor:"pointer", boxShadow:"0 2px 12px rgba(22,101,52,0.25)" }}>
-            <div style={{ width:44, height:44, borderRadius:14, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            </div>
-            <div style={{ fontSize:15, fontWeight:800, color:"#fff", marginBottom:3 }}>Ask Wazobia</div>
-            <div style={{ fontSize:11, fontWeight:500, color:"rgba(255,255,255,0.55)" }}>AI legal assistant</div>
-          </div>
-        </div>
-
-        <ElectionCountdown />
-
-        {/* Quick facts strip */}
-        <div style={{ background:C.card, borderRadius:20, padding:"20px", boxShadow:"0 2px 12px rgba(0,0,0,0.05)", marginBottom:4 }}>
-          <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Nigeria at a glance</p>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
-            {QUICK_FACTS.map((f,i) => (
-              <div key={i} style={{ textAlign:"center" }}>
-                <div style={{ fontSize:18, marginBottom:4 }}>{f.icon}</div>
-                <div style={{ fontSize:13, fontWeight:800, color:C.ink, letterSpacing:-0.5 }}>{f.value}</div>
-                <div style={{ fontSize:10, fontWeight:500, color:C.textMuted, marginTop:2, lineHeight:1.3 }}>{f.label}</div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
-      <div style={{ height:16 }} />
+
+      {/* Nigeria at a glance — compact strip */}
+      <div style={{ background:C.card, border:("1px solid " + C.border), borderRadius:16, padding:"12px 14px", flexShrink:0 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
+          {QUICK_FACTS.map((f,i) => (
+            <div key={i} style={{ textAlign:"center" }}>
+              <div style={{ fontSize:15, marginBottom:2 }}>{f.icon}</div>
+              <div style={{ fontSize:11.5, fontWeight:800, color:C.ink, letterSpacing:-0.3, lineHeight:1.1 }}>{f.value}</div>
+              <div style={{ fontSize:8.5, fontWeight:500, color:C.textMuted, marginTop:1, lineHeight:1.2 }}>{f.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
-
 /* ════════════════════════════════════════
    HISTORY SCREEN
 ════════════════════════════════════════ */
@@ -1786,7 +1789,7 @@ function HistoryScreen() {
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:42, marginBottom:14 }}>📚</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>Nigerian History</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>Nigerian History</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:280 }}>From ancient kingdoms to the Fourth Republic — Nigeria's full story in plain language.</p>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18 }}>
             <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
@@ -1891,7 +1894,7 @@ function HistoryScreen() {
                         fontSize:20,
                       }}>{event.icon}</div>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:700, color:C.textPrimary, lineHeight:1.3, marginBottom:3 }}>{event.title}</div>
+                        <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:15, fontWeight:700, color:C.textPrimary, lineHeight:1.3, marginBottom:3 }}>{event.title}</div>
                         <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.5, fontWeight:500 }}>{event.summary}</div>
                       </div>
                     </div>
@@ -1955,7 +1958,7 @@ function ConstitutionScreen({ chapterIdx, setChapterIdx, expandedSec, setExpande
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:42, marginBottom:14 }}>📜</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>The Constitution</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>The Constitution</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:280 }}>Nigeria's supreme law — explained in plain, everyday language.</p>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:18 }}>
             <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
@@ -1975,7 +1978,7 @@ function ConstitutionScreen({ chapterIdx, setChapterIdx, expandedSec, setExpande
               <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:`0 6px 20px ${C.gMain}33` }}>{ch.icon}</div>
               <div style={{ flex:1 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
-                  <span style={{ fontFamily:"'Playfair Display', serif", fontSize:16, fontWeight:700, color:C.textPrimary }}>{ch.title}</span>
+                  <span style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:16, fontWeight:700, color:C.textPrimary }}>{ch.title}</span>
                   <span style={{ fontSize:9, fontWeight:700, letterSpacing:1, color:C.gMain, background:C.gLight, border:`1px solid ${C.borderLit}`, padding:"2px 8px", borderRadius:20 }}>{ch.tag}</span>
                 </div>
                 <div style={{ fontSize:12, color:C.textGhost, fontWeight:500 }}>{ch.chapter} · {ch.sections.length} sections</div>
@@ -2000,7 +2003,7 @@ function ChapterDetail({ chapter, chapterIdx, onBack, expandedSec, setExpanded }
           <button onClick={onBack} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:12, padding:"7px 16px", color:"#fff", fontSize:14, fontWeight:600, marginBottom:22 }}>← Back</button>
           <div style={{ width:62, height:62, borderRadius:20, marginBottom:16, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>{chapter.icon}</div>
           <div style={{ fontSize:10, letterSpacing:2, color:"rgba(255,255,255,0.55)", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>{chapter.chapter}</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1.15, marginBottom:10 }}>{chapter.title}</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1.15, marginBottom:10 }}>{chapter.title}</h2>
           <p style={{ fontSize:13, color:"rgba(255,255,255,0.6)", fontWeight:500, maxWidth:260 }}>Tap any section to read more</p>
         </div>
       </div>
@@ -2041,7 +2044,7 @@ function ChapterDetail({ chapter, chapterIdx, onBack, expandedSec, setExpanded }
                       <div style={{ width:7, height:7, borderRadius:"50%", background:C.textGhost }} />
                       <span style={{ fontSize:10, letterSpacing:2, color:C.textGhost, textTransform:"uppercase", fontWeight:700 }}>Official Text</span>
                     </div>
-                    <p style={{ fontFamily:"'Playfair Display', serif", fontSize:13, fontStyle:"italic", color:C.textMuted, lineHeight:1.85, borderLeft:`2px solid ${C.borderLit}`, paddingLeft:14 }}>"{sec.official}"</p>
+                    <p style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:13, fontStyle:"italic", color:C.textMuted, lineHeight:1.85, borderLeft:`2px solid ${C.borderLit}`, paddingLeft:14 }}>"{sec.official}"</p>
                   </div>
                   {/* Bookmark row */}
                   <div style={{ padding:"12px 18px", display:"flex", justifyContent:"flex-end", background:C.cardAlt }}>
@@ -2421,7 +2424,7 @@ function GameLobby({ stats, onStart }) {
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:44, marginBottom:14 }}>🎮</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>Game Zone</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>Game Zone</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:270 }}>Test what you know about Nigeria's history and constitution. Earn points and badges.</p>
           {/* Stats row */}
           <div style={{ display:"flex", gap:8, marginTop:18 }}>
@@ -2447,7 +2450,7 @@ function GameLobby({ stats, onStart }) {
             <div key={cat.id} onClick={() => onStart(cat.id)} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"18px 20px", cursor:"pointer", display:"flex", alignItems:"center", gap:14, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
               <div style={{ width:54, height:54, borderRadius:16, flexShrink:0, background:cat.light, border:`1px solid ${cat.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26 }}>{cat.icon}</div>
               <div style={{ flex:1 }}>
-                <div style={{ fontFamily:"'Playfair Display', serif", fontSize:17, fontWeight:700, color:C.textPrimary, marginBottom:4 }}>{cat.label}</div>
+                <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:17, fontWeight:700, color:C.textPrimary, marginBottom:4 }}>{cat.label}</div>
                 <div style={{ fontSize:12, color:C.textMuted, fontWeight:500, marginBottom:6 }}>{cat.desc}</div>
                 <div style={{ fontSize:10, color:C.textGhost, fontWeight:600 }}>{Math.min(10, cat.total)} questions per game · {cat.total} in pool</div>
               </div>
@@ -2518,7 +2521,7 @@ function QuizScreen({ questions, qIdx, selected, revealed, streak, score, choose
           </div>
 
           {/* Question */}
-          <h3 style={{ fontFamily:"'Playfair Display', serif", fontSize:19, fontWeight:800, color:"#fff", lineHeight:1.45 }}>{q.q}</h3>
+          <h3 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:19, fontWeight:800, color:"#fff", lineHeight:1.45 }}>{q.q}</h3>
         </div>
       </div>
 
@@ -2591,8 +2594,8 @@ function ResultScreen({ score, total, maxStreak, answers, questions, stats, onPl
       <div style={{ background:C.gDark, padding:"52px 28px 44px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:52, marginBottom:12 }}>{grade.icon}</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:6 }}>{grade.label}</h2>
-          <div style={{ fontSize:52, fontWeight:900, color:C.gGlow || "#a8f0a8", letterSpacing:-2, lineHeight:1, marginBottom:8, fontFamily:"'Playfair Display', serif" }}>{pct}%</div>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", marginBottom:6 }}>{grade.label}</h2>
+          <div style={{ fontSize:52, fontWeight:900, color:C.gGlow || "#a8f0a8", letterSpacing:-2, lineHeight:1, marginBottom:8, fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em" }}>{pct}%</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.65)", fontWeight:500, marginBottom:20 }}>{score} out of {total} correct</div>
 
           {/* Stats row */}
@@ -2757,14 +2760,14 @@ function AskTheLaw() {
   const showSuggestions = messages.length <= 1;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100vh", maxHeight:"100vh", overflow:"hidden" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
 
       {/* Header */}
-      <div style={{ background:C.gDark, padding:"52px 28px 28px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
+      <div style={{ background:C.gDark, padding:"56px 28px 24px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ width:64, height:64, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, marginBottom:14 }}>🤖</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:8, lineHeight:1.15 }}>Ask Wazobia</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:28, fontWeight:900, color:"#fff", marginBottom:8, lineHeight:1.15 }}>Ask Wazobia</h2>
           <p style={{ fontSize:13, color:"rgba(255,255,255,0.7)", fontWeight:500, maxWidth:260, lineHeight:1.6 }}>Your AI-powered Nigerian civic rights assistant — ask anything about the constitution or your rights.</p>
           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
             <div style={{ width:6, height:6, borderRadius:"50%", background:"#a8f0c0", flexShrink:0 }} />
@@ -2781,16 +2784,16 @@ function AskTheLaw() {
           return (
             <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-end", flexDirection: isBot ? "row" : "row-reverse" }}>
               {isBot && (
-                <div style={{ width:30, height:30, borderRadius:"50%", background:"linear-gradient(135deg, #1a5c6b, #277a8a)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>🤖</div>
+                <div style={{ width:30, height:30, borderRadius:"50%", background:"C.gMain", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>🤖</div>
               )}
               <div style={{
                 maxWidth:"78%",
-                background: isBot ? C.card : "linear-gradient(135deg, #1a5c6b, #277a8a)",
+                background: isBot ? C.card : "C.gMain",
                 color: isBot ? C.textBody : "#fff",
                 borderRadius: isBot ? "18px 18px 18px 4px" : "18px 18px 4px 18px",
                 padding:"12px 15px",
                 fontSize:14, lineHeight:1.75, fontWeight:500,
-                boxShadow: isBot ? "0 2px 8px rgba(0,0,0,0.07)" : "0 4px 16px rgba(26,92,107,0.35)",
+                boxShadow: isBot ? "0 2px 8px rgba(0,0,0,0.07)" : "0 4px 16px rgba(20,64,31,0.3)",
                 border: isBot ? `1px solid ${C.border}` : "none",
               }}>
                 {renderText(m.content)}
@@ -2801,10 +2804,10 @@ function AskTheLaw() {
 
         {loading && (
           <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
-            <div style={{ width:30, height:30, borderRadius:"50%", background:"linear-gradient(135deg, #1a5c6b, #277a8a)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>🤖</div>
+            <div style={{ width:30, height:30, borderRadius:"50%", background:"C.gMain", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>🤖</div>
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:"18px 18px 18px 4px", padding:"13px 18px", display:"flex", gap:5, alignItems:"center", boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
               {[0,1,2].map(d => (
-                <div key={d} style={{ width:7, height:7, borderRadius:"50%", background:"#1a5c6b", opacity:0.5, animation:`bounce 1.2s ease-in-out ${d*0.2}s infinite` }} />
+                <div key={d} style={{ width:7, height:7, borderRadius:"50%", background:C.gMain, opacity:0.5, animation:`bounce 1.2s ease-in-out ${d*0.2}s infinite` }} />
               ))}
             </div>
           </div>
@@ -2832,7 +2835,7 @@ function AskTheLaw() {
       <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-6px);opacity:1} }`}</style>
 
       {/* Input bar */}
-      <div style={{ background:C.card, borderTop:`1px solid ${C.border}`, padding:"12px 16px 28px", display:"flex", gap:10, alignItems:"flex-end", flexShrink:0, boxShadow:"0 -4px 20px rgba(0,0,0,0.06)" }}>
+      <div style={{ background:C.card, borderTop:`1px solid ${C.border}`, padding:"12px 16px 92px", display:"flex", gap:10, alignItems:"flex-end", flexShrink:0 }}>
         <textarea
           ref={inputRef}
           value={input}
@@ -2842,8 +2845,8 @@ function AskTheLaw() {
           rows={1}
           style={{ flex:1, resize:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"11px 14px", fontSize:14, fontFamily:"'Inter', sans-serif", fontWeight:500, color:C.textPrimary, background:C.bg, outline:"none", lineHeight:1.5, overflow:"hidden", minHeight:44 }}
         />
-        <button onClick={() => send()} disabled={!input.trim() || loading} style={{ width:44, height:44, borderRadius:14, background: input.trim() && !loading ? "linear-gradient(135deg, #1a5c6b, #277a8a)" : C.deep, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0, boxShadow: input.trim() && !loading ? "0 4px 16px rgba(26,92,107,0.4)" : "none", transition:"all 0.2s" }}>
-          {loading ? "⏳" : "➤"}
+        <button onClick={() => send()} disabled={!input.trim() || loading} style={{ width:44, height:44, borderRadius:14, background: input.trim() && !loading ? C.gMain : C.deep, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0, boxShadow: input.trim() && !loading ? "0 4px 16px rgba(20,64,31,0.35)" : "none", transition:"all 0.2s" }}>
+          <span style={{ color: input.trim() && !loading ? "#fff" : C.textGhost }}>{loading ? "⏳" : "➤"}</span>
         </button>
       </div>
     </div>
@@ -2857,14 +2860,14 @@ function Soon({ title, icon, phase }) {
   return (
     <div>
       <div style={{
-        background:`linear-gradient(160deg, ${C.gDark} 0%, ${C.gMid} 100%)`,
-        padding:"52px 28px 48px", position:"relative", overflow:"hidden",
+        background:C.gDark,
+        padding:"56px 28px 48px",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
       }}>
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ width:72, height:72, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:34, marginBottom:20 }}>{icon}</div>
-          <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", letterSpacing:-0.5, marginBottom:10, lineHeight:1.15 }}>{title}</h2>
+          <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", marginBottom:10, lineHeight:1.15 }}>{title}</h2>
           <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, fontWeight:500, maxWidth:270, marginBottom:24 }}>This section is being built and will be ready in the next phase.</p>
           <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:20, padding:"8px 24px", fontSize:10, letterSpacing:2, fontWeight:700, color:"rgba(255,255,255,0.9)", textTransform:"uppercase" }}>Coming in Phase {phase}</div>
         </div>
@@ -2883,13 +2886,13 @@ function SetupScreen() {
   const valid = name.trim().length >= 2;
 
   if (step === 1) return (
-    <div style={{ minHeight:"100vh", background:C.gDark, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"space-between", padding:"72px 28px 56px", textAlign:"center" }}>
+    <div style={{ height:"100dvh", maxWidth:430, margin:"0 auto", background:C.gDark, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"space-between", padding:"72px 28px 56px", textAlign:"center" }}>
 
       {/* Top — centered brand */}
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
         <div style={{ width:64, height:64, borderRadius:20, background:"rgba(255,255,255,0.10)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, marginBottom:32 }}>🇳🇬</div>
         <p style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", marginBottom:14 }}>Know Your Nigeria</p>
-        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:44, fontWeight:900, color:"#fff", lineHeight:1.08, letterSpacing:-1.5 }}>Your rights.<br/>Your history.<br/>Your Nigeria.</h1>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:44, fontWeight:900, color:"#fff", lineHeight:1.08 }}>Your rights.<br/>Your history.<br/>Your Nigeria.</h1>
       </div>
 
       {/* Bottom — stats + CTA */}
@@ -2897,7 +2900,7 @@ function SetupScreen() {
         <div style={{ display:"flex", justifyContent:"center", gap:32, marginBottom:40 }}>
           {[{n:"269",l:"Sections"},{n:"500+",l:"Yrs history"},{n:"60+",l:"Quiz Q's"}].map((s,i)=>(
             <div key={i} style={{ textAlign:"center" }}>
-              <div style={{ fontFamily:"'Playfair Display', serif", fontSize:24, fontWeight:900, color:"#fff", letterSpacing:-0.5 }}>{s.n}</div>
+              <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:24, fontWeight:900, color:"#fff" }}>{s.n}</div>
               <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.38)", marginTop:3, letterSpacing:0.5 }}>{s.l}</div>
             </div>
           ))}
@@ -2909,14 +2912,14 @@ function SetupScreen() {
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", textAlign:"center" }}>
+    <div style={{ height:"100dvh", maxWidth:430, margin:"0 auto", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", textAlign:"center" }}>
       <div style={{ width:"100%", maxWidth:360 }}>
         <div style={{ display:"flex", justifyContent:"center", marginBottom:28 }}>
           <div style={{ width:56, height:56, borderRadius:18, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
         </div>
-        <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:C.ink, lineHeight:1.1, letterSpacing:-0.8, marginBottom:10 }}>What's your name?</h2>
+        <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:C.ink, lineHeight:1.1, marginBottom:10 }}>What's your name?</h2>
         <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:32 }}>We'll personalise your experience and track your progress.</p>
         <input
           type="text"
@@ -3000,8 +3003,8 @@ function ProfileScreen({ setTab }) {
     <div>
       {/* Header */}
       <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
-        <div style={{ width:72, height:72, borderRadius:"50%", background:"rgba(255,255,255,0.2)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, fontWeight:900, color:"#fff", marginBottom:14, fontFamily:"'Playfair Display', serif" }}>{initials}</div>
-        <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:28, fontWeight:900, color:"#fff", marginBottom:6 }}>{user.name}</h2>
+        <div style={{ width:72, height:72, borderRadius:"50%", background:"rgba(255,255,255,0.2)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, fontWeight:900, color:"#fff", marginBottom:14, fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em" }}>{initials}</div>
+        <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:28, fontWeight:900, color:"#fff", marginBottom:6 }}>{user.name}</h2>
         <p style={{ fontSize:12, color:"rgba(255,255,255,0.55)", fontWeight:600 }}>Member since {user.joinedDate || "today"}</p>
         {/* Stat pills */}
         <div style={{ display:"flex", gap:8, marginTop:20, flexWrap:"wrap", justifyContent:"center" }}>
@@ -3232,6 +3235,7 @@ function DirectoryScreen() {
   const [section, setSection]       = useState("police"); // police | lawyers | join
   const [policeState, setPoliceState] = useState("");
   const [lawyerState, setLawyerState] = useState("");
+  const [lgaState, setLgaState] = useState("");
 
   const selectStyle = {
     width:"100%", padding:"14px 16px", fontSize:14, fontWeight:600,
@@ -3246,29 +3250,29 @@ function DirectoryScreen() {
 
   const tabs = [
     { id:"police",  label:"Police PRO" },
+    { id:"lga",     label:"LGA Officials" },
     { id:"lawyers", label:"Find a Lawyer" },
     { id:"join",    label:"For Lawyers" },
   ];
 
   return (
-    <div style={{ background:C.bg, minHeight:"100vh" }}>
+    <div style={{ background:C.bg }}>
 
       {/* Header */}
       <div style={{ background:C.gDark, padding:"60px 24px 28px", textAlign:"center" }}>
         <p style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:8 }}>Know Your Nigeria</p>
-        <h1 style={{ fontFamily:"'Playfair Display', serif", fontSize:34, fontWeight:900, color:"#fff", lineHeight:1.1, letterSpacing:-0.5, marginBottom:8 }}>Help Directory</h1>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:8 }}>Help Directory</h1>
         <p style={{ fontSize:13, fontWeight:500, color:"rgba(255,255,255,0.55)", lineHeight:1.6 }}>Police contacts, legal support & more — all in one place.</p>
       </div>
 
       {/* Section tabs */}
-      <div style={{ background:C.gDark, padding:"0 20px 20px" }}>
-        <div style={{ display:"flex", gap:8 }}>
+      <div style={{ background:C.gDark, padding:"0 16px 20px" }}>
+        <div style={{ display:"flex", gap:6, overflowX:"auto" }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setSection(t.id)} style={{
-              flex:1, padding:"9px 4px", borderRadius:12,
-              background: section === t.id ? "rgba(255,255,255,0.15)" : "transparent",
-              border: section === t.id ? "1px solid rgba(255,255,255,0.25)" : "1px solid transparent",
-              fontSize:11, fontWeight:700, color: section === t.id ? "#fff" : "rgba(255,255,255,0.4)",
+              flex:"1 0 auto", padding:"9px 14px", borderRadius:12, whiteSpace:"nowrap",
+              background: section === t.id ? "#fff" : "rgba(255,255,255,0.08)",
+              fontSize:11.5, fontWeight:700, color: section === t.id ? C.gDark : "rgba(255,255,255,0.55)",
               letterSpacing:0.2, transition:"all 0.2s",
             }}>{t.label}</button>
           ))}
@@ -3283,7 +3287,7 @@ function DirectoryScreen() {
             <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
                 <div style={{ width:40, height:40, borderRadius:12, background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
                 <div>
                   <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>Police PRO Directory</div>
@@ -3309,7 +3313,7 @@ function DirectoryScreen() {
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   </div>
                   <div>
-                    <div style={{ fontFamily:"'Playfair Display', serif", fontSize:20, fontWeight:900, color:"#fff", lineHeight:1.2 }}>{matchedPRO.name}</div>
+                    <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:20, fontWeight:900, color:"#fff", lineHeight:1.2 }}>{matchedPRO.name}</div>
                     <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.5)", marginTop:3, letterSpacing:0.5 }}>{matchedPRO.rank} · Public Relations Officer</div>
                   </div>
                 </div>
@@ -3330,13 +3334,58 @@ function DirectoryScreen() {
           </div>
         )}
 
+        {/* ── LGA OFFICIALS SECTION ── */}
+        {section === "lga" && (
+          <div>
+            <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+                <div style={{ width:40, height:40, borderRadius:12, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gMain} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>LGA Officials</div>
+                  <div style={{ fontSize:11, fontWeight:500, color:C.textMuted }}>Chairmen & constituency reps</div>
+                </div>
+              </div>
+              <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:16 }}>
+                Find your Local Government Chairman and elected representatives. Knowing who represents you is the first step to holding them accountable.
+              </p>
+              <div style={{ position:"relative" }}>
+                <select value={lgaState} onChange={e => setLgaState(e.target.value)} style={selectStyle}>
+                  <option value="">Select your state…</option>
+                  {STATES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {lgaState ? (
+              <div style={{ background:C.card, borderRadius:20, padding:"28px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize:36, marginBottom:12 }}>🏛️</div>
+                <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:8 }}>{lgaState} directory coming soon</div>
+                <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:20 }}>
+                  We are compiling verified contact details for all Local Government Chairmen and constituency representatives in {lgaState}. Check back soon.
+                </p>
+                <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gLight, color:C.gDark, fontSize:12, fontWeight:700, padding:"10px 18px", borderRadius:12 }}>
+                  <div style={{ width:6, height:6, borderRadius:"50%", background:C.gMain }} />
+                  In progress
+                </div>
+              </div>
+            ) : (
+              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize:36, marginBottom:12 }}>🏛️</div>
+                <div style={{ fontSize:14, fontWeight:700, color:C.textMuted }}>Select your state above to find your LGA Chairman and constituency representatives.</div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── LAWYERS SECTION ── */}
         {section === "lawyers" && (
           <div>
             <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
                 <div style={{ width:40, height:40, borderRadius:12, background:"#EFF6FF", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                 </div>
                 <div>
                   <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>Find a Lawyer</div>
@@ -3383,7 +3432,7 @@ function DirectoryScreen() {
               <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
               </div>
-              <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:26, fontWeight:900, color:"#fff", lineHeight:1.2, marginBottom:12, letterSpacing:-0.3 }}>Are you a Lawyer or Barrister?</h2>
+              <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:26, fontWeight:900, color:"#fff", lineHeight:1.2, marginBottom:12 }}>Are you a Lawyer or Barrister?</h2>
               <p style={{ fontSize:14, fontWeight:500, color:"rgba(255,255,255,0.65)", lineHeight:1.75 }}>
                 Join the Know Your Nigeria legal directory and connect with Nigerians who need your expertise. Our platform reaches thousands of citizens across the country who are actively seeking legal guidance.
               </p>
@@ -3429,22 +3478,21 @@ function DirectoryScreen() {
 
 function Nav({ tab, setTab, setChapterIdx }) {
   const tabs = [
-    { id:"home",         svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, label:"Home"   },
-    { id:"constitution", svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>, label:"Rights" },
-    { id:"history",      svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"History"},
-    { id:"directory",    svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:"Help"    },
-    { id:"ask",          svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:"Ask"    },
-    { id:"profile",      svg:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Me"     },
+    { id:"home",         svg:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, label:"Home"   },
+    { id:"constitution", svg:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>, label:"Rights" },
+    { id:"history",      svg:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"History"},
+    { id:"directory",    svg:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:"Help"    },
+    { id:"ask",          svg:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:"Ask"    },
+    { id:"profile",      svg:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Me"     },
   ];
   return (
-    <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background: C.isDark ? "rgba(10,15,10,0.97)" : "rgba(255,255,255,0.97)", backdropFilter:"blur(24px)", borderTop:`1px solid ${C.border}`, display:"flex", justifyContent:"space-around", padding:"8px 0 20px", zIndex:200, boxShadow:`0 -1px 0 ${C.border}` }}>
+    <div style={{ position:"absolute", bottom:18, left:"50%", transform:"translateX(-50%)", display:"flex", justifyContent:"space-between", alignItems:"center", gap:2, background: C.isDark ? "#1A211A" : "#0A0F0A", borderRadius:30, padding:"7px 8px", zIndex:200, boxShadow:"0 10px 32px rgba(0,0,0,0.28)", width:"calc(100% - 32px)", maxWidth:398 }}>
       {tabs.map(t => {
         const active = tab === t.id;
         return (
-          <button key={t.id} onClick={() => { setTab(t.id); if (t.id !== "constitution") setChapterIdx?.(null); }} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"4px 10px", minWidth:44 }}>
-            <span style={{ color: active ? C.gMain : C.isDark ? "#4B5563" : "#BFC0BA", transition:"color 0.2s", display:"flex" }}>{t.svg}</span>
-            <span style={{ fontSize:9.5, fontWeight:700, letterSpacing:0.2, color: active ? C.gMain : C.isDark ? "#4B5563" : "#BFC0BA", transition:"color 0.2s" }}>{t.label}</span>
-            {active && <div style={{ width:16, height:2.5, borderRadius:2, background:C.gMain, marginTop:1 }} />}
+          <button key={t.id} onClick={() => { setTab(t.id); if (t.id !== "constitution") setChapterIdx?.(null); }} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3, padding:"9px 2px", borderRadius:22, background: active ? C.gMain : "transparent", transition:"background 0.22s" }}>
+            <span style={{ color: active ? "#fff" : "rgba(255,255,255,0.45)", transition:"color 0.2s", display:"flex" }}>{t.svg}</span>
+            <span style={{ fontSize:8.5, fontWeight:700, letterSpacing:0.2, color: active ? "#fff" : "rgba(255,255,255,0.45)", transition:"color 0.2s" }}>{t.label}</span>
           </button>
         );
       })}
