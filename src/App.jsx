@@ -2982,11 +2982,11 @@ function AskTheLaw() {
           return (
             <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-end", flexDirection: isBot ? "row" : "row-reverse" }}>
               {isBot && (
-                <div style={{ width:30, height:30, borderRadius:"50%", background:"C.gMain", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>🤖</div>
+                <div style={{ width:30, height:30, borderRadius:"50%", background:C.gMain, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>🤖</div>
               )}
               <div style={{
                 maxWidth:"78%",
-                background: isBot ? C.card : "C.gMain",
+                background: isBot ? C.card : C.gMain,
                 color: isBot ? C.textBody : "#fff",
                 borderRadius: isBot ? "18px 18px 18px 4px" : "18px 18px 4px 18px",
                 padding:"12px 15px",
@@ -3002,7 +3002,7 @@ function AskTheLaw() {
 
         {loading && (
           <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
-            <div style={{ width:30, height:30, borderRadius:"50%", background:"C.gMain", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>🤖</div>
+            <div style={{ width:30, height:30, borderRadius:"50%", background:C.gMain, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>🤖</div>
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:"18px 18px 18px 4px", padding:"13px 18px", display:"flex", gap:5, alignItems:"center", boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
               {[0,1,2].map(d => (
                 <div key={d} style={{ width:7, height:7, borderRadius:"50%", background:C.gMain, opacity:0.5, animation:`bounce 1.2s ease-in-out ${d*0.2}s infinite` }} />
