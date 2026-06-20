@@ -3,6 +3,14 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# API function route — must come BEFORE the SPA catch-all
+[[redirects]]
+  from = "/api/ask"
+  to = "/.netlify/functions/ask"
+  status = 200
+  force = true
+
+# SPA catch-all — everything else serves the app
 [[redirects]]
   from = "/*"
   to = "/index.html"
