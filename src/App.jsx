@@ -2922,17 +2922,22 @@ function AskTheLaw() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-5",
           max_tokens: 1000,
           system: SYSTEM_PROMPT,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response. Please try again.";
+      let reply = data.content?.[0]?.text;
+      if (!reply) {
+        // Surface the real reason instead of a generic message
+        const detail = data.error?.message || data.error || `Status ${res.status}`;
+        reply = "Wazobia is having trouble connecting right now. (" + detail + ") Please try again shortly.";
+      }
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Network error. Please check your connection and try again." }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Network error: " + e.message + ". Please check your connection and try again." }]);
     } finally {
       setLoading(false);
     }
