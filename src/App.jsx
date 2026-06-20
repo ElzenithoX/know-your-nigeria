@@ -86,7 +86,7 @@ const FontLoader = ({ dark }) => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { background: ${dark ? "#0B0F0B" : "#FFFFFF"}; font-family: 'Inter', system-ui, sans-serif; font-weight: 500; overscroll-behavior: none; }
+    html, body { background: ${dark ? "#0A0A0B" : "#F4F6F4"}; font-family: 'Inter', system-ui, sans-serif; font-weight: 500; overscroll-behavior: none; }
     #root { height: 100%; }
     ::-webkit-scrollbar { display: none; }
     button { cursor: pointer; border: none; background: none; font-family: inherit; }
@@ -96,22 +96,26 @@ const FontLoader = ({ dark }) => (
 );
 
 const LIGHT = {
-  bg: "#FFFFFF", card: "#FFFFFF", cardAlt: "#F4F6F3", deep: "#ECEFEA",
+  bg: "#F4F6F4", card: "#FFFFFF", cardAlt: "#FAFBFA", deep: "#ECEFEA",
   border: "#E8EBE6", borderLit: "#D4DDD0",
   gDark: "#14401F", gMid: "#1B5E2A", gMain: "#1F7A35", gBright: "#2E9E48", gLight: "#E6F2E9",
   gDim: "#CDE6D4",
   textPrimary: "#0A0F0A", textBody: "#2A332A", textMuted: "#6B756B", textGhost: "#A0A8A0",
   ink: "#0A0F0A",
+  shadow: "0 4px 20px rgba(10,20,12,0.06), 0 1px 3px rgba(10,20,12,0.04)",
+  shadowLg: "0 12px 32px rgba(10,20,12,0.10)",
   isDark: false,
 };
 
 const DARK = {
-  bg: "#0B0F0B", card: "#131913", cardAlt: "#1A211A", deep: "#212A21",
-  border: "#28332A", borderLit: "#36473A",
+  bg: "#0A0A0B", card: "#161618", cardAlt: "#1E1E21", deep: "#26262A",
+  border: "#2A2A2E", borderLit: "#3A3A40",
   gDark: "#14401F", gMid: "#1B5E2A", gMain: "#2E9E48", gBright: "#46C264", gLight: "#15301C",
   gDim: "#14401F",
-  textPrimary: "#FFFFFF", textBody: "#D4DDD4", textMuted: "#8B958B", textGhost: "#5A655A",
+  textPrimary: "#FFFFFF", textBody: "#D4D4D8", textMuted: "#8B8B92", textGhost: "#5A5A60",
   ink: "#FFFFFF",
+  shadow: "0 4px 20px rgba(0,0,0,0.40)",
+  shadowLg: "0 12px 32px rgba(0,0,0,0.55)",
   isDark: true,
 };
 
@@ -1255,6 +1259,7 @@ const ERAS = [
   { id:"republic1",   label:"1st Republic",  short:"Independ.",  color:"#1a3d5c", lightColor:"#e8f0fd", dotColor:"#3a72b8" },
   { id:"military",    label:"Military Rule", short:"Military",   color:"#3d3d1a", lightColor:"#fdfae8", dotColor:"#9a8a20" },
   { id:"democracy",   label:"Democracy",     short:"Today",      color:C.gDark,   lightColor:C.gLight,  dotColor:C.gBright },
+  { id:"modern",      label:"Other Events",  short:"Notable",    color:"#4338CA", lightColor:"#EEF0FF", dotColor:"#6366F1" },
 ];
 
 const HISTORY_EVENTS = [
@@ -1278,13 +1283,13 @@ const HISTORY_EVENTS = [
     icon:"👑",
   },
   {
-    era:"precolonial", year:"1400 – 1836",
-    title:"The Oyo Empire",
-    summary:"The mighty Yoruba empire becomes the dominant power in West Africa.",
-    whatHappened:"The Oyo Empire rose to become the largest and most powerful Yoruba state, dominating much of what is now southwest Nigeria and parts of Benin and Togo. Its military power was built on a formidable cavalry force. Oyo ran a sophisticated constitutional system — the Alafin (king) was kept in check by the Oyo Mesi council, showing early concepts of checks and balances.",
-    whyItMatters:"Oyo's system of governance — where even the king could be removed by a council — is a pre-colonial example of constitutional checks on power, centuries before modern democracy.",
-    keyFigures:"Sango (the legendary warrior-king who became the god of thunder), Abiodun (Alafin at Oyo's peak), Afonja (general whose rebellion began its decline).",
-    icon:"⚔️",
+    era:"precolonial", year:"1000s – 1800s",
+    title:"The Hausa City-States",
+    summary:"Seven major Hausa states build a thriving network of trade, scholarship, and governance.",
+    whatHappened:"The Hausa Bakwai — the seven legitimate Hausa city-states of Biram, Daura, Gobir, Kano, Katsina, Rano, and Zazzau (Zaria) — became major centres of commerce, Islamic scholarship, and craftsmanship. Kano and Katsina were among the most important trading cities in the whole of Africa. The Hausa language became a major trade lingua franca across West Africa.",
+    whyItMatters:"The Hausa city-states demonstrate that the north of Nigeria had urban, literate, and commercially sophisticated societies long before European contact.",
+    keyFigures:"Queen Amina of Zaria (c. 1533–1610) — a warrior queen who expanded Zazzau's territory and built the famous Amina walls around Hausa cities.",
+    icon:"🏙️",
   },
   {
     era:"precolonial", year:"1180 – Present",
@@ -1296,13 +1301,13 @@ const HISTORY_EVENTS = [
     icon:"🥁",
   },
   {
-    era:"precolonial", year:"1000s – 1800s",
-    title:"The Hausa City-States",
-    summary:"Seven major Hausa states build a thriving network of trade, scholarship, and governance.",
-    whatHappened:"The Hausa Bakwai — the seven legitimate Hausa city-states of Biram, Daura, Gobir, Kano, Katsina, Rano, and Zazzau (Zaria) — became major centres of commerce, Islamic scholarship, and craftsmanship. Kano and Katsina were among the most important trading cities in the whole of Africa. The Hausa language became a major trade lingua franca across West Africa.",
-    whyItMatters:"The Hausa city-states demonstrate that the north of Nigeria had urban, literate, and commercially sophisticated societies long before European contact.",
-    keyFigures:"Queen Amina of Zaria (c. 1533–1610) — a warrior queen who expanded Zazzau's territory and built the famous Amina walls around Hausa cities.",
-    icon:"🏙️",
+    era:"precolonial", year:"1400 – 1836",
+    title:"The Oyo Empire",
+    summary:"The mighty Yoruba empire becomes the dominant power in West Africa.",
+    whatHappened:"The Oyo Empire rose to become the largest and most powerful Yoruba state, dominating much of what is now southwest Nigeria and parts of Benin and Togo. Its military power was built on a formidable cavalry force. Oyo ran a sophisticated constitutional system — the Alafin (king) was kept in check by the Oyo Mesi council, showing early concepts of checks and balances.",
+    whyItMatters:"Oyo's system of governance — where even the king could be removed by a council — is a pre-colonial example of constitutional checks on power, centuries before modern democracy.",
+    keyFigures:"Sango (the legendary warrior-king who became the god of thunder), Abiodun (Alafin at Oyo's peak), Afonja (general whose rebellion began its decline).",
+    icon:"⚔️",
   },
   {
     era:"precolonial", year:"1804 – 1903",
@@ -1483,6 +1488,187 @@ const HISTORY_EVENTS = [
     keyFigures:"Bola Ahmed Tinubu (elected President), Peter Obi (Labour Party candidate who galvanised youth), Atiku Abubakar (PDP candidate), Mahmood Yakubu (INEC chairman).",
     icon:"🗳️",
   },
+  /* ── OTHER NOTABLE EVENTS ───────────────────────── */
+  {
+    era:"modern", year:"January 15, 1970",
+    title:"End of the Biafran Civil War",
+    summary:"Nigeria's brutal 30-month civil war ends with a message of reconciliation.",
+    whatHappened:"After 30 months of fighting and an estimated 1–3 million deaths, mostly from starvation in the blockaded Eastern Region, the Biafran secession collapsed. General Yakubu Gowon declared 'No victor, no vanquished' and launched a reconciliation, reconstruction and rehabilitation programme to reintegrate the Igbo people into Nigeria.",
+    whyItMatters:"The war remains the most painful chapter in Nigeria's history. Its lessons about ethnic tension, federalism, and national unity still shape Nigerian politics today.",
+    keyFigures:"General Yakubu Gowon, Chukwuemeka Odumegwu Ojukwu (Biafran leader), Philip Effiong (who formally surrendered).",
+    icon:"🕊️",
+  },
+  {
+    era:"modern", year:"1980 – 1985",
+    title:"The Maitatsine Riots",
+    summary:"Violent religious uprisings in northern cities leave thousands dead.",
+    whatHappened:"A series of violent insurrections led by the controversial preacher Mohammed Marwa (nicknamed 'Maitatsine') erupted in Kano, Maiduguri, Kaduna and other northern cities. The clashes between his followers and security forces killed thousands of people and were among the deadliest religious disturbances in Nigeria's history.",
+    whyItMatters:"The Maitatsine uprisings were an early warning of how extremist movements could exploit poverty and disenfranchisement in northern Nigeria — patterns later echoed by Boko Haram.",
+    keyFigures:"Mohammed Marwa 'Maitatsine'.",
+    icon:"⚠️",
+  },
+  {
+    era:"modern", year:"1994 & 1996",
+    title:"AFCON Glory & Olympic Gold",
+    summary:"Nigeria's golden generation conquers African and Olympic football.",
+    whatHappened:"The Super Eagles won the 1994 Africa Cup of Nations in Tunisia, then made their World Cup debut that same year, reaching the Round of 16. In 1996, the Dream Team won gold in football at the Atlanta Olympics — the first African nation ever to do so — beating Brazil and Argentina along the way.",
+    whyItMatters:"This golden generation made Nigeria a global football force and gave Nigerians around the world an enormous source of pride during a difficult era of military rule.",
+    keyFigures:"Rashidi Yekini, Jay-Jay Okocha, Nwankwo Kanu, Sunday Oliseh, Daniel Amokachi.",
+    icon:"🏆",
+  },
+  {
+    era:"modern", year:"2002",
+    title:"The Miss World Riots",
+    summary:"Religious violence forces the Miss World pageant to leave Nigeria.",
+    whatHappened:"Nigeria was set to host the Miss World pageant in Abuja, but a newspaper article deemed offensive to Islam sparked deadly riots in Kaduna that killed over 200 people. The pageant was hurriedly moved to London.",
+    whyItMatters:"The episode highlighted the deep religious sensitivities and tensions that exist in parts of Nigeria, and how quickly they can turn violent.",
+    keyFigures:"Isioma Daniel (the journalist whose article sparked the unrest).",
+    icon:"⚠️",
+  },
+  {
+    era:"modern", year:"April 14, 2014",
+    title:"The Chibok Schoolgirls Kidnapping",
+    summary:"Boko Haram abducts 276 schoolgirls, sparking a global movement.",
+    whatHappened:"Boko Haram militants stormed a girls' secondary school in Chibok, Borno State, and abducted 276 students. The mass kidnapping shocked the world and gave rise to the global #BringBackOurGirls campaign, backed by figures including Michelle Obama and Malala Yousafzai. While many girls escaped or were freed over the years, some remain missing to this day.",
+    whyItMatters:"Chibok exposed the devastating human cost of the Boko Haram insurgency, especially on girls' education and security in the northeast. It became a symbol of the fight against terrorism in Nigeria.",
+    keyFigures:"The Chibok girls and their families; the #BringBackOurGirls campaigners including Oby Ezekwesili.",
+    icon:"🎗️",
+  },
+  {
+    era:"modern", year:"2009 – Present",
+    title:"The Boko Haram Insurgency",
+    summary:"A violent extremist insurgency devastates Nigeria's northeast.",
+    whatHappened:"Boko Haram — whose name roughly means 'Western education is forbidden' — launched a violent insurgency in 2009 aiming to establish a strict Islamic state. Over the years it has carried out bombings, mass killings, and kidnappings, displacing millions and killing tens of thousands across the northeast. A splinter faction, ISWAP, later emerged. The Nigerian military, alongside regional forces, has fought to contain the group.",
+    whyItMatters:"The insurgency is one of the gravest security challenges in Nigeria's history, reshaping life in the northeast and dominating national security policy for over a decade.",
+    keyFigures:"Mohammed Yusuf (founder), Abubakar Shekau (longtime leader), the Multinational Joint Task Force.",
+    icon:"⚠️",
+  },
+  {
+    era:"modern", year:"2014",
+    title:"Nigeria Defeats Ebola",
+    summary:"Swift action stops an Ebola outbreak from becoming a catastrophe.",
+    whatHappened:"When a traveller brought the deadly Ebola virus to Lagos in July 2014, many feared disaster in Africa's largest city. Through rapid contact tracing, isolation, and public health mobilisation, Nigeria contained the outbreak to just 19 confirmed cases and was declared Ebola-free by the WHO in October 2014 — a globally praised public health success.",
+    whyItMatters:"Nigeria's Ebola response became a model for the world, showing what decisive, well-organised public health action can achieve. Dr Stella Adadevoh's role was central — and cost her life.",
+    keyFigures:"Dr Stella Ameyo Adadevoh, who identified and contained the index case but died of the virus.",
+    icon:"🏥",
+  },
+  {
+    era:"modern", year:"March 28, 2015",
+    title:"First Democratic Power Transfer",
+    summary:"For the first time, an incumbent Nigerian president loses and concedes peacefully.",
+    whatHappened:"Muhammadu Buhari defeated sitting President Goodluck Jonathan in the 2015 election. In an act widely praised across Africa, Jonathan conceded defeat and congratulated Buhari before official results were even fully announced, ensuring a peaceful transfer of power — the first time an incumbent had lost re-election in Nigeria.",
+    whyItMatters:"This peaceful handover was a milestone for Nigerian democracy, proving that power could change hands through the ballot box rather than the barracks.",
+    keyFigures:"Goodluck Jonathan (whose concession was historic), Muhammadu Buhari.",
+    icon:"🤝",
+  },
+  {
+    era:"modern", year:"October 2020",
+    title:"The #EndSARS Protests",
+    summary:"A youth-led movement against police brutality grips the nation.",
+    whatHappened:"Sparked by viral footage of abuses by the Special Anti-Robbery Squad (SARS), young Nigerians launched nationwide protests demanding an end to police brutality. The peaceful #EndSARS movement became one of the largest youth-led protests in Nigeria's history. On October 20, 2020, soldiers opened fire on protesters at the Lekki Toll Gate in Lagos, an event now remembered as the Lekki Toll Gate shooting. The government disbanded SARS, but debates over accountability continue.",
+    whyItMatters:"#EndSARS showed the power of a digitally organised Nigerian youth demanding accountability. It marked a turning point in the relationship between young citizens and the state.",
+    keyFigures:"Nigerian youth and civil society; documenters of the Lekki Toll Gate events; the Feminist Coalition.",
+    icon:"✊",
+  },
+  {
+    era:"modern", year:"February 2024",
+    title:"Super Eagles' AFCON Final Run",
+    summary:"Nigeria reaches the AFCON final, reigniting national football pride.",
+    whatHappened:"The Super Eagles reached the final of the 2023 Africa Cup of Nations (held in early 2024 in Côte d'Ivoire), finishing as runners-up after a hard-fought tournament. William Troost-Ekong captained the side and won the tournament's best player award, uniting Nigerians in support.",
+    whyItMatters:"Even in tough economic times, the Super Eagles' run reminded Nigerians of the unifying power of sport and national pride.",
+    keyFigures:"William Troost-Ekong (captain, player of the tournament), José Peseiro (coach), Victor Osimhen.",
+    icon:"🦅",
+  },
+  {
+    era:"modern", year:"1976",
+    title:"FESTAC '77 Announced & The Murtala Assassination",
+    summary:"A failed coup kills a beloved leader as Nigeria prepares to host the world.",
+    whatHappened:"In February 1976, General Murtala Mohammed — a popular reformist head of state — was assassinated in a failed coup led by Lt. Col. Buka Suka Dimka. His deputy, Olusegun Obasanjo, took over and continued his reforms, including preparing Nigeria to host FESTAC '77, the largest pan-African cultural festival ever held.",
+    whyItMatters:"Murtala's brief rule and dramatic death left a lasting mark — Lagos's airport and the ₦20 note bear his image. FESTAC '77 showcased Nigeria as the cultural heart of Black Africa.",
+    keyFigures:"General Murtala Mohammed, Olusegun Obasanjo, Lt. Col. Buka Suka Dimka.",
+    icon:"🎭",
+  },
+  {
+    era:"modern", year:"January 27, 2002",
+    title:"The Ikeja Cantonment Bomb Blast",
+    summary:"A military armoury explosion kills over a thousand in Lagos.",
+    whatHappened:"A massive explosion at a military storage facility in the Ikeja Cantonment in Lagos sent bombs flying across residential areas. In the panic, many people — including children — drowned in the Oke-Afa canal while fleeing in the dark. Over 1,000 people died, making it one of Nigeria's deadliest disasters.",
+    whyItMatters:"The tragedy exposed serious lapses in the safe handling of military ordnance near civilian areas and remains a somber memory for Lagosians.",
+    keyFigures:"The victims and families of the Ikeja blast.",
+    icon:"💥",
+  },
+  {
+    era:"modern", year:"June 3, 2012",
+    title:"The Dana Air Crash",
+    summary:"A passenger plane crashes into a Lagos neighbourhood, killing all aboard.",
+    whatHappened:"Dana Air Flight 992 crashed into a densely populated area of Iju-Ishaga in Lagos, killing all 153 people on board and several on the ground. It was one of the worst aviation disasters in Nigeria's history and led to scrutiny of the country's airline safety standards.",
+    whyItMatters:"The crash forced a national reckoning over aviation safety, regulation, and emergency response — issues central to public trust in air travel.",
+    keyFigures:"The 153 victims and the affected Iju-Ishaga community.",
+    icon:"✈️",
+  },
+  {
+    era:"modern", year:"2013",
+    title:"Nigeria Wins AFCON 2013",
+    summary:"The Super Eagles lift the Africa Cup of Nations for a third time.",
+    whatHappened:"Under coach Stephen Keshi, the Super Eagles won the 2013 Africa Cup of Nations in South Africa, beating Burkina Faso 1–0 in the final. Keshi became one of only two people to win the AFCON as both a player and a coach. Sunday Mba scored the winning goal.",
+    whyItMatters:"It was Nigeria's first AFCON title in 19 years and a moment of pure national joy, achieved with a largely home-based squad that Keshi believed in.",
+    keyFigures:"Stephen Keshi (coach), Sunday Mba (match-winner), Vincent Enyeama (goalkeeper and captain).",
+    icon:"🏆",
+  },
+  {
+    era:"modern", year:"2015 – 2016",
+    title:"Nigeria Becomes Africa's Largest Economy",
+    summary:"A GDP rebasing makes Nigeria the biggest economy on the continent.",
+    whatHappened:"After recalculating (rebasing) how it measured its economy, Nigeria overtook South Africa to become the largest economy in Africa, with GDP driven by telecoms, Nollywood, services, and oil. Nollywood — Nigeria's film industry — was recognised as one of the largest in the world by output.",
+    whyItMatters:"It cemented Nigeria's position as the 'Giant of Africa' economically and drew global investment attention, even as challenges of inequality and oil dependence persisted.",
+    keyFigures:"Nigeria's National Bureau of Statistics; the Nollywood and telecoms sectors.",
+    icon:"📈",
+  },
+  {
+    era:"modern", year:"2018 – 2019",
+    title:"Tiwa, Burna & the Global Afrobeats Explosion",
+    summary:"Nigerian music conquers the world stage.",
+    whatHappened:"Nigerian Afrobeats artists like Burna Boy, Wizkid, Davido, and Tiwa Savage broke into the global mainstream. Burna Boy's 'African Giant' earned a Grammy nomination (he later won in 2021), Wizkid featured on global hits, and Afrobeats became one of the fastest-growing genres worldwide, filling arenas from London to New York.",
+    whyItMatters:"Afrobeats became one of Nigeria's most powerful cultural exports, reshaping global pop music and giving Nigerian youth a proud, worldwide identity.",
+    keyFigures:"Burna Boy, Wizkid, Davido, Tiwa Savage, Tems.",
+    icon:"🎶",
+  },
+  {
+    era:"modern", year:"May 29, 2023",
+    title:"Fuel Subsidy Removal",
+    summary:"A single sentence triggers an economic shock felt by every Nigerian.",
+    whatHappened:"In his inauguration speech, President Bola Tinubu declared 'subsidy is gone,' ending the decades-old fuel subsidy. Petrol prices tripled almost overnight, the naira was floated, and the cost of living rose sharply — sparking nationwide debate over reform versus hardship.",
+    whyItMatters:"The subsidy removal is one of the most consequential economic decisions in recent Nigerian history, affecting transport, food prices, and daily life for tens of millions.",
+    keyFigures:"President Bola Tinubu; Nigerian labour unions; everyday citizens bearing the cost.",
+    icon:"⛽",
+  },
+  {
+    era:"modern", year:"July 2019",
+    title:"Tortoise & Tems — Women Rising",
+    summary:"A wave of Nigerian women break barriers in sport, tech and the arts.",
+    whatHappened:"Across the late 2010s and 2020s, Nigerian women made global headlines: Asisat Oshoala won multiple African Women's Footballer of the Year awards and Champions League titles with Barcelona; Tobi Amusan set a 100m hurdles world record in 2022; and Chimamanda Ngozi Adichie became one of the world's most influential authors and feminists.",
+    whyItMatters:"These women shattered stereotypes and inspired a generation of Nigerian girls to pursue excellence in fields once closed to them.",
+    keyFigures:"Asisat Oshoala, Tobi Amusan (100m hurdles world record holder), Chimamanda Ngozi Adichie.",
+    icon:"🌟",
+  },
+  {
+    era:"modern", year:"2022",
+    title:"Tobi Amusan's World Record",
+    summary:"A Nigerian sprinter becomes the fastest woman in history over the hurdles.",
+    whatHappened:"At the 2022 World Athletics Championships in Oregon, USA, Tobi Amusan ran 12.12 seconds in the 100m hurdles semi-final — a new world record — then won gold in the final. She became the first Nigerian to ever hold a track and field world record and the first to win a World Championship gold.",
+    whyItMatters:"Amusan's record was a historic first for Nigerian athletics and a moment of overwhelming national pride.",
+    keyFigures:"Tobi Amusan.",
+    icon:"🏃🏾‍♀️",
+  },
+  {
+    era:"modern", year:"2024 – 2025",
+    title:"Economic Hardship & Citizen Resilience",
+    summary:"Nigerians navigate soaring inflation with characteristic resilience.",
+    whatHappened:"Following the naira float and subsidy removal, Nigeria faced its worst cost-of-living crisis in a generation, with inflation reaching multi-decade highs. Protests over hunger occurred in 2024. Yet Nigerians continued to display remarkable resilience — through small businesses, community support systems, and the famous Nigerian spirit of endurance and enterprise.",
+    whyItMatters:"This ongoing period is shaping the political and economic consciousness of a new generation, and how citizens hold leaders accountable for the cost of living.",
+    keyFigures:"Nigerian workers, traders, and civil society; organised labour.",
+    icon:"💪🏾",
+  },
 ];
 
 /* ════════════════════════════════════════
@@ -1501,7 +1687,7 @@ function TopBar() {
       borderBottom:`1px solid ${C.border}`,
       display:"flex", alignItems:"center", justifyContent:"center",
       padding:"7px 16px", zIndex:300,
-      boxShadow:"0 2px 12px rgba(0,0,0,0.06)"
+      boxShadow:C.shadow
     }}>
       <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, color:C.textGhost, textTransform:"uppercase", textAlign:"center" }}>
         Created by El Zenitho
@@ -1569,6 +1755,7 @@ function AppInner() {
             {tab === "games"        && <GameZone />}
             {tab === "profile"      && <ProfileScreen setTab={setTab} />}
             {tab === "directory"    && <DirectoryScreen />}
+            {tab === "about"        && <AboutNigeriaScreen />}
             <div style={{ height:96 }} />
           </div>
         )}
@@ -1649,7 +1836,7 @@ function ElectionCountdown() {
       <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>
         🗳️ Election Countdown
       </p>
-      <div style={{ background:C.gDark, borderRadius:20, padding:"20px" }}>
+      <div style={{ background:C.gDark, borderRadius:22, padding:"20px" }}>
         <Row label="Presidential Election" date="January 16, 2027" countdown={pres} />
         <div style={{ height:1, background:"rgba(255,255,255,0.08)", margin:"14px 0" }} />
         <Row label="Governorship Election" date="February 6, 2027"  countdown={gov}  />
@@ -1665,9 +1852,15 @@ function HomeScreen({ setTab }) {
   const pres = useCountdown("2027-01-16T08:00:00");
   const gov  = useCountdown("2027-02-06T08:00:00");
 
-  const tile = (onClick, bg, iconBg, icon, title, sub, dark2) => (
-    <div onClick={onClick} style={{ background:bg, border: dark2 ? "none" : ("1px solid " + C.border), borderRadius:16, padding:"12px", cursor:"pointer", display:"flex", flexDirection:"column", justifyContent:"space-between", minHeight:0 }}>
-      <div style={{ width:38, height:38, borderRadius:11, background:iconBg, display:"flex", alignItems:"center", justifyContent:"center" }}>{icon}</div>
+  const tile = (onClick, dark2, icon, title, sub) => (
+    <div onClick={onClick} style={{
+      background: dark2 ? C.gDark : C.card,
+      borderRadius:22, padding:"14px", cursor:"pointer",
+      display:"flex", flexDirection:"column", justifyContent:"space-between",
+      minHeight:0, boxShadow: dark2 ? C.shadowLg : C.shadow,
+      border: dark2 ? "none" : ("1px solid " + (C.isDark ? C.border : "rgba(0,0,0,0.02)")),
+    }}>
+      <div style={{ width:40, height:40, borderRadius:13, background: dark2 ? "rgba(255,255,255,0.12)" : C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>{icon}</div>
       <div>
         <div style={{ fontSize:14, fontWeight:800, color: dark2 ? "#fff" : C.ink, lineHeight:1.1 }}>{title}</div>
         <div style={{ fontSize:10.5, fontWeight:500, color: dark2 ? "rgba(255,255,255,0.55)" : C.textMuted, marginTop:2 }}>{sub}</div>
@@ -1675,119 +1868,92 @@ function HomeScreen({ setTab }) {
     </div>
   );
 
+  const I = (path, c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>;
+
   return (
-    <div style={{ background:C.bg, transition:"background 0.3s", height:"100%", display:"flex", flexDirection:"column", padding:"calc(env(safe-area-inset-top, 0px) + 28px) 16px 10px", overflow:"hidden" }}>
+    <div style={{ background:C.bg, transition:"background 0.3s", height:"100%", display:"flex", flexDirection:"column", padding:"calc(env(safe-area-inset-top, 0px) + 28px) 16px calc(env(safe-area-inset-bottom, 0px) + 92px)", overflow:"hidden" }}>
 
       {/* Hero header */}
-      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12, flexShrink:0 }}>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14, flexShrink:0 }}>
         <div>
           <p style={{ fontSize:12, fontWeight:600, color:C.textMuted, marginBottom:1 }}>
             {firstName ? "Welcome back," : "Good to see you"}
           </p>
-          <h1 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:27, fontWeight:900, color:C.ink, lineHeight:1.0 }}>
+          <h1 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:28, fontWeight:900, color:C.ink, lineHeight:1.0 }}>
             {firstName ? (firstName + ".") : "Know Your Nigeria."}
           </h1>
         </div>
         <button
           onClick={toggleDark}
           title={dark ? "Light mode" : "Dark mode"}
-          style={{ width:44, height:26, borderRadius:20, background: dark ? C.gMain : C.deep, border:("1.5px solid " + (dark ? C.gBright : C.border)), display:"flex", alignItems:"center", padding:"0 3px", transition:"all 0.25s", cursor:"pointer", flexShrink:0, marginTop:4 }}
+          style={{ width:46, height:28, borderRadius:20, background: dark ? C.gMain : "#FFFFFF", border:("1.5px solid " + (dark ? C.gBright : C.border)), display:"flex", alignItems:"center", padding:"0 3px", transition:"all 0.25s", cursor:"pointer", flexShrink:0, marginTop:4, boxShadow:C.shadow }}
         >
-          <div style={{ width:18, height:18, borderRadius:"50%", background: dark ? "#fff" : C.gDark, transform: dark ? "translateX(18px)" : "translateX(0px)", transition:"transform 0.25s, background 0.25s", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10 }}>
+          <div style={{ width:20, height:20, borderRadius:"50%", background: dark ? "#fff" : C.gDark, transform: dark ? "translateX(18px)" : "translateX(0px)", transition:"transform 0.25s, background 0.25s", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10 }}>
             {dark ? "🌙" : "☀️"}
           </div>
         </button>
       </div>
 
       {/* Progress card */}
-      <div style={{ background:C.gDark, borderRadius:18, padding:"13px 16px", marginBottom:10, flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+      <div style={{ background:C.gDark, borderRadius:24, padding:"16px 18px", marginBottom:11, flexShrink:0, boxShadow:C.shadowLg }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:9 }}>
           <div style={{ display:"flex", alignItems:"flex-end", gap:7 }}>
-            <span style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:32, fontWeight:900, color:"#fff", lineHeight:0.9 }}>{readPct}%</span>
+            <span style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", lineHeight:0.9 }}>{readPct}%</span>
             <span style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.55)", marginBottom:3 }}>{readCount}/{totalSections} read</span>
           </div>
-          <button onClick={() => setTab("constitution")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"6px 14px", fontSize:11.5, fontWeight:700, color:"#fff" }}>Continue →</button>
+          <button onClick={() => setTab("constitution")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"7px 15px", fontSize:11.5, fontWeight:700, color:"#fff" }}>Continue →</button>
         </div>
-        <div style={{ height:4, background:"rgba(255,255,255,0.15)", borderRadius:99, overflow:"hidden" }}>
+        <div style={{ height:5, background:"rgba(255,255,255,0.15)", borderRadius:99, overflow:"hidden" }}>
           <div style={{ width:(readPct + "%"), height:"100%", background:C.gBright, borderRadius:99, transition:"width 0.6s ease" }} />
         </div>
       </div>
 
-      {/* Feature tiles — square grid, fills available space */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridAutoRows:"126px", gap:8, marginBottom:10, flexShrink:0 }}>
-        {tile(() => setTab("constitution"), C.card, C.gLight,
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
-          "Rights", "269 sections", false)}
-        {tile(() => setTab("history"), C.card, "#FEF3C7",
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-          "History", "Full timeline", false)}
-        {tile(() => setTab("directory"), C.card, "#FEF2F2",
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-          "Help", "Directories", false)}
-        {tile(() => setTab("games"), C.card, "#FFF7ED",
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M7 12h.01"/><path d="M17 10v4M15 12h4"/></svg>,
-          "Games", "Quiz & points", false)}
-        {tile(() => setTab("ask"), C.gDark, "rgba(255,255,255,0.15)",
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-          "Wazobia", "Ask AI", true)}
-        {tile(() => setTab("profile"), C.card, C.gLight,
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gMain} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-          "My Progress", "Stats & saved", false)}
+      {/* About Nigeria banner */}
+      <div onClick={() => setTab("about")} style={{ background:C.card, borderRadius:16, padding:"12px 16px", marginBottom:11, flexShrink:0, cursor:"pointer", display:"flex", alignItems:"center", gap:12, boxShadow:C.shadow }}>
+        <div style={{ width:40, height:28, borderRadius:6, overflow:"hidden", display:"flex", flexShrink:0, boxShadow:"0 1px 4px rgba(0,0,0,0.15)" }}>
+          <div style={{ flex:1, background:"#008751" }} />
+          <div style={{ flex:1, background:"#FFFFFF" }} />
+          <div style={{ flex:1, background:"#008751" }} />
+        </div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:14, fontWeight:800, color:C.ink, lineHeight:1.1 }}>About Nigeria</div>
+          <div style={{ fontSize:11, fontWeight:500, color:C.textMuted, marginTop:1 }}>Population, languages, people & more</div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
 
-      {/* Flexible spacer */}
-      <div style={{ flex:1, minHeight:6 }} />
-
-      {/* Election countdowns — both in one card */}
-      <div onClick={() => setTab("directory")} style={{ background:C.gDark, borderRadius:16, padding:"13px 16px", marginBottom:10, flexShrink:0, cursor:"pointer" }}>
-        <p style={{ fontSize:9.5, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:10 }}>🗳️ Election Countdown</p>
-
-        {/* Presidential */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-          <div>
-            <p style={{ fontSize:11.5, fontWeight:700, color:"#fff", lineHeight:1.2 }}>Presidential</p>
-            <p style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.5)" }}>Jan 16, 2027</p>
-          </div>
-          <div style={{ display:"flex", gap:5 }}>
-            {[{v:pres.days,l:"D"},{v:pres.hours,l:"H"},{v:pres.minutes,l:"M"},{v:pres.seconds,l:"S"}].map((u,i)=>(
-              <div key={i} style={{ textAlign:"center", minWidth:28, background:"rgba(255,255,255,0.08)", borderRadius:7, padding:"4px 3px" }}>
-                <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:15, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
-                <div style={{ fontSize:7, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:1 }}>{u.l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ height:1, background:"rgba(255,255,255,0.08)", marginBottom:10 }} />
-
-        {/* Governorship */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div>
-            <p style={{ fontSize:11.5, fontWeight:700, color:"#fff", lineHeight:1.2 }}>Governorship</p>
-            <p style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.5)" }}>Feb 6, 2027</p>
-          </div>
-          <div style={{ display:"flex", gap:5 }}>
-            {[{v:gov.days,l:"D"},{v:gov.hours,l:"H"},{v:gov.minutes,l:"M"},{v:gov.seconds,l:"S"}].map((u,i)=>(
-              <div key={i} style={{ textAlign:"center", minWidth:28, background:"rgba(255,255,255,0.08)", borderRadius:7, padding:"4px 3px" }}>
-                <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:15, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
-                <div style={{ fontSize:7, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:1 }}>{u.l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Feature tiles */}
+      <div style={{ flex:1, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr", gap:9, marginBottom:11, minHeight:0 }}>
+        {tile(() => setTab("constitution"), false, I(<><path d="M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 010-5H20"/></>, C.gDark), "Rights", "269 sections")}
+        {tile(() => setTab("history"), false, I(<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>, C.gDark), "History", "Full timeline")}
+        {tile(() => setTab("directory"), false, I(<><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></>, C.gDark), "Help", "Directories")}
+        {tile(() => setTab("games"), false, I(<><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="15.5" cy="11" r="0.6" fill={C.gDark}/><circle cx="17.5" cy="13" r="0.6" fill={C.gDark}/></>, C.gDark), "Games", "Quiz & points")}
+        {tile(() => setTab("ask"), true, I(<><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-3.8-.9L3 20l1.9-5.2A8.38 8.38 0 014 11.5 8.5 8.5 0 0112 3a8.38 8.38 0 019 8.5z"/></>, "#fff"), "Wazobia", "Ask AI")}
+        {tile(() => setTab("profile"), false, I(<><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></>, C.gDark), "Progress", "Stats & saved")}
       </div>
 
-      {/* Nigeria at a glance — compact strip */}
-      <div style={{ background:C.card, border:("1px solid " + C.border), borderRadius:16, padding:"12px 14px", flexShrink:0 }}>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
-          {QUICK_FACTS.map((f,i) => (
-            <div key={i} style={{ textAlign:"center" }}>
-              <div style={{ fontSize:15, marginBottom:2 }}>{f.icon}</div>
-              <div style={{ fontSize:11.5, fontWeight:800, color:C.ink, letterSpacing:-0.3, lineHeight:1.1 }}>{f.value}</div>
-              <div style={{ fontSize:8.5, fontWeight:500, color:C.textMuted, marginTop:1, lineHeight:1.2 }}>{f.label}</div>
+      {/* Election countdowns */}
+      <div onClick={() => setTab("directory")} style={{ background:C.gDark, borderRadius:22, padding:"12px 16px", marginBottom:8, flexShrink:0, cursor:"pointer", boxShadow:C.shadowLg }}>
+        <p style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:8 }}>🗳️ Election Countdown</p>
+        {[{label:"Presidential", date:"Jan 16, 2027", cd:pres},{label:"Governorship", date:"Feb 6, 2027", cd:gov}].map((e,idx)=>(
+          <div key={idx}>
+            {idx === 1 && <div style={{ height:1, background:"rgba(255,255,255,0.08)", margin:"8px 0" }} />}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div>
+                <p style={{ fontSize:11.5, fontWeight:700, color:"#fff", lineHeight:1.2 }}>{e.label}</p>
+                <p style={{ fontSize:9.5, fontWeight:500, color:"rgba(255,255,255,0.5)" }}>{e.date}</p>
+              </div>
+              <div style={{ display:"flex", gap:4 }}>
+                {[{v:e.cd.days,l:"D"},{v:e.cd.hours,l:"H"},{v:e.cd.minutes,l:"M"},{v:e.cd.seconds,l:"S"}].map((u,i)=>(
+                  <div key={i} style={{ textAlign:"center", minWidth:26, background:"rgba(255,255,255,0.10)", borderRadius:8, padding:"4px 3px" }}>
+                    <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:14, fontWeight:900, color:"#fff", lineHeight:1 }}>{String(u.v).padStart(2,"0")}</div>
+                    <div style={{ fontSize:6.5, fontWeight:700, letterSpacing:0.5, color:"rgba(255,255,255,0.4)", marginTop:1 }}>{u.l}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1809,8 +1975,8 @@ function HistoryScreen() {
     <div>
       {/* Header */}
       <div style={{
-        background:"linear-gradient(160deg, #2c1a0e 0%, #5a3010 55%, #8B4513 100%)",
-        padding:"52px 28px 40px", position:"relative", overflow:"hidden",
+        background:C.gDark,
+        padding:"60px 24px 36px", borderRadius:"0 0 28px 28px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center",
       }}>
 
@@ -1823,7 +1989,7 @@ function HistoryScreen() {
               <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>{HISTORY_EVENTS.length} Events</span>
             </div>
             <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:20, padding:"5px 14px" }}>
-              <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>500 BC – 2023 AD</span>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.9)", fontWeight:700 }}>500 BC – Today</span>
             </div>
           </div>
         </div>
@@ -1980,7 +2146,7 @@ function ConstitutionScreen({ chapterIdx, setChapterIdx, expandedSec, setExpande
   }
   return (
     <div>
-      <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden",
+      <div style={{ background:C.gDark, padding:"60px 24px 36px", borderRadius:"0 0 28px 28px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
@@ -2001,7 +2167,7 @@ function ConstitutionScreen({ chapterIdx, setChapterIdx, expandedSec, setExpande
         <Label>Choose a Chapter</Label>
         <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:10 }}>
           {CHAPTERS.map((ch, idx) => (
-            <div key={ch.id} onClick={() => setChapterIdx(idx)} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"18px", cursor:"pointer", display:"flex", alignItems:"center", gap:14, boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+            <div key={ch.id} onClick={() => setChapterIdx(idx)} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"18px", cursor:"pointer", display:"flex", alignItems:"center", gap:14, boxShadow:C.shadow }}>
               <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:`linear-gradient(135deg, ${C.gMid}, ${C.gBright})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:`0 6px 20px ${C.gMain}33` }}>{ch.icon}</div>
               <div style={{ flex:1 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
@@ -2023,7 +2189,7 @@ function ChapterDetail({ chapter, chapterIdx, onBack, expandedSec, setExpanded }
   const { markRead, toggleBookmark, user } = useUser();
   return (
     <div>
-      <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden",
+      <div style={{ background:C.gDark, padding:"60px 24px 36px", borderRadius:"0 0 28px 28px", position:"relative", overflow:"hidden",
         display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
@@ -2038,7 +2204,7 @@ function ChapterDetail({ chapter, chapterIdx, onBack, expandedSec, setExpanded }
         {chapter.sections.map((sec, idx) => {
           const open = expandedSec === idx;
           return (
-            <div key={idx} style={{ background:C.card, border:`1px solid ${open ? C.borderLit : C.border}`, borderRadius:16, overflow:"hidden", boxShadow: open ? "0 4px 16px rgba(0,0,0,0.08)" : "0 1px 4px rgba(0,0,0,0.04)", transition:"all 0.2s" }}>
+            <div key={idx} style={{ background:C.card, border:`1px solid ${open ? C.borderLit : C.border}`, borderRadius:18, overflow:"hidden", boxShadow: open ? C.shadowLg : C.shadow, transition:"all 0.2s", marginBottom:2 }}>
               <div onClick={() => { if (!open) markRead(chapterIdx, idx); setExpanded(open ? null : idx); }} style={{ padding:"16px 18px", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
                 <div style={{ width:40, height:40, borderRadius:12, flexShrink:0, background:C.gLight, border:`1px solid ${C.borderLit}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:C.gMain }}>§</div>
                 <div style={{ flex:1 }}>
@@ -2517,7 +2683,7 @@ function QuizScreen({ questions, qIdx, selected, revealed, streak, score, choose
   return (
     <div>
       {/* Top bar */}
-      <div style={{ background:C.gDark, padding:"56px 24px 28px", position:"relative", overflow:"hidden" }}>
+      <div style={{ background:C.gDark, padding:"56px 24px 28px", borderRadius:"0 0 28px 28px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"relative" }}>
           {/* Progress + stats */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
@@ -2569,7 +2735,7 @@ function QuizScreen({ questions, qIdx, selected, revealed, streak, score, choose
             }
           }
           return (
-            <div key={idx} onClick={() => choose(idx)} style={{ background:bg, border:`2px solid ${border}`, borderRadius:14, padding:"15px 18px", cursor: revealed ? "default" : "pointer", display:"flex", alignItems:"center", gap:12, transition:"all 0.2s", boxShadow: revealed && idx === q.answer ? "0 4px 16px rgba(76,175,80,0.25)" : "0 1px 3px rgba(0,0,0,0.05)" }}>
+            <div key={idx} onClick={() => choose(idx)} style={{ background:bg, border:`2px solid ${revealed ? border : C.border}`, borderRadius:16, padding:"15px 18px", cursor: revealed ? "default" : "pointer", display:"flex", alignItems:"center", gap:12, transition:"all 0.2s", boxShadow: revealed && idx === q.answer ? "0 6px 20px rgba(76,175,80,0.22)" : C.shadow }}>
               <div style={{ width:32, height:32, borderRadius:"50%", background: revealed && idx === q.answer ? "#4CAF50" : revealed && idx === selected ? "#ef5350" : C.deep, border:`1px solid ${border}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.2s" }}>
                 <span style={{ fontSize:13, fontWeight:800, color: revealed && (idx === q.answer || idx === selected) ? "#fff" : C.textMuted }}>
                   {icon || ["A","B","C","D"][idx]}
@@ -2618,7 +2784,7 @@ function ResultScreen({ score, total, maxStreak, answers, questions, stats, onPl
   return (
     <div>
       {/* Hero result */}
-      <div style={{ background:C.gDark, padding:"52px 28px 44px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", position:"relative", overflow:"hidden" }}>
+      <div style={{ background:C.gDark, padding:"52px 28px 44px", borderRadius:"0 0 28px 28px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ fontSize:52, marginBottom:12 }}>{grade.icon}</div>
           <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:34, fontWeight:900, color:"#fff", marginBottom:6 }}>{grade.label}</h2>
@@ -2790,7 +2956,7 @@ function AskTheLaw() {
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
 
       {/* Header */}
-      <div style={{ background:C.gDark, padding:"56px 28px 24px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
+      <div style={{ background:C.gDark, padding:"56px 28px 24px", borderRadius:"0 0 28px 28px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", flexShrink:0 }}>
 
         <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center" }}>
           <div style={{ width:64, height:64, borderRadius:22, background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, marginBottom:14 }}>🤖</div>
@@ -2956,7 +3122,7 @@ function SetupScreen() {
           placeholder="Your first name…"
           maxLength={30}
           autoFocus
-          style={{ width:"100%", padding:"18px 20px", fontSize:18, fontWeight:700, color:C.ink, background:C.card, border:`2px solid ${valid ? C.gBright : C.border}`, borderRadius:18, outline:"none", boxSizing:"border-box", textAlign:"center", transition:"border-color 0.2s", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}
+          style={{ width:"100%", padding:"18px 20px", fontSize:18, fontWeight:700, color:C.ink, background:C.card, border:`2px solid ${valid ? C.gBright : C.border}`, borderRadius:18, outline:"none", boxSizing:"border-box", textAlign:"center", transition:"border-color 0.2s", boxShadow:C.shadow }}
         />
         <button
           onClick={() => valid && completeSetup(name)}
@@ -3029,7 +3195,7 @@ function ProfileScreen({ setTab }) {
   return (
     <div>
       {/* Header */}
-      <div style={{ background:C.gDark, padding:"60px 24px 36px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
+      <div style={{ background:C.gDark, padding:"60px 24px 36px", borderRadius:"0 0 28px 28px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
         <div style={{ width:72, height:72, borderRadius:"50%", background:"rgba(255,255,255,0.2)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, fontWeight:900, color:"#fff", marginBottom:14, fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em" }}>{initials}</div>
         <h2 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:28, fontWeight:900, color:"#fff", marginBottom:6 }}>{user.name}</h2>
         <p style={{ fontSize:12, color:"rgba(255,255,255,0.55)", fontWeight:600 }}>Member since {user.joinedDate || "today"}</p>
@@ -3053,7 +3219,7 @@ function ProfileScreen({ setTab }) {
         {/* Reading Progress */}
         <div>
           <Label>Reading Progress</Label>
-          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"20px", marginTop:14, boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:"20px", marginTop:14, boxShadow:C.shadow }}>
             {/* Overall bar */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
               <span style={{ fontSize:14, fontWeight:700, color:C.textPrimary }}>Overall Constitution</span>
@@ -3133,7 +3299,7 @@ function ProfileScreen({ setTab }) {
               { icon:"🔥", label:"Best Streak",       val: user.maxStreak },
               { icon:"🔖", label:"Bookmarks",         val: bookmarkCount },
             ].map((s,i) => (
-              <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+              <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px", boxShadow:C.shadow }}>
                 <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
                 <div style={{ fontSize:22, fontWeight:800, color:C.textPrimary, letterSpacing:-0.5 }}>{s.val}</div>
                 <div style={{ fontSize:11, fontWeight:600, color:C.textGhost, marginTop:3 }}>{s.label}</div>
@@ -3211,43 +3377,43 @@ function ProfileScreen({ setTab }) {
    DIRECTORY SCREEN
 ════════════════════════════════════════ */
 const POLICE_PROS = [
-  { state:"Abia",          name:"Chinaka Chioma Maureen",       rank:"ASP", phone:"07059951536" },
-  { state:"Adamawa",       name:"Yahaya Suleiman",              rank:"SP",  phone:"08065604764" },
-  { state:"Akwa-Ibom",     name:"Odiko S. Ogbeche-Macdon",      rank:"SP",  phone:"08033380470" },
-  { state:"Anambra",       name:"Ikenganyia T. Anthony",        rank:"DSP", phone:"08039394002" },
-  { state:"Bauchi",        name:"Ahmed Mohammed Wakil",         rank:"SP",  phone:"08034844393" },
-  { state:"Bayelsa",       name:"Musa Mohammed",                rank:"SP",  phone:"07032702984" },
-  { state:"Benue",         name:"Anene Sewuse Catherine",       rank:"SP",  phone:"08032845555" },
-  { state:"Borno",         name:"Nahum Daso Kenneth",           rank:"ASP", phone:"09025437854" },
-  { state:"Cross River",   name:"Irene Ugbo",                   rank:"SP",  phone:"08068559326" },
-  { state:"Delta",         name:"Edafe Bright",                 rank:"DSP", phone:"08131070122" },
-  { state:"Ebonyi",        name:"Ukandu Joshua",                rank:"DSP", phone:"08032716251" },
-  { state:"Edo",           name:"Chidi Nwabuzor",               rank:"SP",  phone:"08033726625" },
-  { state:"Ekiti",         name:"Abutu Sunday",                 rank:"DSP", phone:"09064050086" },
-  { state:"Enugu",         name:"Daniel Ndukwe Ekea",           rank:"DSP", phone:"08063722988" },
-  { state:"Gombe",         name:"Nahid Mua'zu Abubakar",       rank:"ASP", phone:"08068508998" },
-  { state:"Imo",           name:"Okoye Henry",                  rank:"ASP", phone:"08148024755" },
-  { state:"Jigawa",        name:"Lawan Shisu Adam",             rank:"DSP", phone:"08109881890" },
-  { state:"Kaduna",        name:"Mansir Hassan",                rank:"ASP", phone:"08166405566" },
-  { state:"Kano",          name:"Haruna Abdullahi",             rank:"SP",  phone:"08037742748" },
-  { state:"Katsina",       name:"Abubakar Sadiq Aliyu",         rank:"ASP", phone:"08133233534" },
-  { state:"Kebbi",         name:"Nafiu Abubakar",               rank:"SP",  phone:"08065159812" },
-  { state:"Kogi",          name:"William Ovye Aya",             rank:"SP",  phone:"08107899269" },
-  { state:"Kwara",         name:"Ejire Adeotun Adeyemi",        rank:"DSP", phone:"07032108353" },
-  { state:"Lagos",         name:"Abimbola Adebisi",             rank:"SP",  phone:"09055390070" },
-  { state:"Nasarawa",      name:"Rahman Mansel",                rank:"DSP", phone:"08037461715" },
-  { state:"Niger",         name:"Wasiu A. Abiodun",             rank:"DSP", phone:"08032233454" },
-  { state:"Ogun",          name:"Odutola Omolola",              rank:"SP",  phone:"09159578888" },
-  { state:"Ondo",          name:"Odunlami Ibukun",              rank:"SP",  phone:"08067669945" },
-  { state:"Osun",          name:"Opalola Yemisi O.",            rank:"SP",  phone:"08067788119" },
-  { state:"Oyo",           name:"Adewale Osifeso",              rank:"SP",  phone:"08068122698" },
-  { state:"Plateau",       name:"Alfred Alabo",                 rank:"DSP", phone:"08060545670" },
-  { state:"Rivers",        name:"Grace Woyengikuro Iringe-koko",rank:"SP",  phone:"08036219523" },
-  { state:"Sokoto",        name:"Rufa'I Ahmed",                rank:"ASP", phone:"08032861946" },
-  { state:"Taraba",        name:"Abdullahi Usman",              rank:"SP",  phone:"08036562695" },
-  { state:"Yobe",          name:"Dungus Abdukarim",             rank:"DSP", phone:"08065682446" },
-  { state:"Zamfara",       name:"Yazid Abubakar",               rank:"ASP", phone:"07046444093" },
-  { state:"FCT Abuja",     name:"Josephine Adeh",               rank:"SP",  phone:"07038979348" },
+  { state:"Abia",          name:"Chinaka Chioma Maureen",         rank:"SP", phone:"07059951536" },
+  { state:"Adamawa",       name:"Yahaya Suleiman",                rank:"SP", phone:"08065604764" },
+  { state:"Akwa-Ibom",     name:"Timfon John",                    rank:"SP", phone:"07039685410" },
+  { state:"Anambra",       name:"Ikenganyia T. Anthony",          rank:"SP", phone:"08039334002" },
+  { state:"Bauchi",        name:"Ahmed Mohammed Wakil",           rank:"SP", phone:"08034844393" },
+  { state:"Bayelsa",       name:"Musa Mohammed",                  rank:"SP", phone:"07032702984" },
+  { state:"Benue",         name:"Udeme Edet",                     rank:"SP", phone:"08065232481" },
+  { state:"Borno",         name:"Daso Nahum Kenneth",             rank:"SP", phone:"09025437854" },
+  { state:"Cross River",   name:"Irene Ugbo",                     rank:"SP", phone:"08068559326" },
+  { state:"Delta",         name:"Edafe Bright",                   rank:"SP", phone:"08131070122" },
+  { state:"Ebonyi",        name:"Ukandu Joshua",                  rank:"SP", phone:"08032716251" },
+  { state:"Edo",           name:"Moses Yamu",                     rank:"SP", phone:"08036363532" },
+  { state:"Ekiti",         name:"Abutu Sunday",                   rank:"SP", phone:"09064050086" },
+  { state:"Enugu",         name:"Daniel Ndukwe Ekea",             rank:"SP", phone:"08063722988" },
+  { state:"Gombe",         name:"Buhari Abdullahi",               rank:"SP", phone:"07038793973" },
+  { state:"Imo",           name:"Okoye Henry",                    rank:"SP", phone:"08148024755" },
+  { state:"Jigawa",        name:"Lawan Shiisu Adam",              rank:"SP", phone:"08109881890" },
+  { state:"Kaduna",        name:"Mansir Hassan",                  rank:"SP", phone:"08166405566" },
+  { state:"Kano",          name:"Haruna Abdulahi",                rank:"SP", phone:"08037742748" },
+  { state:"Katsina",       name:"Abubakar Sadiq Aliyu",           rank:"SP", phone:"08133233534" },
+  { state:"Kebbi",         name:"Nafiu Abubakar",                 rank:"SP", phone:"08065159812" },
+  { state:"Kogi",          name:"William Ovye Aya",               rank:"SP", phone:"08107899269" },
+  { state:"Kwara",         name:"Ejire-Adetoun Adeyemi",          rank:"SP", phone:"07032108353" },
+  { state:"Lagos",         name:"Abimbola Adebisi",               rank:"SP", phone:"09055390070" },
+  { state:"Nasarawa",      name:"Ramhan Nansel",                  rank:"SP", phone:"08037461715" },
+  { state:"Niger",         name:"Wasiu A. Abiodun",               rank:"SP", phone:"08032233454" },
+  { state:"Ogun",          name:"Odutola Omolola",                rank:"SP", phone:"09159578888" },
+  { state:"Ondo",          name:"Olushola Yinka",                 rank:"SP", phone:"08132188976" },
+  { state:"Osun",          name:"Abiodun Ojolabi",                rank:"SP", phone:"07067790040" },
+  { state:"Oyo",           name:"Adewale Osifeso",                rank:"SP", phone:"08068122698" },
+  { state:"Plateau",       name:"Alfred Alabo",                   rank:"SP", phone:"08060545670" },
+  { state:"Rivers",        name:"Grace Woyengikuro Iringe-Koko",  rank:"SP", phone:"08036219523" },
+  { state:"Sokoto",        name:"Rufa'i Ahmad",                   rank:"SP", phone:"08032861946" },
+  { state:"Taraba",        name:"Lashen James",                   rank:"SP", phone:"08141387931" },
+  { state:"Yobe",          name:"Dungus Abdulkarim",              rank:"SP", phone:"08065682446" },
+  { state:"Zamfara",       name:"Yazid Abubakar",                 rank:"SP", phone:"07046444093" },
+  { state:"FCT Abuja",     name:"Josephine Adeh",                 rank:"SP", phone:"07038979348" },
 ];
 
 const STATES_LIST = [
@@ -3258,11 +3424,20 @@ const STATES_LIST = [
   "Zamfara","FCT Abuja"
 ];
 
+const LAWYERS = [
+  {
+    state:"Lagos",
+    name:"Oluwatosin Oladigbolu",
+    scn:"SCN125520",
+    phone:"08164373954",
+    areas:["Property Law","Corporate & Commercial Law","Dispute Resolution","Real Estate","Intellectual Property","Shipping, Maritime & Aviation"],
+  },
+];
+
 function DirectoryScreen() {
   const [section, setSection]       = useState("police"); // police | lawyers | join
   const [policeState, setPoliceState] = useState("");
   const [lawyerState, setLawyerState] = useState("");
-  const [lgaState, setLgaState] = useState("");
 
   const selectStyle = {
     width:"100%", padding:"14px 16px", fontSize:14, fontWeight:600,
@@ -3277,7 +3452,6 @@ function DirectoryScreen() {
 
   const tabs = [
     { id:"police",  label:"Police PRO" },
-    { id:"lga",     label:"LGA Officials" },
     { id:"lawyers", label:"Find a Lawyer" },
     { id:"join",    label:"For Lawyers" },
   ];
@@ -3293,7 +3467,7 @@ function DirectoryScreen() {
       </div>
 
       {/* Section tabs */}
-      <div style={{ background:C.gDark, padding:"0 16px 20px" }}>
+      <div style={{ background:C.gDark, padding:"0 16px 20px", borderRadius:"0 0 28px 28px" }}>
         <div style={{ display:"flex", gap:6, overflowX:"auto" }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setSection(t.id)} style={{
@@ -3311,10 +3485,10 @@ function DirectoryScreen() {
         {/* ── POLICE PRO SECTION ── */}
         {section === "police" && (
           <div>
-            <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+            <div style={{ background:C.card, borderRadius:22, padding:"20px", marginBottom:16, boxShadow:C.shadow }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-                <div style={{ width:40, height:40, borderRadius:12, background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div style={{ width:40, height:40, borderRadius:12, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
                 <div>
                   <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>Police PRO Directory</div>
@@ -3333,7 +3507,7 @@ function DirectoryScreen() {
             </div>
 
             {matchedPRO && (
-              <div style={{ background:C.gDark, borderRadius:20, padding:"24px", boxShadow:"0 4px 20px rgba(22,101,52,0.2)" }}>
+              <div style={{ background:C.gDark, borderRadius:20, padding:"24px", boxShadow:C.shadowLg }}>
                 <p style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:14 }}>{matchedPRO.state} State Command</p>
                 <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
                   <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -3353,54 +3527,9 @@ function DirectoryScreen() {
             )}
 
             {!policeState && (
-              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:C.shadow }}>
                 <div style={{ fontSize:36, marginBottom:12 }}>🗺️</div>
                 <div style={{ fontSize:14, fontWeight:700, color:C.textMuted }}>Select your state above to see the Police PRO contact for that state.</div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── LGA OFFICIALS SECTION ── */}
-        {section === "lga" && (
-          <div>
-            <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-                <div style={{ width:40, height:40, borderRadius:12, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.gMain} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>
-                </div>
-                <div>
-                  <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>LGA Officials</div>
-                  <div style={{ fontSize:11, fontWeight:500, color:C.textMuted }}>Chairmen & constituency reps</div>
-                </div>
-              </div>
-              <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:16 }}>
-                Find your Local Government Chairman and elected representatives. Knowing who represents you is the first step to holding them accountable.
-              </p>
-              <div style={{ position:"relative" }}>
-                <select value={lgaState} onChange={e => setLgaState(e.target.value)} style={selectStyle}>
-                  <option value="">Select your state…</option>
-                  {STATES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {lgaState ? (
-              <div style={{ background:C.card, borderRadius:20, padding:"28px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize:36, marginBottom:12 }}>🏛️</div>
-                <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:8 }}>{lgaState} directory coming soon</div>
-                <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:20 }}>
-                  We are compiling verified contact details for all Local Government Chairmen and constituency representatives in {lgaState}. Check back soon.
-                </p>
-                <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gLight, color:C.gDark, fontSize:12, fontWeight:700, padding:"10px 18px", borderRadius:12 }}>
-                  <div style={{ width:6, height:6, borderRadius:"50%", background:C.gMain }} />
-                  In progress
-                </div>
-              </div>
-            ) : (
-              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize:36, marginBottom:12 }}>🏛️</div>
-                <div style={{ fontSize:14, fontWeight:700, color:C.textMuted }}>Select your state above to find your LGA Chairman and constituency representatives.</div>
               </div>
             )}
           </div>
@@ -3409,10 +3538,10 @@ function DirectoryScreen() {
         {/* ── LAWYERS SECTION ── */}
         {section === "lawyers" && (
           <div>
-            <div style={{ background:C.card, borderRadius:20, padding:"20px", marginBottom:16, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+            <div style={{ background:C.card, borderRadius:22, padding:"20px", marginBottom:16, boxShadow:C.shadow }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-                <div style={{ width:40, height:40, borderRadius:12, background:"#EFF6FF", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                <div style={{ width:40, height:40, borderRadius:12, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                 </div>
                 <div>
                   <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>Find a Lawyer</div>
@@ -3432,19 +3561,54 @@ function DirectoryScreen() {
             </div>
 
             {lawyerState ? (
-              <div style={{ background:C.card, borderRadius:20, padding:"28px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize:36, marginBottom:12 }}>⚖️</div>
-                <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:8 }}>No lawyers listed yet in {lawyerState}</div>
-                <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:20 }}>
-                  We are actively onboarding lawyers across Nigeria. Are you a lawyer in {lawyerState}? Join our growing directory.
-                </p>
-                <a href="mailto:elzenitho@knowyournigeria.ng" style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gDark, color:"#fff", fontSize:13, fontWeight:700, padding:"12px 24px", borderRadius:14, textDecoration:"none" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  Register as a Lawyer
-                </a>
-              </div>
+              (() => {
+                const matches = LAWYERS.filter(l => l.state === lawyerState);
+                if (matches.length === 0) {
+                  return (
+                    <div style={{ background:C.card, borderRadius:20, padding:"28px 20px", textAlign:"center", boxShadow:C.shadow }}>
+                      <div style={{ fontSize:36, marginBottom:12 }}>⚖️</div>
+                      <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:8 }}>No lawyers listed yet in {lawyerState}</div>
+                      <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:20 }}>
+                        We are actively onboarding lawyers across Nigeria. Are you a lawyer in {lawyerState}? Join our growing directory.
+                      </p>
+                      <a href="mailto:elzenitho@knowyournigeria.ng" style={{ display:"inline-flex", alignItems:"center", gap:8, background:C.gDark, color:"#fff", fontSize:13, fontWeight:700, padding:"12px 24px", borderRadius:14, textDecoration:"none" }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Register as a Lawyer
+                      </a>
+                    </div>
+                  );
+                }
+                return (
+                  <div>
+                    <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:12 }}>{matches.length} lawyer{matches.length > 1 ? "s" : ""} in {lawyerState}</p>
+                    {matches.map((l, i) => (
+                      <div key={i} style={{ background:C.card, border:("1px solid " + C.border), borderRadius:22, padding:"20px", marginBottom:12, boxShadow:C.shadow }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16 }}>
+                          <div style={{ width:52, height:52, borderRadius:16, flexShrink:0, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                          </div>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:19, fontWeight:900, color:C.ink, lineHeight:1.15 }}>{l.name}</div>
+                            <div style={{ fontSize:11, fontWeight:600, color:C.textMuted, marginTop:3 }}>SCN: {l.scn} · {l.state} State</div>
+                          </div>
+                        </div>
+                        <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.2, color:C.textMuted, textTransform:"uppercase", marginBottom:8 }}>Areas of Practice</p>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:16 }}>
+                          {l.areas.map((a, j) => (
+                            <span key={j} style={{ fontSize:11, fontWeight:600, color:C.gDark, background:C.gLight, borderRadius:8, padding:"5px 10px" }}>{a}</span>
+                          ))}
+                        </div>
+                        <a href={"tel:" + l.phone} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, background:C.gDark, color:"#fff", fontSize:14, fontWeight:800, padding:"13px", borderRadius:14, textDecoration:"none", letterSpacing:0.3 }}>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.66A2 2 0 012 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                          {l.phone}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
             ) : (
-              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+              <div style={{ background:C.card, borderRadius:20, padding:"32px 20px", textAlign:"center", boxShadow:C.shadow }}>
                 <div style={{ fontSize:36, marginBottom:12 }}>⚖️</div>
                 <div style={{ fontSize:14, fontWeight:700, color:C.textMuted }}>Select your state above to find available lawyers in your area.</div>
               </div>
@@ -3465,7 +3629,7 @@ function DirectoryScreen() {
               </p>
             </div>
 
-            <div style={{ background:C.card, borderRadius:20, padding:"24px", marginBottom:12, boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+            <div style={{ background:C.card, borderRadius:20, padding:"24px", marginBottom:12, boxShadow:C.shadow }}>
               <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:16 }}>Why Join?</p>
               {[
                 { icon:"🌍", title:"Nationwide Reach", desc:"Your profile is visible to Nigerians across all 36 states and the FCT" },
@@ -3483,7 +3647,7 @@ function DirectoryScreen() {
               ))}
             </div>
 
-            <div style={{ background:C.card, borderRadius:20, padding:"24px", boxShadow:"0 2px 12px rgba(0,0,0,0.05)" }}>
+            <div style={{ background:C.card, borderRadius:20, padding:"24px", boxShadow:C.shadow }}>
               <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:12 }}>Get Listed</p>
               <p style={{ fontSize:13, fontWeight:500, color:C.textBody, lineHeight:1.75, marginBottom:20 }}>
                 Send an email with your full name, call to bar number, area of practice, state, and contact details. We'll review and add you to the directory within 48 hours.
@@ -3499,6 +3663,163 @@ function DirectoryScreen() {
 
       </div>
       <div style={{ height:16 }} />
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   ABOUT NIGERIA
+════════════════════════════════════════ */
+function AboutNigeriaScreen() {
+  const facts = [
+    { icon:"👥", label:"Population", value:"~242 million", sub:"6th largest in the world" },
+    { icon:"🏛️", label:"Capital",    value:"Abuja",        sub:"Largest city: Lagos" },
+    { icon:"🗺️", label:"States",     value:"36 + FCT",     sub:"774 local governments" },
+    { icon:"📐", label:"Land Area",  value:"923,769 km²",  sub:"Larger than Texas" },
+    { icon:"🗣️", label:"Languages",  value:"500+",         sub:"English is official" },
+    { icon:"🌍", label:"Ethnic Groups", value:"250+",      sub:"Most diverse in Africa" },
+  ];
+
+  const ethnicGroups = [
+    { name:"Hausa-Fulani", pct:"~30%", region:"Northern Nigeria", color:"#16A34A" },
+    { name:"Yoruba",       pct:"~16%", region:"South-West",       color:"#2E9E48" },
+    { name:"Igbo",         pct:"~15%", region:"South-East",       color:"#46C264" },
+    { name:"Ijaw",         pct:"~10%", region:"Niger Delta",      color:"#65D788" },
+    { name:"Kanuri, Tiv, Ibibio & 240+ others", pct:"~29%", region:"Nationwide", color:"#A0A8A0" },
+  ];
+
+  const languages = [
+    { name:"English", note:"Official language — used in government, schools & business" },
+    { name:"Hausa",   note:"Most widely spoken — lingua franca of the north" },
+    { name:"Yoruba",  note:"Dominant in the south-west" },
+    { name:"Igbo",    note:"Dominant in the south-east" },
+    { name:"Nigerian Pidgin", note:"Spoken across the country as a common tongue" },
+  ];
+
+  const symbols = [
+    { icon:"🟢⚪🟢", label:"The Flag", text:"Two green bands and one white band. Green stands for Nigeria's agriculture and natural wealth; white stands for peace and unity." },
+    { icon:"🦅", label:"Coat of Arms", text:"A black shield with two white stripes (the Niger and Benue rivers), held by two horses, topped by an eagle for strength." },
+    { icon:"🎵", label:"National Anthem", text:'"Nigeria, We Hail Thee" — readopted in 2024.' },
+    { icon:"🌟", label:"National Motto", text:'"Unity and Faith, Peace and Progress."' },
+  ];
+
+  return (
+    <div style={{ background:C.bg, minHeight:"100%" }}>
+      {/* Header */}
+      <div style={{ background:C.gDark, padding:"60px 24px 32px", borderRadius:"0 0 28px 28px", textAlign:"center" }}>
+        {/* Flag */}
+        <div style={{ width:96, height:64, borderRadius:10, overflow:"hidden", display:"flex", margin:"0 auto 18px", boxShadow:"0 6px 20px rgba(0,0,0,0.3)" }}>
+          <div style={{ flex:1, background:"#008751" }} />
+          <div style={{ flex:1, background:"#FFFFFF" }} />
+          <div style={{ flex:1, background:"#008751" }} />
+        </div>
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", marginBottom:8 }}>Federal Republic of</p>
+        <h1 style={{ fontFamily:"'Playfair Display', serif", letterSpacing:"-0.01em", fontSize:38, fontWeight:900, color:"#fff", lineHeight:1.05, marginBottom:10 }}>Nigeria</h1>
+        <p style={{ fontSize:13, fontWeight:500, color:"rgba(255,255,255,0.6)", lineHeight:1.6, maxWidth:300, margin:"0 auto" }}>The Giant of Africa — the most populous Black nation on Earth, on the west coast of Africa.</p>
+      </div>
+
+      <div style={{ padding:"24px 20px", paddingBottom:120 }}>
+
+        {/* Quick facts grid */}
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>At a Glance</p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:28 }}>
+          {facts.map((f,i) => (
+            <div key={i} style={{ background:C.card, borderRadius:18, padding:"16px", boxShadow:C.shadow }}>
+              <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
+              <div style={{ fontSize:17, fontWeight:800, color:C.ink, letterSpacing:-0.3, lineHeight:1.1 }}>{f.value}</div>
+              <div style={{ fontSize:11, fontWeight:700, color:C.gMain, marginTop:3 }}>{f.label}</div>
+              <div style={{ fontSize:10.5, fontWeight:500, color:C.textMuted, marginTop:2, lineHeight:1.3 }}>{f.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Location / map */}
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Where We Are</p>
+        <div style={{ background:C.card, borderRadius:20, padding:"20px", boxShadow:C.shadow, marginBottom:28 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:14 }}>
+            <div style={{ width:48, height:48, borderRadius:14, background:C.gLight, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            </div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:800, color:C.ink }}>West Africa</div>
+              <div style={{ fontSize:12, fontWeight:500, color:C.textMuted }}>On the Gulf of Guinea, Atlantic coast</div>
+            </div>
+          </div>
+          <p style={{ fontSize:13, fontWeight:500, color:C.textBody, lineHeight:1.75 }}>
+            Nigeria is bordered by <b>Niger</b> to the north, <b>Chad</b> to the north-east, <b>Cameroon</b> to the east, and <b>Benin</b> to the west. To the south lies the Atlantic Ocean. The mighty Niger and Benue rivers meet at the centre of the country, forming a "Y" that gives Nigeria its name.
+          </p>
+          <a href="https://www.google.com/maps/place/Nigeria" target="_blank" rel="noreferrer" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:C.gLight, color:C.gDark, fontSize:13, fontWeight:700, padding:"11px", borderRadius:12, textDecoration:"none", marginTop:14 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            View on Google Maps
+          </a>
+        </div>
+
+        {/* Ethnic groups */}
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Our People</p>
+        <div style={{ background:C.card, borderRadius:20, padding:"20px", boxShadow:C.shadow, marginBottom:28 }}>
+          <p style={{ fontSize:13, fontWeight:500, color:C.textBody, lineHeight:1.7, marginBottom:16 }}>
+            Nigeria is the most ethnically diverse country in Africa, with over <b>250 ethnic groups</b>. The largest are:
+          </p>
+          {ethnicGroups.map((g,i) => (
+            <div key={i} style={{ marginBottom: i < ethnicGroups.length-1 ? 14 : 0 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:5 }}>
+                <span style={{ fontSize:13.5, fontWeight:700, color:C.ink }}>{g.name}</span>
+                <span style={{ fontSize:12, fontWeight:800, color:C.gMain }}>{g.pct}</span>
+              </div>
+              <div style={{ height:6, background:C.deep, borderRadius:99, overflow:"hidden" }}>
+                <div style={{ width:g.pct.replace("~",""), height:"100%", background:g.color, borderRadius:99 }} />
+              </div>
+              <div style={{ fontSize:10.5, fontWeight:500, color:C.textMuted, marginTop:4 }}>{g.region}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Languages */}
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Languages</p>
+        <div style={{ background:C.card, borderRadius:20, padding:"20px", boxShadow:C.shadow, marginBottom:28 }}>
+          <p style={{ fontSize:13, fontWeight:500, color:C.textBody, lineHeight:1.7, marginBottom:16 }}>
+            Over <b>500 languages</b> are spoken across Nigeria. The main ones are:
+          </p>
+          {languages.map((l,i) => (
+            <div key={i} style={{ display:"flex", gap:12, marginBottom: i < languages.length-1 ? 14 : 0 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:C.gMain, marginTop:6, flexShrink:0 }} />
+              <div>
+                <div style={{ fontSize:13.5, fontWeight:700, color:C.ink }}>{l.name}</div>
+                <div style={{ fontSize:11.5, fontWeight:500, color:C.textMuted, lineHeight:1.4, marginTop:1 }}>{l.note}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* National symbols */}
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>National Symbols</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28 }}>
+          {symbols.map((s,i) => (
+            <div key={i} style={{ background:C.card, borderRadius:18, padding:"16px 18px", boxShadow:C.shadow, display:"flex", gap:14, alignItems:"flex-start" }}>
+              <div style={{ fontSize:22, flexShrink:0 }}>{s.icon}</div>
+              <div>
+                <div style={{ fontSize:14, fontWeight:800, color:C.ink, marginBottom:3 }}>{s.label}</div>
+                <div style={{ fontSize:12, fontWeight:500, color:C.textBody, lineHeight:1.6 }}>{s.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Religion & government */}
+        <p style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, color:C.textMuted, textTransform:"uppercase", marginBottom:14 }}>Society & Government</p>
+        <div style={{ background:C.card, borderRadius:20, padding:"20px", boxShadow:C.shadow }}>
+          <div style={{ marginBottom:16 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.ink, marginBottom:6 }}>Religion</div>
+            <p style={{ fontSize:12.5, fontWeight:500, color:C.textBody, lineHeight:1.7 }}>Roughly half Muslim (mainly the north) and half Christian (mainly the south), with traditional African beliefs also practised. Nigeria is constitutionally a secular state.</p>
+          </div>
+          <div style={{ height:1, background:C.border, marginBottom:16 }} />
+          <div>
+            <div style={{ fontSize:13, fontWeight:800, color:C.ink, marginBottom:6 }}>Government</div>
+            <p style={{ fontSize:12.5, fontWeight:500, color:C.textBody, lineHeight:1.7 }}>A federal presidential republic with three arms: the Executive (President), the Legislature (National Assembly — Senate & House of Representatives), and the Judiciary. Nigeria gained independence from Britain on <b>October 1, 1960</b>.</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
