@@ -96,14 +96,6 @@ const FontLoader = ({ dark }) => (
       overflow: hidden;
     }
     #root { height: 100%; width: 100%; }
-    /* iOS standalone: fill the home-indicator strip with the app background */
-    body::after {
-      content: "";
-      position: fixed; left: 0; right: 0; bottom: 0;
-      height: env(safe-area-inset-bottom, 0px);
-      background: ${dark ? "#0A0F0A" : "#FFFFFF"};
-      z-index: 0; pointer-events: none;
-    }
     ::-webkit-scrollbar { display: none; }
     button { cursor: pointer; border: none; background: none; font-family: inherit; }
     input, textarea { font-family: inherit; }
@@ -1850,7 +1842,7 @@ function AppInner() {
             {tab === "profile"      && <ProfileScreen setTab={setTab} />}
             {tab === "directory"    && <DirectoryScreen />}
             {tab === "about"        && <AboutNigeriaScreen />}
-            <div style={{ height:96 }} />
+            <div style={{ height:"calc(max(10px, env(safe-area-inset-bottom, 0px) - 20px) + 84px)" }} />
           </div>
         )}
         <Nav tab={tab} setTab={setTab} setChapterIdx={setChapterIdx} />
@@ -1988,7 +1980,7 @@ function HomeScreen({ setTab }) {
 
   return (
     <div style={{ background:C.bg, transition:"background 0.15s ease", height:"100%", display:"flex", flexDirection:"column",
-                  padding:"calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 92px)", overflow:"hidden" }}>
+                  padding:"calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(max(10px, env(safe-area-inset-bottom, 0px) - 20px) + 74px)", overflow:"hidden" }}>
 
       {/* Header */}
       <div className="fadein" style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexShrink:0 }}>
@@ -4159,10 +4151,14 @@ function Nav({ tab, setTab, setChapterIdx }) {
   const activeIdx = Math.max(0, tabs.findIndex(t => t.id === tab));
 
   return (
-    <div style={{ position:"absolute", bottom:"calc(env(safe-area-inset-bottom, 0px) + 14px)", left:"50%", transform:"translateX(-50%)",
+    // Floating pill. The inset is absorbed as inner padding rather than pushing
+    // the pill upward, so it hovers close to the edge on every device.
+    <div style={{ position:"absolute", bottom:"max(10px, calc(env(safe-area-inset-bottom, 0px) - 20px))",
+                  left:"50%", transform:"translateX(-50%)",
                   display:"flex", alignItems:"center", background: C.isDark ? "#141418" : "#0A0F0A",
                   borderRadius:22, padding:"6px", zIndex:200,
-                  boxShadow:"0 8px 30px rgba(0,0,0,0.30)", width:"calc(100% - 32px)", maxWidth:398, overflow:"hidden" }}>
+                  boxShadow:"0 8px 30px rgba(0,0,0,0.30)",
+                  width:"calc(100% - 32px)", maxWidth:398, overflow:"hidden" }}>
       {/* sliding pill — glides between tabs */}
       <div style={{ position:"absolute", top:6, bottom:6, left:6,
                     width:`calc((100% - 12px) / ${tabs.length})`,
