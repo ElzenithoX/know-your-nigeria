@@ -86,21 +86,23 @@ const FontLoader = ({ dark }) => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    :root { --app-h: 100%; }
     html, body {
       background: ${dark ? "#0A0F0A" : "#FFFFFF"};
       font-family: 'Inter', system-ui, sans-serif; font-weight: 500;
       overscroll-behavior: none;
-      height: var(--app-h);
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
       margin: 0; padding: 0;
       overflow: hidden;
-      position: fixed;
-      width: 100%;
     }
-    #root { height: var(--app-h); }
-    /* Modern browsers: dynamic viewport unit tracks the collapsing address bar */
-    @supports (height: 100dvh) {
-      :root { --app-h: 100dvh; }
+    #root { height: 100%; width: 100%; }
+    /* iOS standalone: fill the home-indicator strip with the app background */
+    body::after {
+      content: "";
+      position: fixed; left: 0; right: 0; bottom: 0;
+      height: env(safe-area-inset-bottom, 0px);
+      background: ${dark ? "#0A0F0A" : "#FFFFFF"};
+      z-index: 0; pointer-events: none;
     }
     ::-webkit-scrollbar { display: none; }
     button { cursor: pointer; border: none; background: none; font-family: inherit; }
@@ -1762,6 +1764,7 @@ function useViewportHeight() {
     const apply = () => {
       const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
       document.documentElement.style.setProperty("--app-h", h + "px");
+      document.body.style.height = h + "px";
     };
     apply();
     const vv = window.visualViewport;
@@ -1826,7 +1829,7 @@ function AppInner() {
     <ThemeCtx.Provider value={{ C, dark, toggleDark }}>
       <FontLoader dark={dark} />
       <div style={{
-        background: C.bg, position:"fixed", top:0, left:0, right:0, height:"var(--app-h)", maxWidth:430, margin:"0 auto",
+        background: C.bg, position:"relative", height:"100%", width:"100%", maxWidth:430, margin:"0 auto",
         fontFamily:"'Inter', system-ui, sans-serif", overflow:"hidden",
         display:"flex", flexDirection:"column", height:"100%",
       }}>
@@ -3260,7 +3263,7 @@ function SplashScreen({ onEnter }) {
         if (Math.abs(dx) > 45) go(dx < 0 ? idx + 1 : idx - 1);
         touchX.current = null;
       }}
-      style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-h)", maxWidth:430, margin:"0 auto", overflow:"hidden",
+      style={{ position:"relative", height:"100%", width:"100%", maxWidth:430, margin:"0 auto", overflow:"hidden",
                background:"#0E2E12", fontFamily:"'Inter', system-ui, sans-serif",
                opacity: loaded ? 1 : 0, transition:"opacity 0.4s ease" }}>
 
@@ -3344,63 +3347,109 @@ function SplashScreen({ onEnter }) {
 
 function SetupScreen() {
   const { completeSetup } = useUser();
-  const [name, setName]   = useState("");
-  const [step, setStep]   = useState(1); // 1=welcome, 2=name
+  const { dark } = useTheme();
+  const [name, setName] = useState("");
   const valid = name.trim().length >= 2;
 
-  if (step === 1) return (
-    <div style={{ height:"100dvh", maxWidth:430, margin:"0 auto", background:C.gDark, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"space-between", padding:"72px 28px 56px", textAlign:"center" }}>
-
-      {/* Top — centered brand */}
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
-        <div style={{ width:64, height:64, borderRadius:20, background:"rgba(255,255,255,0.10)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, marginBottom:32 }}>🇳🇬</div>
-        <p style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", marginBottom:14 }}>Know Your Nigeria</p>
-        <h1 style={{ fontFamily:"'Inter', sans-serif", letterSpacing:"-0.035em", fontSize:44, fontWeight:900, color:"#fff", lineHeight:1.08 }}>Your rights.<br/>Your history.<br/>Your Nigeria.</h1>
-      </div>
-
-      {/* Bottom — stats + CTA */}
-      <div style={{ width:"100%" }}>
-        <div style={{ display:"flex", justifyContent:"center", gap:32, marginBottom:40 }}>
-          {[{n:"269",l:"Sections"},{n:"500+",l:"Yrs history"},{n:"60+",l:"Quiz Q's"}].map((s,i)=>(
-            <div key={i} style={{ textAlign:"center" }}>
-              <div style={{ fontFamily:"'Inter', sans-serif", letterSpacing:"-0.035em", fontSize:24, fontWeight:900, color:"#fff" }}>{s.n}</div>
-              <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.38)", marginTop:3, letterSpacing:0.5 }}>{s.l}</div>
-            </div>
-          ))}
-        </div>
-        <button onClick={() => setStep(2)} style={{ width:"100%", background:"#fff", color:C.gDark, fontSize:16, fontWeight:800, padding:"18px", borderRadius:20, letterSpacing:0.1, boxShadow:"0 12px 32px rgba(0,0,0,0.3)" }}>Get Started →</button>
-        <p style={{ textAlign:"center", marginTop:16, fontSize:11, fontWeight:500, color:"rgba(255,255,255,0.25)" }}>Free · Works offline · No sign-up required</p>
-      </div>
-    </div>
+  const Ic = ({ d, c: col, s = 20 }) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.8"
+         strokeLinecap="round" strokeLinejoin="round">{d}</svg>
   );
 
+  // Same colour language as the home tiles
+  const chips = dark
+    ? [
+        { bg: C.card,  fg: "#FFFFFF", ic: C.lime,  label: "269 sections",  d: <><path d="M4 19.5v-15A2.5 2.5 0 016.5 2H19a1 1 0 011 1v16a1 1 0 01-1 1H6.5A2.5 2.5 0 014 19.5z"/><path d="M8 7h7M8 11h5"/></> },
+        { bg: C.card,  fg: "#FFFFFF", ic: C.lime,  label: "500+ yrs",      d: <><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></> },
+        { bg: C.lime,  fg: "#0E2E12", ic: "#0E2E12", label: "Ask Wazobia", d: <path d="M20.5 11.6a8 8 0 01-8.6 8 8.5 8.5 0 01-3.7-.9L3.5 20l1.4-4.6a8 8 0 01-.9-3.8 8 8 0 018.3-8 8 8 0 018.2 8z"/> },
+      ]
+    : [
+        { bg: C.gLight,    fg: "#0E2E12", ic: C.gMain, label: "269 sections", d: <><path d="M4 19.5v-15A2.5 2.5 0 016.5 2H19a1 1 0 011 1v16a1 1 0 01-1 1H6.5A2.5 2.5 0 014 19.5z"/><path d="M8 7h7M8 11h5"/></> },
+        { bg: C.aSandSoft, fg: "#6B4A05", ic: C.aSand, label: "500+ yrs",     d: <><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></> },
+        { bg: C.lime,      fg: "#0E2E12", ic: "#0E2E12", label: "Ask Wazobia", d: <path d="M20.5 11.6a8 8 0 01-8.6 8 8.5 8.5 0 01-3.7-.9L3.5 20l1.4-4.6a8 8 0 01-.9-3.8 8 8 0 018.3-8 8 8 0 018.2 8z"/> },
+      ];
+
   return (
-    <div style={{ height:"100dvh", maxWidth:430, margin:"0 auto", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", textAlign:"center" }}>
-      <div style={{ width:"100%", maxWidth:360 }}>
-        <div style={{ display:"flex", justifyContent:"center", marginBottom:28 }}>
-          <div style={{ width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.gDark} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
+    <div style={{ height:"100%", width:"100%", maxWidth:430, margin:"0 auto", background:C.bg,
+                  display:"flex", flexDirection:"column", overflow:"hidden",
+                  padding:"calc(env(safe-area-inset-top,0px) + 28px) 20px calc(env(safe-area-inset-bottom,0px) + 24px)",
+                  fontFamily:"'Inter', system-ui, sans-serif" }}>
+
+      {/* Brand mark */}
+      <div className="fadein" style={{ display:"flex", alignItems:"center", gap:10, marginBottom:26, flexShrink:0 }}>
+        <div style={{ width:34, height:23, borderRadius:4, overflow:"hidden", display:"flex", flexShrink:0 }}>
+          <div style={{ flex:1, background:"#008751" }} /><div style={{ flex:1, background:"#fff" }} /><div style={{ flex:1, background:"#008751" }} />
         </div>
-        <h2 style={{ fontFamily:"'Inter', sans-serif", letterSpacing:"-0.035em", fontSize:34, fontWeight:900, color:C.ink, lineHeight:1.1, marginBottom:10 }}>What's your name?</h2>
-        <p style={{ fontSize:13, fontWeight:500, color:C.textMuted, lineHeight:1.7, marginBottom:32 }}>We'll personalise your experience and track your progress.</p>
+        <span style={{ fontSize:11, fontWeight:700, letterSpacing:1.6, color:C.textMuted, textTransform:"uppercase" }}>
+          Know Your Nigeria
+        </span>
+      </div>
+
+      {/* Headline */}
+      <div className="rise d1" style={{ flexShrink:0, marginBottom:20 }}>
+        <h1 style={{ fontSize:34, fontWeight:800, color:C.ink, letterSpacing:"-0.045em", lineHeight:1.02, marginBottom:10 }}>
+          What should we<br/>call you?
+        </h1>
+        <p style={{ fontSize:13.5, fontWeight:500, color:C.textMuted, lineHeight:1.6, maxWidth:290 }}>
+          We'll use your name to keep track of what you've read and the points you earn.
+        </p>
+      </div>
+
+      {/* Input — lime frame once valid */}
+      <div className="rise d2" style={{ flexShrink:0, marginBottom:14 }}>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === "Enter" && valid && completeSetup(name)}
-          placeholder="Your first name…"
+          placeholder="Your first name"
           maxLength={30}
           autoFocus
-          style={{ width:"100%", padding:"18px 20px", fontSize:18, fontWeight:700, color:C.ink, background:C.card, border:`2px solid ${valid ? C.gBright : C.border}`, borderRadius:18, outline:"none", boxSizing:"border-box", textAlign:"center", transition:"border-color 0.2s", boxShadow:C.shadow }}
+          style={{ width:"100%", padding:"17px 18px", fontSize:17, fontWeight:700, color:C.ink,
+                   background: C.card, border:("2px solid " + (valid ? C.limeDeep : C.border)),
+                   borderRadius:16, outline:"none", boxSizing:"border-box",
+                   transition:"border-color 0.2s ease", letterSpacing:-0.3 }}
         />
+      </div>
+
+      {/* Colourful preview chips */}
+      <div className="rise d3" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, flexShrink:0, marginBottom:18 }}>
+        {chips.map((c2, i) => (
+          <div key={i} style={{ background:c2.bg, borderRadius:14, padding:"13px 11px",
+                                border: (dark && c2.bg === C.card) ? ("1px solid " + C.border) : "none" }}>
+            <Ic c={c2.ic} d={c2.d} />
+            <div style={{ fontSize:11, fontWeight:700, color:c2.fg, marginTop:9, letterSpacing:-0.2, lineHeight:1.2 }}>
+              {c2.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ flex:1, minHeight:8 }} />
+
+      {/* Start */}
+      <div className="rise d4" style={{ flexShrink:0 }}>
         <button
           onClick={() => valid && completeSetup(name)}
           disabled={!valid}
-          style={{ width:"100%", marginTop:12, background: valid ? C.gDark : C.deep, color: valid ? "#fff" : C.textGhost, fontSize:16, fontWeight:800, padding:"18px", borderRadius:18, cursor: valid ? "pointer" : "default", transition:"all 0.2s", letterSpacing:0.1 }}>
-          Start Learning →
+          className="tap"
+          style={{ width:"100%", background: valid ? C.lime : C.deep,
+                   color: valid ? "#0E2E12" : C.textGhost,
+                   fontSize:15.5, fontWeight:800, padding:"17px", borderRadius:16,
+                   cursor: valid ? "pointer" : "default", letterSpacing:-0.2,
+                   display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+                   transition:"background 0.2s ease, color 0.2s ease" }}>
+          Start Learning
+          {valid && (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0E2E12"
+                 strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h13"/><path d="M12 5l7 7-7 7"/>
+            </svg>
+          )}
         </button>
-        <p style={{ textAlign:"center", marginTop:16, fontSize:11, fontWeight:500, color:C.textGhost }}>Your data stays on your device only.</p>
+        <p style={{ textAlign:"center", marginTop:13, fontSize:11.5, fontWeight:500, color:C.textGhost }}>
+          Everything stays on your device. No account needed.
+        </p>
       </div>
     </div>
   );
@@ -4110,7 +4159,7 @@ function Nav({ tab, setTab, setChapterIdx }) {
   const activeIdx = Math.max(0, tabs.findIndex(t => t.id === tab));
 
   return (
-    <div style={{ position:"absolute", bottom:16, left:"50%", transform:"translateX(-50%)",
+    <div style={{ position:"absolute", bottom:"calc(env(safe-area-inset-bottom, 0px) + 14px)", left:"50%", transform:"translateX(-50%)",
                   display:"flex", alignItems:"center", background: C.isDark ? "#141418" : "#0A0F0A",
                   borderRadius:22, padding:"6px", zIndex:200,
                   boxShadow:"0 8px 30px rgba(0,0,0,0.30)", width:"calc(100% - 32px)", maxWidth:398, overflow:"hidden" }}>
