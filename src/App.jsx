@@ -86,8 +86,22 @@ const FontLoader = ({ dark }) => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { background: ${dark ? "#0A0F0A" : "#FFFFFF"}; font-family: 'Inter', system-ui, sans-serif; font-weight: 500; overscroll-behavior: none; }
-    #root { height: 100%; }
+    :root { --app-h: 100%; }
+    html, body {
+      background: ${dark ? "#0A0F0A" : "#FFFFFF"};
+      font-family: 'Inter', system-ui, sans-serif; font-weight: 500;
+      overscroll-behavior: none;
+      height: var(--app-h);
+      margin: 0; padding: 0;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+    #root { height: var(--app-h); }
+    /* Modern browsers: dynamic viewport unit tracks the collapsing address bar */
+    @supports (height: 100dvh) {
+      :root { --app-h: 100dvh; }
+    }
     ::-webkit-scrollbar { display: none; }
     button { cursor: pointer; border: none; background: none; font-family: inherit; }
     input, textarea { font-family: inherit; }
@@ -1737,7 +1751,33 @@ export default function App() {
   );
 }
 
+/* Keeps --app-h equal to the real visible viewport, so the app never
+   leaves a gap when mobile browser chrome expands or collapses. */
+function useViewportHeight() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Browsers with dvh handle this natively — no JS needed.
+    if (window.CSS && CSS.supports && CSS.supports("height", "100dvh")) return;
+
+    const apply = () => {
+      const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      document.documentElement.style.setProperty("--app-h", h + "px");
+    };
+    apply();
+    const vv = window.visualViewport;
+    window.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", apply);
+    if (vv) vv.addEventListener("resize", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      window.removeEventListener("orientationchange", apply);
+      if (vv) vv.removeEventListener("resize", apply);
+    };
+  }, []);
+}
+
 function AppInner() {
+  useViewportHeight();
   const { user } = useUser();
   const [tab, setTab]               = useState("home");
   const [chapterIdx, setChapterIdx] = useState(null);
@@ -1786,7 +1826,7 @@ function AppInner() {
     <ThemeCtx.Provider value={{ C, dark, toggleDark }}>
       <FontLoader dark={dark} />
       <div style={{
-        background: C.bg, position:"fixed", inset:0, maxWidth:430, margin:"0 auto",
+        background: C.bg, position:"fixed", top:0, left:0, right:0, height:"var(--app-h)", maxWidth:430, margin:"0 auto",
         fontFamily:"'Inter', system-ui, sans-serif", overflow:"hidden",
         display:"flex", flexDirection:"column", height:"100%",
       }}>
@@ -3220,7 +3260,7 @@ function SplashScreen({ onEnter }) {
         if (Math.abs(dx) > 45) go(dx < 0 ? idx + 1 : idx - 1);
         touchX.current = null;
       }}
-      style={{ position:"fixed", inset:0, maxWidth:430, margin:"0 auto", overflow:"hidden",
+      style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-h)", maxWidth:430, margin:"0 auto", overflow:"hidden",
                background:"#0E2E12", fontFamily:"'Inter', system-ui, sans-serif",
                opacity: loaded ? 1 : 0, transition:"opacity 0.4s ease" }}>
 
